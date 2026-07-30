@@ -29,4 +29,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function consumer()
+    {
+        return $this->hasOne(Consumer::class);
+    }
 }

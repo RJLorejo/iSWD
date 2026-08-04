@@ -28,7 +28,45 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+
+        $user->update([
+
+            'last_login_at' => now(),
+
+            'last_login_ip' => $request->ip(),
+
+        ]);
+
+        if ($user->hasRole('Administrator')) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($user->hasRole('Maintenance Manager')) {
+            return redirect()->route('manager.dashboard');
+        }
+
+        if ($user->hasRole('Maintenance Supervisor')) {
+            return redirect()->route('supervisor.dashboard');
+        }
+
+        if ($user->hasRole('Maintenance Technician')) {
+            return redirect()->route('technician.dashboard');
+        }
+
+        Auth::logout();
+
+        return redirect()
+
+            ->route('login')
+
+            ->withErrors([
+
+                'email' =>
+
+                'Your account has no assigned role. Please contact the System Administrator.'
+
+            ]);
     }
 
     /**
@@ -45,3 +83,4 @@ class AuthenticatedSessionController extends Controller
         return redirect('/');
     }
 }
+

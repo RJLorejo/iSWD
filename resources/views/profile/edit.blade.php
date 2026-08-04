@@ -1,29 +1,55 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('admin.layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
+@section('title', 'Edit Profile')
+
+@section('content')
+
+    <div class="grid lg:grid-cols-3 gap-8">
+
+        <div class="lg:col-span-2">
+
+            <div class="bg-white rounded-2xl shadow border">
+
+                <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+
+                    @csrf
+
+                    @method('PUT')
+
+                    <div class="p-8 grid md:grid-cols-2 gap-6">
+
+                        @include('profile.partials.profile-form')
+
+                    </div>
+
+                    <div class="border-t p-6 flex justify-end gap-3">
+
+                        <a href="{{ route('profile.show') }}" class="px-5 py-3 rounded-xl border">
+
+                            Cancel
+
+                        </a>
+
+                        <button class="px-6 py-3 rounded-xl bg-sky-700 text-white">
+
+                            Save Changes
+
+                        </button>
+
+                    </div>
+
+                </form>
+
             </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
         </div>
+
+        <div>
+
+            @include('profile.partials.password-form')
+
+        </div>
+
     </div>
-</x-app-layout>
+
+@endsection

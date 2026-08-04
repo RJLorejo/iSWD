@@ -28,8 +28,22 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'email' => [
+
+                'required',
+
+                'email',
+
+                'max:255'
+
+            ],
+            'password' => [
+
+                'required',
+
+                'min:8'
+
+            ]
         ];
     }
 
@@ -46,7 +60,26 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+
+                'email' =>
+
+                'Invalid email address or password. Please try again.'
+
+            ]);
+        }
+
+        $user = Auth::user();
+
+        if (!$user->is_active) {
+
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+
+                'email' =>
+
+                'Your account has been deactivated. Please contact the System Administrator.'
+
             ]);
         }
 
@@ -81,6 +114,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }

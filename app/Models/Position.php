@@ -8,11 +8,16 @@ class Position extends Model
 {
     protected $fillable = [
 
-        'name',
+        'position_name',
 
-        'code',
+        'description',
 
-        'description'
+        'is_active'
 
     ];
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

@@ -79,16 +79,16 @@ class UserController extends Controller
                 0
             )->count(),
 
-            'administrators' => User::role(
-                'Administrator'
+            'maintenance_managers' => User::role(
+                'Maintenance Manager'
             )->count(),
 
-            'technicians' => User::role(
+            'maintenance_technicians' => User::role(
                 'Maintenance Technician'
             )->count(),
 
-            'supervisors' => User::role(
-                'Maintenance Supervisor'
+            'customer_services' => User::role(
+                'Customer Service'
             )->count(),
 
         ]);

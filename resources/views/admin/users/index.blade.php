@@ -17,15 +17,15 @@
             <x-admin.stat-card title="Inactive Employees" :value="$inactiveEmployees" subtitle="Disabled accounts"
                 icon="fa-solid fa-user-xmark" />
 
-            <x-admin.stat-card title="Administrators" :value="$administrators" subtitle="System administrators"
-                icon="fa-solid fa-user-shield" />
 
-            <x-admin.stat-card title="Supervisors" :value="$supervisors" subtitle="Maintenance supervisors"
+            <x-admin.stat-card title="Customer Service" :value="$customer_services" subtitle="Customer service representatives"
                 icon="fa-solid fa-users-gear" />
 
-            <x-admin.stat-card title="Technicians" :value="$technicians" subtitle="Maintenance personnel"
-                icon="fa-solid fa-screwdriver-wrench" />
+            <x-admin.stat-card title="Maintenance Managers" :value="$maintenance_managers" subtitle="Maintenance managers"
+                icon="fa-solid fa-user-gear" />
 
+            <x-admin.stat-card title="Maintenance Technicians" :value="$maintenance_technicians" subtitle="Maintenance personnel"
+                icon="fa-solid fa-screwdriver-wrench" />
         </div>
 
         <div class="p-6 border-b flex justify-between items-center">
@@ -100,7 +100,7 @@
 
                     </select>
 
-                    <select name="status" class="rounded-xl">
+                    <select name="status" class="rounded-xl border-gray-300">
 
                         <option value="">
 
@@ -126,7 +126,7 @@
 
                         <button class="flex-1 bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600 text-white rounded-xl">
 
-                            <i class="bi bi-search"></i>
+                            <i class="fas fa-search"></i>
 
                             Search
 

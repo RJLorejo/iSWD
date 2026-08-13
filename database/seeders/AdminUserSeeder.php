@@ -29,9 +29,9 @@ class AdminUserSeeder extends Seeder
 
                 'phone' => '09123456789',
 
-                'department_id' => 1,
+                'department_id' => null,
 
-                'position_id' => 1,
+                'position_id' => null,
 
                 'password' => Hash::make('Admin@12345'),
 

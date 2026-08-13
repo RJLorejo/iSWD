@@ -15,7 +15,7 @@ class RolePermissionSeeder extends Seeder
 
             'Maintenance Manager',
 
-            'Maintenance Supervisor',
+            'Customer Service',
 
             'Maintenance Technician',
 

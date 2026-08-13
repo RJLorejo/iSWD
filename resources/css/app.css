@@ -36,3 +36,48 @@ body{
 .card-hover{
     @apply transition duration-300 hover:-translate-y-1 hover:shadow-xl;
 }
+
+/* =========================================================
+   LEAFLET MAP STACKING
+   Prevent Leaflet from appearing above navbar/sidebar
+   ========================================================= */
+
+.leaflet-container {
+    z-index: 0 !important;
+}
+
+.leaflet-pane,
+.leaflet-control,
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 1 !important;
+}
+
+.leaflet-control {
+    z-index: 2 !important;
+}
+
+#complaint-map {
+    width: 100%;
+    height: 420px;
+    min-height: 420px;
+    position: relative;
+}
+
+#complaint-map.leaflet-container {
+    width: 100%;
+    height: 420px;
+}
+
+.leaflet-container {
+    font-family: inherit;
+}
+
+.leaflet-pane {
+    z-index: 1;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 2;
+}

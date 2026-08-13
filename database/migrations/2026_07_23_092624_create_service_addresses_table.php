@@ -23,13 +23,17 @@ return new class extends Migration
 
             $table->string('street')->nullable();
 
+            $table->string('purok')->nullable();
+
             $table->string('barangay');
 
             $table->string('city')->default('Sagay City');
 
             $table->string('province')->default('Negros Occidental');
 
-            $table->string('postal_code')->nullable();
+            $table->string('zip_code')->nullable();
+
+            $table->string('landmark')->nullable();
 
             $table->timestamps();
         });

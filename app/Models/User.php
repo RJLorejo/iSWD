@@ -64,13 +64,13 @@ class User extends Authenticatable
 
     protected $casts = [
 
-        'email_verified_at'=>'datetime',
+        'email_verified_at' => 'datetime',
 
-        'last_login_at'=>'datetime',
+        'last_login_at' => 'datetime',
 
-        'password'=>'hashed',
+        'password' => 'hashed',
 
-        'is_active'=>'boolean',
+        'is_active' => 'boolean',
 
     ];
 
@@ -84,6 +84,19 @@ class User extends Authenticatable
         return $this->belongsTo(Position::class);
     }
 
+    public function consumer()
+    {
+        return $this->hasOne(Consumer::class);
+    }
+
+    public function assignedComplaints()
+    {
+        return $this->hasMany(
+            \App\Models\Complaint::class,
+            'assigned_to'
+        );
+    }
+
     public function getFullNameAttribute()
     {
         return collect([
@@ -94,16 +107,14 @@ class User extends Authenticatable
         ])->filter()->implode(' ');
     }
 
-        public function getAvatarUrlAttribute(): string
+    public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar) {
 
-            return asset('storage/'.$this->avatar);
-
+            return asset('storage/' . $this->avatar);
         }
 
         return 'https://ui-avatars.com/api/?background=0ea5e9&color=ffffff&name='
-            .urlencode($this->full_name);
+            . urlencode($this->full_name);
     }
-
 }

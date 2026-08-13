@@ -19,13 +19,21 @@ class ServiceConnection extends Model
 
         'meter_number',
 
+        'connection_type',
+
+        'meter_size',
+
         'status',
 
         'installation_date',
 
-        'latitude',
+        'remarks',
 
-        'longitude'
+    ];
+
+    protected $casts = [
+
+        'installation_date' => 'date',
 
     ];
 
@@ -37,5 +45,18 @@ class ServiceConnection extends Model
     public function address()
     {
         return $this->hasOne(ServiceAddress::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auto Number
+    |--------------------------------------------------------------------------
+    */
+
+    public static function generateConnectionNumber(): string
+    {
+        $next = self::max('id') + 1;
+
+        return 'SC-' . str_pad($next, 6, '0', STR_PAD_LEFT);
     }
 }

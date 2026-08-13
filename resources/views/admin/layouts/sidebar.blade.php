@@ -11,7 +11,7 @@
 
             <h1 class="text-2xl font-bold">
 
-                KnowledgeRetain AI
+                iSWD
 
             </h1>
 
@@ -78,6 +78,14 @@
             <i class="fa-solid fa-building w-6"></i>
 
             <span x-show="!sidebarMini">Departments</span>
+
+        </a>
+
+        <a href="{{ route('admin.positions.index') }}" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+
+            <i class="fa-solid fa-building w-6"></i>
+
+            <span x-show="!sidebarMini">Position</span>
 
         </a>
 

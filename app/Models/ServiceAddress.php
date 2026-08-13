@@ -14,18 +14,41 @@ class ServiceAddress extends Model
 
         'street',
 
+        'purok',
+
         'barangay',
 
         'city',
 
         'province',
 
-        'postal_code'
+        'zip_code',
+
+        'landmark',
 
     ];
 
     public function serviceConnection()
     {
         return $this->belongsTo(ServiceConnection::class);
+    }
+
+    public function getFullAddressAttribute()
+    {
+        return collect([
+
+            $this->house_no,
+
+            $this->street,
+
+            $this->purok,
+
+            $this->barangay,
+
+            $this->city,
+
+            $this->province,
+
+        ])->filter()->implode(', ');
     }
 }

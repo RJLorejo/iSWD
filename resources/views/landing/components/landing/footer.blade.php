@@ -6,9 +6,9 @@
 
             <div>
 
-                <h2 class="text-2xl font-bold">
+                <h2 class="text-2xl font-bold text-center">
 
-                    KnowledgeRetain AI
+                    iSWD
 
                 </h2>
 
@@ -22,7 +22,7 @@
 
             <div class="mt-6 md:mt-0 text-sm text-sky-200">
 
-                © {{ date('Y') }} KnowledgeRetain AI. All Rights Reserved.
+                © {{ date('Y') }} iSWD. All Rights Reserved.
 
             </div>
 

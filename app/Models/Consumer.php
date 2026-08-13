@@ -11,6 +11,8 @@ class Consumer extends Model
 
     protected $fillable = [
 
+        'consumer_no',
+
         'user_id',
 
         'first_name',
@@ -19,25 +21,74 @@ class Consumer extends Model
 
         'last_name',
 
-        'contact_number',
+        'suffix',
+
+        'sex',
+
+        'birth_date',
+
+        'phone',
 
         'email',
 
-        'valid_id_type',
-
-        'valid_id_number',
-
-        'is_verified'
+        'is_active',
 
     ];
+
+    protected $casts = [
+
+        'birth_date' => 'date',
+
+        'is_active' => 'boolean',
+
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    public function address()
+    {
+        return $this->hasOne(ConsumerAddress::class);
+    }
+
     public function serviceConnections()
     {
         return $this->hasMany(ServiceConnection::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    public function getFullNameAttribute()
+    {
+        return trim(
+
+            "{$this->first_name} {$this->middle_name} {$this->last_name} {$this->suffix}"
+
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consumer Number Generator
+    |--------------------------------------------------------------------------
+    */
+
+    public static function generateConsumerNo(): string
+    {
+        $next = self::max('id') + 1;
+
+        return 'CON-' . str_pad($next, 6, '0', STR_PAD_LEFT);
     }
 }

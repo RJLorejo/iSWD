@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+
 class AuthenticatedSessionController extends Controller
 {
     /**
@@ -43,11 +44,11 @@ class AuthenticatedSessionController extends Controller
         }
 
         if ($user->hasRole('Maintenance Manager')) {
-            return redirect()->route('manager.dashboard');
+            return redirect()->route('maintenance-manager.dashboard');
         }
 
-        if ($user->hasRole('Maintenance Supervisor')) {
-            return redirect()->route('supervisor.dashboard');
+        if ($user->hasRole('Customer Service')) {
+            return redirect()->route('customer-service.dashboard');
         }
 
         if ($user->hasRole('Maintenance Technician')) {

@@ -8,13 +8,13 @@
 
                 <h2 class="text-4xl font-bold text-slate-800 mb-8">
 
-                    About KnowledgeRetain AI
+                    About iSWD
 
                 </h2>
 
                 <p class="text-slate-600 leading-8 text-lg">
 
-                    KnowledgeRetain AI is an intelligent maintenance knowledge management
+                    iSWD is an intelligent maintenance knowledge management
                     system developed for the Maintenance Department of Sagay Water District.
                     It centralizes maintenance records, repair histories, standard operating
                     procedures (SOPs), technical manuals, and organizational knowledge into

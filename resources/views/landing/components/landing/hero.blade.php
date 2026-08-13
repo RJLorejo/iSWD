@@ -14,12 +14,12 @@
 
                 <h1 class="text-6xl font-bold mt-4">
 
-                    KnowledgeRetain AI
+                    iSWD
                 </h1>
 
                 <p class="mt-8 text-xl leading-9">
 
-                    Intelligent Maintenance Knowledge Management System with AI-Based Repair Case Recommendation.
+                    A Maintenance Knowledge Management System with AI-Based Repair Case Recommendation.
 
                 </p>
 

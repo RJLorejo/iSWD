@@ -25,17 +25,26 @@ return new class extends Migration
 
             $table->string('meter_number')->unique();
 
+            $table->enum('connection_type', [
+                'Residential',
+                'Commercial',
+                'Government',
+                'Institutional'
+            ])->default('Residential');
+
+            $table->string('meter_size')->nullable();
+
             $table->enum('status', [
                 'Active',
+                'Inactive',
                 'Disconnected',
+                'Temporary',
                 'Pending'
             ])->default('Pending');
 
             $table->date('installation_date')->nullable();
 
-            $table->decimal('latitude', 10, 7)->nullable();
-
-            $table->decimal('longitude', 10, 7)->nullable();
+            $table->text('remarks')->nullable();
 
             $table->timestamps();
 

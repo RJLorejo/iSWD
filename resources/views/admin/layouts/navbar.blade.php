@@ -27,7 +27,7 @@
 
                 <p class="text-sm text-gray-500">
 
-                    KnowledgeRetain AI Management System
+                    iSWD - Sagay Water District
 
                 </p>
 
@@ -67,8 +67,7 @@
 
                 <button @click="open=!open" class="flex items-center gap-3 rounded-xl hover:bg-gray-100 px-3 py-2">
 
-                    <img class="w-11 h-11 rounded-full"
-                        src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{ urlencode(auth()->user()->name) }}">
+                    <img class="w-11 h-11 rounded-full" src="{{ auth()->user()->avatar_url }}" alt="User Avatar">
 
                     <div class="hidden md:block text-left">
 

@@ -18,7 +18,7 @@ return new class extends Migration
             |--------------------------------------------------------------------------
             */
 
-            $table->string('employee_id')->unique();
+            $table->string('employee_id')->unique()->nullable();
 
             $table->string('first_name');
 

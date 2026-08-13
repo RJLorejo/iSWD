@@ -12,6 +12,8 @@ return new class extends Migration
 
             $table->id();
 
+            $table->string('department_code')->unique();
+
             $table->string('department_name')->unique();
 
             $table->text('description')->nullable();

@@ -26,7 +26,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('users');
 
-            $table->foreignId('supervisor_id')
+            $table->foreignId('customer_service_id')
                 ->nullable()
                 ->constrained('users');
 

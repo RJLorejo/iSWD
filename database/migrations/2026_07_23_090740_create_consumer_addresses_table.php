@@ -12,7 +12,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('consumer_addresses', function (Blueprint $table) {
+
             $table->id();
+
+            $table->foreignId('consumer_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('house_no')->nullable();
+
+            $table->string('street')->nullable();
+
+            $table->string('purok')->nullable();
+
+            $table->string('barangay');
+
+            $table->string('municipality')->default('Sagay');
+
+            $table->string('province')->default('Negros Occidental');
+
+            $table->string('zip_code')->nullable();
+
             $table->timestamps();
         });
     }

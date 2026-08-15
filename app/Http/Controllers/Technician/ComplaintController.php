@@ -237,6 +237,8 @@ class ComplaintController extends Controller
             'customerService',
             'verifier',
             'technician',
+            'maintenanceReport',
+            'maintenanceReport.technician',
         ]);
 
         /*

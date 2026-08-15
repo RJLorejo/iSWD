@@ -142,7 +142,7 @@
 
 
         {{-- Maintenance History --}}
-        <a href="#"
+        <a href="{{ route('technician.maintenance-history.index') }}"
             class="flex items-center gap-4 px-4 py-3 rounded-xl
                    hover:bg-white/20 transition">
 

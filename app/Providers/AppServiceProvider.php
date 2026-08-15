@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Complaint;
+use App\Observers\ComplaintObserver;
+use App\Models\MaintenanceReport;
+use App\Observers\MaintenanceReportObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Complaint::observe(
+            ComplaintObserver::class
+        );
+
+        MaintenanceReport::observe(
+            MaintenanceReportObserver::class
+        );
     }
 }

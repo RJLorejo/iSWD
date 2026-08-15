@@ -195,22 +195,28 @@
                     </div>
 
 
-                    {{-- Action --}}
-                    <div>
+                    {{-- ========================================================= --}}
+                    {{-- MAINTENANCE ACTIONS --}}
+                    {{-- ========================================================= --}}
 
+                    <div class="flex flex-wrap gap-3 mt-6">
+
+                        {{-- ASSIGNED --}}
                         @if ($complaint->status === 'Assigned')
-                            <form method="POST" action="{{ route('technician.complaints.start', $complaint) }}"
-                                onsubmit="return confirm('Start maintenance work on this complaint?');">
+                            <form method="POST"
+                                action="{{ route('technician.maintenance-reports.start', $complaint) }}">
 
                                 @csrf
 
                                 <button type="submit"
                                     class="inline-flex items-center gap-2
-                                           px-5 py-3 rounded-xl
-                                           bg-indigo-600 text-white
-                                           font-medium
-                                           hover:bg-indigo-700
-                                           transition shadow-sm">
+                       px-5 py-3
+                       rounded-xl
+                       bg-blue-600
+                       text-white
+                       font-semibold
+                       hover:bg-blue-700
+                       transition">
 
                                     <i class="fas fa-play"></i>
 
@@ -219,39 +225,67 @@
                                 </button>
 
                             </form>
-                        @elseif($complaint->status === 'In Progress')
-                            <form method="POST" action="{{ route('technician.complaints.complete', $complaint) }}"
-                                onsubmit="return confirm('Are you sure this maintenance work is complete?');">
+                        @endif
 
-                                @csrf
 
-                                <button type="submit"
-                                    class="inline-flex items-center gap-2
-                                           px-5 py-3 rounded-xl
-                                           bg-green-600 text-white
-                                           font-medium
-                                           hover:bg-green-700
-                                           transition shadow-sm">
-
-                                    <i class="fas fa-circle-check"></i>
-
-                                    Complete Maintenance
-
-                                </button>
-
-                            </form>
-                        @elseif($complaint->status === 'Completed')
-                            <div
+                        {{-- IN PROGRESS --}}
+                        @if ($complaint->status === 'In Progress')
+                            <a href="{{ route('technician.maintenance-reports.create', $complaint) }}"
                                 class="inline-flex items-center gap-2
-                                    px-5 py-3 rounded-xl
-                                    bg-green-50 text-green-700
-                                    border border-green-200">
+                   px-5 py-3
+                   rounded-xl
+                   bg-indigo-600
+                   text-white
+                   font-semibold
+                   hover:bg-indigo-700
+                   transition">
 
-                                <i class="fas fa-circle-check"></i>
+                                <i class="fas fa-file-pen"></i>
 
-                                Maintenance Completed
+                                Continue Maintenance Report
 
-                            </div>
+                            </a>
+                        @endif
+
+
+                        {{-- COMPLETED --}}
+                        @if ($complaint->status === 'Completed')
+
+                            @if ($complaint->maintenanceReport)
+                                <a href="{{ route('technician.maintenance-reports.show', $complaint) }}"
+                                    class="inline-flex items-center gap-2
+                       px-5 py-3
+                       rounded-xl
+                       bg-green-600
+                       text-white
+                       font-semibold
+                       hover:bg-green-700
+                       transition">
+
+                                    <i class="fas fa-file-circle-check"></i>
+
+                                    View Maintenance Report
+
+                                </a>
+
+                                <a href="{{ route('technician.maintenance-reports.print', $complaint) }}"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-2
+                       px-5 py-3
+                       rounded-xl
+                       bg-gray-800
+                       text-white
+                       font-semibold
+                       hover:bg-gray-900
+                       transition">
+
+                                    <i class="fas fa-print"></i>
+
+                                    Print Report
+
+                                </a>
+                            @endif
+
                         @endif
 
                     </div>
@@ -724,7 +758,7 @@
 
                                         <p class="font-semibold text-gray-900">
 
-                                            {{ $complaint->verifier?->last_name ??  'Not verified' }}
+                                            {{ $complaint->verifier?->last_name ?? 'Not verified' }}
 
                                         </p>
 
@@ -928,7 +962,8 @@
 
                                 <p class="font-semibold text-gray-900">
 
-                                    {{ $complaint->technician?->last_name ?? '—' }}, {{ $complaint->technician?->first_name ?? '—' }}
+                                    {{ $complaint->technician?->last_name ?? '—' }},
+                                    {{ $complaint->technician?->first_name ?? '—' }}
 
                                 </p>
 
@@ -950,7 +985,8 @@
 
                             <p class="font-medium text-gray-900 mt-1">
 
-                                {{ $complaint->customerService?->last_name ?? '—' }} , {{ $complaint->customerService?->first_name ?? '—' }}
+                                {{ $complaint->customerService?->last_name ?? '—' }} ,
+                                {{ $complaint->customerService?->first_name ?? '—' }}
 
                             </p>
 

@@ -117,6 +117,12 @@ class Complaint extends Model
         );
     }
 
+    public function maintenanceHistories()
+    {
+        return $this->hasMany(
+            MaintenanceHistory::class
+        )->latest('event_at');
+    }
 
     /*
     |--------------------------------------------------------------------------

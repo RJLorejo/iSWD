@@ -14,7 +14,6 @@ use App\Http\Controllers\CustomerService\ComplaintController;
 use App\Http\Controllers\CustomerService\ConsumerController;
 use App\Http\Controllers\CustomerService\ComplaintCategoryController;
 use App\Http\Controllers\CustomerService\ComplaintVerificationController;
-use App\Http\Controllers\CustomerService\ProfileController as CustomerServiceProfileController;
 
 use App\Http\Controllers\Manager\ComplaintController as ManagerComplaintController;
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
@@ -22,6 +21,7 @@ use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
 use App\Http\Controllers\Technician\DashboardController as TechnicianDashboard;
 use App\Http\Controllers\Technician\ComplaintController as TechnicianComplaintController;
 use App\Http\Controllers\Technician\MaintenanceReportController;
+use App\Http\Controllers\Technician\MaintenanceHistoryController;
 
 
 
@@ -155,17 +155,7 @@ Route::middleware(['auth', 'role:Customer Service'])
         )->name('complaint-verification.index');
 
 
-        Route::get('/customer-service/profile', [CustomerServiceProfileController::class, 'show'])
-            ->name('profile.show');
 
-        Route::get('/customer-service/profile/edit', [CustomerServiceProfileController::class, 'edit'])
-            ->name('profile.edit');
-
-        Route::put('/customer-service/profile', [ProfileController::class, 'update'])
-            ->name('profile.update');
-
-        Route::put('/customer-service/profile/password', [ProfileController::class, 'updatePassword'])
-            ->name('profile.password');
     });
 
 
@@ -211,6 +201,109 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             MaintenanceReportController::class,
             'print'
         ])->name('reports.maintenance.print');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Maintenance Reports
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/maintenance-reports',
+            [
+                MaintenanceReportController::class,
+                'index'
+            ]
+        )->name(
+            'maintenance-reports.index'
+        );
+
+        Route::get(
+            '/complaints/{complaint}/maintenance-report',
+            [
+                MaintenanceReportController::class,
+                'create'
+            ]
+        )->name(
+            'maintenance-reports.create'
+        );
+
+        Route::post(
+            '/complaints/{complaint}/maintenance-report/start',
+            [
+                MaintenanceReportController::class,
+                'start'
+            ]
+        )->name(
+            'maintenance-reports.start'
+        );
+
+        Route::post(
+            '/complaints/{complaint}/maintenance-report',
+            [
+                MaintenanceReportController::class,
+                'store'
+            ]
+        )->name(
+            'maintenance-reports.store'
+        );
+
+        Route::get(
+            '/complaints/{complaint}/maintenance-report/view',
+            [
+                MaintenanceReportController::class,
+                'show'
+            ]
+        )->name(
+            'maintenance-reports.show'
+        );
+
+        Route::get(
+            '/complaints/{complaint}/maintenance-report/print',
+            [
+                MaintenanceReportController::class,
+                'printReport'
+            ]
+        )->name(
+            'maintenance-reports.print'
+        );
+
+        Route::get(
+            '/maintenance-reports/print',
+            [
+                MaintenanceReportController::class,
+                'print'
+            ]
+        )->name(
+            'maintenance-reports.print-summary'
+        );
+
+                /*
+        |--------------------------------------------------------------------------
+        | Maintenance History
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/maintenance-history',
+            [
+                MaintenanceHistoryController::class,
+                'index',
+            ]
+        )->name(
+            'maintenance-history.index'
+        );
+
+        Route::get(
+            '/maintenance-history/{complaint}',
+            [
+                MaintenanceHistoryController::class,
+                'show',
+            ]
+        )->name(
+            'maintenance-history.show'
+        );
     });
 
 
@@ -242,3 +335,24 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__ . '/auth.php';
 
 
+
+//admin pass: Admin@12345
+//cs pass: 6dEY8nz5Mq
+//mm pass: C9fIpt9fm5
+//mt pass: hPeVeLSvMr
+
+// //Step 1 — Technician Maintenance Report ← NEXT
+
+// Step 2 — Maintenance History / Timeline
+
+// Step 3 — Before/After Photos
+
+// Step 4 — Maintenance Materials & Parts
+
+// Step 5 — Technician Work Report validation
+
+// Step 6 — Supervisor review/approval
+
+// Step 7 — Knowledge Repository
+
+// Step 8 — AI Repair Case Recommendation

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AssignComplaintRequest;
+use App\Http\Requests\Manager\AssignComplaintRequest;
 use App\Models\Complaint;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -11,76 +11,101 @@ use Illuminate\Support\Facades\DB;
 
 class ComplaintController extends Controller
 {
-    /**
-     * Display complaints waiting for technician assignment.
-     */
+
     public function index(Request $request)
     {
+
         $query = Complaint::with([
             'consumer',
             'category',
             'customerService',
             'verifier',
-            'technician',
-        ])
-            ->whereIn('status', [
-                'Verified',
-                'Assigned',
-                'In Progress',
-            ]);
+            'technicians',
+        ])->whereIn('status', [
+            'Verified',
+            'Assigned',
+            'In Progress',
+            'Completed',
+            'Closed',
+        ]);
 
         /*
         |--------------------------------------------------------------------------
-        | Search
+        | Search Filter
         |--------------------------------------------------------------------------
         */
 
         if ($request->filled('search')) {
-
-            $search = $request->search;
+            $search = trim($request->search);
 
             $query->where(function ($q) use ($search) {
-
                 $q->where('complaint_no', 'like', "%{$search}%")
                     ->orWhere('subject', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('address', 'like', "%{$search}%");
-
-                $q->orWhereHas('consumer', function ($consumer) use ($search) {
-
-                    $consumer
-                        ->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('consumer_no', 'like', "%{$search}%");
-                });
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhereHas('consumer', function ($consumer) use ($search) {
+                        $consumer->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('account_number', 'like', "%{$search}%");
+                    });
             });
         }
 
-        if ($request->filled('status')) {
-
-            $query->where(
-                'status',
-                $request->status
-            );
-        }
-
         /*
         |--------------------------------------------------------------------------
-        | Priority Filter
+        | Status Filter
         |--------------------------------------------------------------------------
         */
 
-        if ($request->filled('priority')) {
+        $allowedStatuses = [
+            'For Assignment',
+            'Verified',
+            'Assigned',
+            'In Progress',
+            'Completed',
+            'Closed',
+        ];
 
-            $query->where(
-                'priority',
-                $request->priority
+        if (
+            $request->filled('status') &&
+            in_array($request->status, $allowedStatuses, true)
+        ) {
+            if ($request->status === 'For Assignment') {
+                $query->where('status', 'Verified')
+                    ->whereDoesntHave('technicians');
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Date Filter
+        |--------------------------------------------------------------------------
+        |
+        | Filters complaints according to their creation date.
+        |
+        */
+
+        if ($request->filled('date_from')) {
+            $query->whereDate(
+                'created_at',
+                '>=',
+                $request->date_from
+            );
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate(
+                'created_at',
+                '<=',
+                $request->date_to
             );
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Complaints
+        | Paginated Complaints
         |--------------------------------------------------------------------------
         */
 
@@ -91,8 +116,11 @@ class ComplaintController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Statistics
+        | Status Statistics
         |--------------------------------------------------------------------------
+        |
+        | Existing statistics are preserved.
+        |
         */
 
         $verifiedCount = Complaint::where(
@@ -110,15 +138,15 @@ class ComplaintController extends Controller
             'In Progress'
         )->count();
 
-        $criticalCount = Complaint::where(
+        $completedCount = Complaint::where(
             'status',
-            'Verified'
-        )
-            ->where(
-                'priority',
-                'Critical'
-            )
-            ->count();
+            'Completed'
+        )->count();
+
+        $closedCount = Complaint::where(
+            'status',
+            'Closed'
+        )->count();
 
         return view(
             'maintenance-manager.complaints.index',
@@ -127,12 +155,15 @@ class ComplaintController extends Controller
                 'verifiedCount',
                 'assignedCount',
                 'inProgressCount',
-                'criticalCount'
+                'completedCount',
+                'closedCount'
             )
         );
     }
 
-
+    /**
+     * Display complaint details.
+     */
     public function show(Complaint $complaint)
     {
         $complaint->load([
@@ -140,7 +171,8 @@ class ComplaintController extends Controller
             'category',
             'customerService',
             'verifier',
-            'technician',
+            'technicians',
+            'maintenanceReport',
         ]);
 
         $technicians = User::role('Maintenance Technician')
@@ -159,40 +191,116 @@ class ComplaintController extends Controller
     }
 
     /**
-     * Assign complaint to a Maintenance Technician.
+     * Assign complaint to multiple Maintenance Technicians.
      */
     public function assign(
         AssignComplaintRequest $request,
         Complaint $complaint
     ) {
-
         /*
-        |--------------------------------------------------------------------------
-        | Only Verified Complaints Can Be Assigned
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Workflow Validation
+    |--------------------------------------------------------------------------
+    */
 
         if ($complaint->status !== 'Verified') {
-
             return back()->with(
                 'error',
-                'Only verified complaints can be assigned.'
+                'Only verified complaints can be assigned to maintenance technicians.'
             );
         }
 
+        /*
+    |--------------------------------------------------------------------------
+    | Get Selected Technicians
+    |--------------------------------------------------------------------------
+    */
+
+        $technicianIds = collect($request->input('technician_ids', []))
+            ->map(fn($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($technicianIds->isEmpty()) {
+            return back()->with(
+                'error',
+                'Please select at least one maintenance technician.'
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Verify Selected Users
+    |--------------------------------------------------------------------------
+    */
+
+        $technicians = User::role('Maintenance Technician')
+            ->where('is_active', true)
+            ->whereIn('id', $technicianIds)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+
+        if ($technicians->count() !== $technicianIds->count()) {
+            return back()->with(
+                'error',
+                'One or more selected technicians are invalid or inactive.'
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Assign Maintenance Team
+    |--------------------------------------------------------------------------
+    */
+
         DB::transaction(function () use (
-            $request,
-            $complaint
+            $complaint,
+            $technicians
         ) {
 
+            $assignments = [];
+
+            foreach ($technicians->values() as $index => $technician) {
+
+                $assignments[$technician->id] = [
+
+                    // Individual technician assignment status
+                    'status' => 'Assigned',
+
+                    'assigned_at' => now(),
+
+                    'started_at' => null,
+
+                    'completed_at' => null,
+                ];
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Sync Technician Team
+        |--------------------------------------------------------------------------
+        |
+        | This creates/updates the complaint_technicians records.
+        |
+        */
+
+            $complaint->technicians()->sync($assignments);
+
+            /*
+        |--------------------------------------------------------------------------
+        | Update Complaint Workflow
+        |--------------------------------------------------------------------------
+        |
+        | The actual technician assignment is stored in
+        | complaint_technicians, NOT complaints.assigned_to.
+        |
+        */
+
             $complaint->update([
-
-                'assigned_to' =>
-                $request->technician_id,
-
-                'status' =>
-                'Assigned',
-
+                'technicians' => null,
+                'status' => 'Assigned',
             ]);
         });
 
@@ -203,7 +311,28 @@ class ComplaintController extends Controller
             )
             ->with(
                 'success',
-                'Complaint assigned to the Maintenance Technician successfully.'
+                $technicians->count()
+                    . ' maintenance technician(s) successfully assigned to this complaint.'
             );
+    }
+
+    /**
+     * Generate a printable report for a single complaint.
+     */
+    public function report(Complaint $complaint)
+    {
+        $complaint->load([
+            'consumer',
+            'category',
+            'customerService',
+            'verifier',
+            'technicians',
+            'maintenanceReport',
+        ]);
+
+        return view(
+            'maintenance-manager.complaints.report',
+            compact('complaint')
+        );
     }
 }

@@ -238,7 +238,7 @@
                                     Report
                                 </th>
 
-                                <th class="px-6 py-4 text-right font-semibold text-gray-600">
+                                <th class="px-6 py-4 text-center font-semibold text-gray-600">
                                     Action
                                 </th>
 
@@ -267,13 +267,13 @@
 
 
                                     {{-- SUBJECT --}}
-                                    <td class="px-6 py-4">
+                                    <td class="px-6 py-4 ">
 
                                         <div class="font-medium text-gray-800">
                                             {{ $history->subject }}
                                         </div>
 
-                                        <div class="text-xs text-gray-500 mt-1 max-w-xs truncate">
+                                        <div class="text-xs text-gray-500 ">
                                             {{ $history->address }}
                                         </div>
 

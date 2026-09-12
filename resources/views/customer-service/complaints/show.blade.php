@@ -732,7 +732,7 @@
             </div>
 
 
-            <div class="p-6">
+            <div class="p-5">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
@@ -786,7 +786,7 @@
 
                         <p class="font-medium text-gray-900 mt-1">
 
-                            {{ $complaint->consumer?->consumer_no ?? 'Walk-in' }}
+                            {{ $complaint->consumer?->account_number ?? 'Walk-in' }}
 
                         </p>
 

@@ -7,8 +7,8 @@ use App\Models\Position;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StorePositionRequest;
-use App\Http\Requests\UpdatePositionRequest;
+use App\Http\Requests\Admin\StorePositionRequest;
+use App\Http\Requests\Admin\UpdatePositionRequest;
 
 class PositionController extends Controller
 {

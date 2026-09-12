@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\CustomerService;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreComplaintCategoryRequest;
-use App\Http\Requests\UpdateComplaintCategoryRequest;
+use App\Http\Requests\CustomerService\StoreComplaintCategoryRequest;
+use App\Http\Requests\CustomerService\UpdateComplaintCategoryRequest;
 use App\Models\ComplaintCategory;
 use Illuminate\Http\Request;
 

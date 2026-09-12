@@ -10,26 +10,29 @@
         {{-- PAGE HEADER --}}
         {{-- ========================================================= --}}
 
-        <x-form.page-header title="Maintenance Manager Dashboard"
+        <x-form.page-header title=""
             subtitle="Monitor maintenance operations, assign technicians, and manage verified complaints." />
 
 
         {{-- ========================================================= --}}
-        {{-- STATISTICS --}}
+        {{-- MAINTENANCE OPERATIONS SUMMARY --}}
         {{-- ========================================================= --}}
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
-            {{-- Verified --}}
+            {{-- ===================================================== --}}
+            {{-- VERIFIED COMPLAINTS --}}
+            {{-- ===================================================== --}}
+
             <x-form.card>
                 <div class="p-5">
 
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3">
 
                         <div class="min-w-0">
 
                             <p class="text-sm text-gray-500">
-                                Ready for Assignment
+                                Verified Complaints
                             </p>
 
                             <p class="text-3xl font-bold text-gray-900 mt-1">
@@ -37,15 +40,15 @@
                             </p>
 
                             <p class="text-xs text-gray-400 mt-1">
-                                Verified complaints
+                                Ready for processing
                             </p>
 
                         </div>
 
                         <div
                             class="w-11 h-11 shrink-0 rounded-xl
-                        bg-indigo-100 text-indigo-600
-                        flex items-center justify-center">
+                           bg-indigo-100 text-indigo-600
+                           flex items-center justify-center">
 
                             <i class="fas fa-shield-check"></i>
 
@@ -57,32 +60,75 @@
             </x-form.card>
 
 
-            {{-- Assigned --}}
+            {{-- ===================================================== --}}
+            {{-- UNASSIGNED CASES --}}
+            {{-- ===================================================== --}}
+
             <x-form.card>
                 <div class="p-5">
 
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3">
 
                         <div class="min-w-0">
 
                             <p class="text-sm text-gray-500">
-                                Assigned
+                                Unassigned Cases
                             </p>
 
                             <p class="text-3xl font-bold text-gray-900 mt-1">
-                                {{ $assignedComplaints }}
+                                {{ $unassignedCases }}
                             </p>
 
                             <p class="text-xs text-gray-400 mt-1">
-                                Awaiting technician action
+                                Awaiting technician
                             </p>
 
                         </div>
 
                         <div
                             class="w-11 h-11 shrink-0 rounded-xl
-                        bg-blue-100 text-blue-600
-                        flex items-center justify-center">
+                           bg-amber-100 text-amber-600
+                           flex items-center justify-center">
+
+                            <i class="fas fa-user-clock"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </x-form.card>
+
+
+            {{-- ===================================================== --}}
+            {{-- ASSIGNED CASES --}}
+            {{-- ===================================================== --}}
+
+            <x-form.card>
+                <div class="p-5">
+
+                    <div class="flex items-center justify-between gap-3">
+
+                        <div class="min-w-0">
+
+                            <p class="text-sm text-gray-500">
+                                Assigned Cases
+                            </p>
+
+                            <p class="text-3xl font-bold text-gray-900 mt-1">
+                                {{ $assignedCases }}
+                            </p>
+
+                            <p class="text-xs text-gray-400 mt-1">
+                                Assigned to technicians
+                            </p>
+
+                        </div>
+
+                        <div
+                            class="w-11 h-11 shrink-0 rounded-xl
+                           bg-blue-100 text-blue-600
+                           flex items-center justify-center">
 
                             <i class="fas fa-user-check"></i>
 
@@ -94,11 +140,14 @@
             </x-form.card>
 
 
-            {{-- In Progress --}}
+            {{-- ===================================================== --}}
+            {{-- IN PROGRESS --}}
+            {{-- ===================================================== --}}
+
             <x-form.card>
                 <div class="p-5">
 
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3">
 
                         <div class="min-w-0">
 
@@ -111,15 +160,15 @@
                             </p>
 
                             <p class="text-xs text-gray-400 mt-1">
-                                Active maintenance work
+                                Active maintenance
                             </p>
 
                         </div>
 
                         <div
                             class="w-11 h-11 shrink-0 rounded-xl
-                        bg-orange-100 text-orange-600
-                        flex items-center justify-center">
+                           bg-orange-100 text-orange-600
+                           flex items-center justify-center">
 
                             <i class="fas fa-screwdriver-wrench"></i>
 
@@ -131,32 +180,75 @@
             </x-form.card>
 
 
-            {{-- Completed --}}
+            {{-- ===================================================== --}}
+            {{-- REPORTS FOR REVIEW --}}
+            {{-- ===================================================== --}}
+
             <x-form.card>
                 <div class="p-5">
 
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3">
 
                         <div class="min-w-0">
 
                             <p class="text-sm text-gray-500">
-                                Completed
+                                Reports for Review
                             </p>
 
                             <p class="text-3xl font-bold text-gray-900 mt-1">
-                                {{ $completedComplaints }}
+                                {{ $reportsForReview }}
                             </p>
 
                             <p class="text-xs text-gray-400 mt-1">
-                                Completed maintenance
+                                Awaiting validation
                             </p>
 
                         </div>
 
                         <div
                             class="w-11 h-11 shrink-0 rounded-xl
-                        bg-green-100 text-green-600
-                        flex items-center justify-center">
+                           bg-purple-100 text-purple-600
+                           flex items-center justify-center">
+
+                            <i class="fas fa-file-circle-check"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </x-form.card>
+
+
+            {{-- ===================================================== --}}
+            {{-- COMPLETED TODAY --}}
+            {{-- ===================================================== --}}
+
+            <x-form.card>
+                <div class="p-5">
+
+                    <div class="flex items-center justify-between gap-3">
+
+                        <div class="min-w-0">
+
+                            <p class="text-sm text-gray-500">
+                                Completed Today
+                            </p>
+
+                            <p class="text-3xl font-bold text-gray-900 mt-1">
+                                {{ $completedToday }}
+                            </p>
+
+                            <p class="text-xs text-gray-400 mt-1">
+                                Successfully completed
+                            </p>
+
+                        </div>
+
+                        <div
+                            class="w-11 h-11 shrink-0 rounded-xl
+                           bg-green-100 text-green-600
+                           flex items-center justify-center">
 
                             <i class="fas fa-circle-check"></i>
 
@@ -167,45 +259,102 @@
                 </div>
             </x-form.card>
 
+        </div>
 
-            {{-- Critical --}}
-            <x-form.card>
-                <div class="p-5">
+{{-- ========================================================= --}}
+{{-- OPERATIONAL ANALYTICS --}}
+{{-- ========================================================= --}}
 
-                    <div class="flex items-center justify-between">
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                        <div class="min-w-0">
+    {{-- ===================================================== --}}
+    {{-- CASE STATUS --}}
+    {{-- ===================================================== --}}
 
-                            <p class="text-sm text-gray-500">
-                                Critical
-                            </p>
+    <x-form.card>
 
-                            <p class="text-3xl font-bold text-red-600 mt-1">
-                                {{ $criticalComplaints }}
-                            </p>
+        <div class="px-5 sm:px-6 py-5 border-b border-gray-100">
 
-                            <p class="text-xs text-gray-400 mt-1">
-                                Requires attention
-                            </p>
+            <div>
 
-                        </div>
+                <h3 class="font-semibold text-gray-900">
 
-                        <div
-                            class="w-11 h-11 shrink-0 rounded-xl
-                        bg-red-100 text-red-600
-                        flex items-center justify-center">
+                    <i class="fas fa-chart-column text-indigo-600 mr-2"></i>
 
-                            <i class="fas fa-triangle-exclamation"></i>
+                    Maintenance Case Status
 
-                        </div>
+                </h3>
 
-                    </div>
+                <p class="text-sm text-gray-500 mt-1">
+                    Current distribution of maintenance cases.
+                </p>
 
-                </div>
-            </x-form.card>
+            </div>
 
         </div>
 
+
+        <div class="p-5">
+
+            <div
+                id="maintenanceCaseStatusChart"
+                class="w-full">
+            </div>
+
+        </div>
+
+    </x-form.card>
+
+
+    {{-- ===================================================== --}}
+    {{-- WORKFLOW OVERVIEW --}}
+    {{-- ===================================================== --}}
+
+    <x-form.card>
+
+        <div class="px-5 sm:px-6 py-5 border-b border-gray-100">
+
+            <div>
+
+                <h3 class="font-semibold text-gray-900">
+
+                    <i class="fas fa-chart-pie text-blue-600 mr-2"></i>
+
+                    Workflow Overview
+
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Current maintenance workload distribution.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="p-5">
+
+            <div
+                id="maintenanceWorkflowChart"
+                class="w-full">
+            </div>
+
+        </div>
+
+    </x-form.card>
+
+</div>
+<script>
+    window.maintenanceDashboard = {
+        verified: @json($verifiedComplaints),
+        unassigned: @json($unassignedCases),
+        assigned: @json($assignedCases),
+        inProgress: @json($inProgressComplaints),
+        review: @json($reportsForReview),
+        completed: @json($completedToday),
+    };
+</script>
 
         {{-- ========================================================= --}}
         {{-- QUICK ACTIONS --}}
@@ -706,5 +855,7 @@
 
 
     </div>
+
+
 
 @endsection

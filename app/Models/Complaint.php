@@ -86,13 +86,21 @@ class Complaint extends Model
         );
     }
 
-    public function technician()
+    public function technicians()
     {
-        return $this->belongsTo(
+        return $this->belongsToMany(
             User::class,
-            'assigned_to'
-        );
+            'complaint_technicians',
+            'complaint_id',
+            'technician_id'
+        )->withPivot([
+            'status',
+            'assigned_at',
+            'started_at',
+            'completed_at'
+        ])->withTimestamps();
     }
+
 
     public function customerService()
     {

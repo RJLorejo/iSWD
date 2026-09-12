@@ -14,7 +14,7 @@
                 </a>
 
                 <h1 class="text-2xl font-bold text-gray-900">
-                    Maintenance Report
+                    Maintenance Reporthsfsdifidsfhisdihi
                 </h1>
 
             </div>
@@ -119,6 +119,68 @@
 
         </div>
 
+        {{-- ASSIGNED MAINTENANCE TEAM --}}
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+
+            <div class="flex items-center justify-between mb-5">
+
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">
+                        Assigned Maintenance Team
+                    </h2>
+
+                    <p class="text-sm text-gray-500 mt-1">
+                        Technicians assigned to this complaint.
+                    </p>
+                </div>
+
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <i class="fas fa-users text-blue-600"></i>
+                </div>
+
+            </div>
+
+            @if ($complaint->technicians->isNotEmpty())
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                    @foreach ($complaint->technicians as $technician)
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
+
+                            <img src="{{ $technician->avatar_url }}" alt="{{ $technician->full_name }}"
+                                class="w-11 h-11 rounded-full object-cover border border-gray-200">
+
+                            <div class="min-w-0">
+
+                                <p class="font-semibold text-gray-900 truncate">
+                                    {{ $technician->full_name }}
+
+                                    @if ($technician->id === auth()->id())
+                                        <span
+                                            class="ml-1 inline-flex px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs">
+                                            You
+                                        </span>
+                                    @endif
+                                </p>
+
+                                <p class="text-xs text-gray-500">
+                                    Maintenance Technician
+                                </p>
+
+                            </div>
+
+                        </div>
+                    @endforeach
+
+                </div>
+            @else
+                <p class="text-sm text-gray-500">
+                    No maintenance technicians are currently assigned.
+                </p>
+            @endif
+
+        </div>
+
 
         {{-- REPORT FORM --}}
 
@@ -133,11 +195,11 @@
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
 
                 <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    1. Diagnosis & Root Cause
+                    1. Inspection Findings & Root Cause
                 </h2>
 
                 <p class="text-sm text-gray-500 mb-6">
-                    Document what was found during inspection.
+                    Document the actual condition observed during inspection and the identified cause.
                 </p>
 
 
@@ -178,11 +240,11 @@
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
 
                 <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    2. Work & Repair
+                    2. Maintenance Work Performed
                 </h2>
 
                 <p class="text-sm text-gray-500 mb-6">
-                    Record the work performed and repair procedure.
+                    Record the actual maintenance work and repair procedure performed on site.
                 </p>
 
 

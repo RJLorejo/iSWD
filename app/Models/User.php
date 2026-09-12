@@ -91,10 +91,17 @@ class User extends Authenticatable
 
     public function assignedComplaints()
     {
-        return $this->hasMany(
-            \App\Models\Complaint::class,
-            'assigned_to'
-        );
+        return $this->belongsToMany(
+            Complaint::class,
+            'complaint_technicians',
+            'technician_id',
+            'complaint_id'
+        )->withPivot([
+            'status',
+            'assigned_at',
+            'started_at',
+            'completed_at'
+        ])->withTimestamps();
     }
 
     public function getFullNameAttribute()

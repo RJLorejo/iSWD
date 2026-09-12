@@ -25,15 +25,15 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
-            <x-admin.stat-card title="Consumers" value="0" subtitle="Registered consumers" icon="fa-solid fa-users" />
+            <x-admin.stat-card title="Consumers" value="{{ $totalConsumers ?? 0 }}" subtitle="Registered consumers" icon="fa-solid fa-users" />
 
-            <x-admin.stat-card title="Technicians" value="0" subtitle="Maintenance personnel"
-                icon="fa-solid fa-user-gear" />
+            <x-admin.stat-card title="Employee" value="{{ $totalTechnicians ?? 0 }}" subtitle="Maintenance personnel"
+                icon="fa-solid fa-user" />
 
             <x-admin.stat-card title="Equipment" value="0" subtitle="Registered equipment"
                 icon="fa-solid fa-screwdriver-wrench" />
 
-            <x-admin.stat-card title="Open Complaints" value="0" subtitle="Pending complaints"
+            <x-admin.stat-card title="Open Complaints" value="{{ $totalComplaints ?? 0 }}" subtitle="Pending complaints"
                 icon="fa-solid fa-file-circle-exclamation" />
 
         </div>

@@ -643,11 +643,38 @@
 
                                 {{ $complaint->category?->name ?? 'Uncategorized' }}
 
-                                @if ($complaint->consumer)
-                                    • {{ $complaint->consumer->full_name }}
-                                @endif
 
                             </p>
+
+                            @if ($complaint->consumer)
+                                <div class="font-medium text-gray-900">
+                                    {{ $complaint->consumer->full_name }}
+                                </div>
+
+                                <div class="text-xs text-gray-500">
+                                    {{ $complaint->consumer->consumer_no }}
+                                </div>
+                            @elseif ($complaint->complainant_name)
+                                <div class="font-medium text-gray-900">
+                                    {{ $complaint->complainant_name }}
+                                </div>
+
+                                <div class="text-xs text-amber-600">
+                                    <i class="fas fa-person-walking mr-1"></i>
+                                    Walk-in / Unregistered
+                                </div>
+
+                                @if ($complaint->complainant_phone)
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-phone mr-1"></i>
+                                        {{ $complaint->complainant_phone }}
+                                    </div>
+                                @endif
+                            @else
+                                <span class="text-gray-400">
+                                    No complainant information
+                                </span>
+                            @endif
 
                         </div>
 

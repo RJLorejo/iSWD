@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\CustomerService;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreConsumerRequest;
-use App\Http\Requests\UpdateConsumerRequest;
+use App\Http\Requests\CustomerService\StoreConsumerRequest;
+use App\Http\Requests\CustomerService\UpdateConsumerRequest;
 use App\Models\Consumer;
 use App\Models\ConsumerAddress;
 use App\Models\ServiceConnection;

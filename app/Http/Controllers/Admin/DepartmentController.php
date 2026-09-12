@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Department;
 use App\Models\User;
-use App\Http\Requests\StoreDepartmentRequest;
-use App\Http\Requests\UpdateDepartmentRequest;
+use App\Http\Requests\Admin\StoreDepartmentRequest;
+use App\Http\Requests\Admin\UpdateDepartmentRequest;
 
 class DepartmentController extends Controller
 {

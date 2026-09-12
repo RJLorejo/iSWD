@@ -4,1919 +4,1240 @@
 
 @section('content')
 
-    <div class="max-w-7xl mx-auto space-y-6">
+<div class="max-w-7xl mx-auto space-y-6">
 
-        {{-- ========================================================= --}}
-        {{-- HEADER --}}
-        {{-- ========================================================= --}}
+    {{-- ========================================================= --}}
+    {{-- HEADER --}}
+    {{-- ========================================================= --}}
 
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 
-            <div>
+        <div>
 
-                <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2">
 
-                    <div
-                        class="w-12 h-12 rounded-2xl
-                    bg-blue-100 text-blue-600
-                    flex items-center justify-center">
+                <a
+                    href="{{ route('maintenance-manager.complaints.index') }}"
+                    class="inline-flex items-center gap-1.5 text-sm
+                           text-gray-500 hover:text-blue-600 transition"
+                >
+                    <svg class="w-4 h-4"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15 19l-7-7 7-7"/>
+                    </svg>
 
-                        <i class="fas fa-file-circle-exclamation text-xl"></i>
+                    Complaints
+                </a>
 
-                    </div>
+                <span class="text-gray-300">/</span>
 
-                    <div>
-
-                        <p class="text-sm text-gray-500">
-                            Maintenance Management
-                        </p>
-
-                        <h1 class="text-2xl font-bold text-gray-900">
-                            Complaint {{ $complaint->complaint_no }}
-                        </h1>
-
-                        <p class="text-sm text-gray-500 mt-1">
-                            Review the verified complaint and assign it to a maintenance technician.
-                        </p>
-
-                    </div>
-
-                </div>
+                <span class="text-sm text-gray-500">
+                    {{ $complaint->complaint_no }}
+                </span>
 
             </div>
 
 
-            <div class="flex flex-wrap gap-3">
+            <div class="mt-3">
 
-                <a href="{{ route('maintenance-manager.complaints.index') }}"
-                    class="inline-flex items-center gap-2
-                px-4 py-2.5 rounded-xl
-                border border-gray-300
-                text-gray-700
-                hover:bg-gray-50 transition">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                    {{ $complaint->subject }}
+                </h1>
 
-                    <i class="fas fa-arrow-left"></i>
-
-                    Back to Complaints
-
-                </a>
+                <p class="mt-1 text-sm text-gray-500">
+                    Complaint #{{ $complaint->complaint_no }}
+                </p>
 
             </div>
 
         </div>
 
 
+        {{-- STATUS --}}
+        @php
 
-        {{-- ========================================================= --}}
-        {{-- STATUS OVERVIEW --}}
-        {{-- ========================================================= --}}
+            $statusClasses = match($complaint->status) {
 
-        <x-form.card>
+                'Verified' =>
+                    'bg-blue-50 text-blue-700 border-blue-200',
 
-            <div class="p-6">
+                'Assigned' =>
+                    'bg-indigo-50 text-indigo-700 border-indigo-200',
 
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                'In Progress' =>
+                    'bg-amber-50 text-amber-700 border-amber-200',
 
+                'Completed' =>
+                    'bg-green-50 text-green-700 border-green-200',
 
-                    {{-- STATUS --}}
+                'Closed' =>
+                    'bg-gray-100 text-gray-700 border-gray-200',
 
-                    <div class="flex items-center gap-3">
+                default =>
+                    'bg-gray-50 text-gray-600 border-gray-200',
 
-                        <div
-                            class="w-11 h-11 rounded-xl
-                        bg-blue-100 text-blue-600
-                        flex items-center justify-center">
+            };
 
-                            <i class="fas fa-circle-info"></i>
+        @endphp
 
-                        </div>
 
-                        <div>
+        <div class="flex items-center gap-2">
 
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
+            <span class="inline-flex items-center gap-2 px-3 py-2
+                         rounded-full border text-sm font-semibold
+                         {{ $statusClasses }}">
 
-                                Status
+                <span class="w-2 h-2 rounded-full bg-current"></span>
 
-                            </p>
+                {{ $complaint->status }}
 
-                            <p class="font-semibold text-gray-900 mt-1">
-
-                                {{ $complaint->status }}
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-
-                    {{-- PRIORITY --}}
-
-                    <div class="flex items-center gap-3">
-
-                        <div
-                            class="w-11 h-11 rounded-xl
-                        bg-orange-100 text-orange-600
-                        flex items-center justify-center">
-
-                            <i class="fas fa-flag"></i>
-
-                        </div>
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Priority
-
-                            </p>
-
-                            <p
-                                class="font-semibold mt-1
-
-                            @if ($complaint->priority === 'Critical') text-red-600
-                            @elseif ($complaint->priority === 'High')
-                                text-orange-600
-                            @elseif ($complaint->priority === 'Medium')
-                                text-yellow-600
-                            @else
-                                text-green-600 @endif">
-
-                                {{ $complaint->priority }}
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-
-                    {{-- VERIFICATION --}}
-
-                    <div class="flex items-center gap-3">
-
-                        <div
-                            class="w-11 h-11 rounded-xl
-                        bg-green-100 text-green-600
-                        flex items-center justify-center">
-
-                            <i class="fas fa-circle-check"></i>
-
-                        </div>
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Verification
-
-                            </p>
-
-                            <p class="font-semibold text-gray-900 mt-1">
-
-                                @if ($complaint->verified_at)
-                                    Verified
-                                @else
-                                    Not Verified
-                                @endif
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-
-                    {{-- REPORTED --}}
-
-                    <div class="flex items-center gap-3">
-
-                        <div
-                            class="w-11 h-11 rounded-xl
-                        bg-purple-100 text-purple-600
-                        flex items-center justify-center">
-
-                            <i class="fas fa-calendar"></i>
-
-                        </div>
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Reported
-
-                            </p>
-
-                            <p class="font-semibold text-gray-900 mt-1">
-
-                                {{ $complaint->created_at?->format('M d, Y') ?? '—' }}
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </x-form.card>
-
-
-
-        {{-- ========================================================= --}}
-        {{-- MAIN CONTENT --}}
-        {{-- ========================================================= --}}
-
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-
-            {{-- ===================================================== --}}
-            {{-- LEFT / MAIN --}}
-            {{-- ===================================================== --}}
-
-            <div class="xl:col-span-2 space-y-6">
-
-
-                {{-- ================================================= --}}
-                {{-- COMPLAINT INFORMATION --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-6 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-blue-100 text-blue-600
-                            flex items-center justify-center">
-
-                                <i class="fas fa-file-lines"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Complaint Information
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Complete reported problem information.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-6 space-y-6">
-
-
-                        {{-- SUBJECT --}}
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Complaint Subject
-
-                            </p>
-
-                            <h2 class="text-xl font-bold text-gray-900 mt-1">
-
-                                {{ $complaint->subject }}
-
-                            </h2>
-
-                        </div>
-
-
-
-                        {{-- DESCRIPTION --}}
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Problem Description
-
-                            </p>
-
-                            <div
-                                class="mt-2 p-5 rounded-xl
-                            bg-gray-50 border border-gray-200
-                            text-gray-700 whitespace-pre-line
-                            leading-relaxed">
-
-                                {{ $complaint->description }}
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- CATEGORY --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-                            <div class="p-4 rounded-xl
-                            bg-gray-50 border border-gray-200">
-
-                                <p class="text-xs text-gray-500">
-
-                                    Complaint Category
-
-                                </p>
-
-                                <p class="font-semibold text-gray-900 mt-1">
-
-                                    @if ($complaint->category)
-                                        {{ $complaint->category->code }}
-
-                                        —
-
-                                        {{ $complaint->category->name }}
-                                    @else
-                                        —
-                                    @endif
-
-                                </p>
-
-                            </div>
-
-
-                            <div class="p-4 rounded-xl
-                            bg-gray-50 border border-gray-200">
-
-                                <p class="text-xs text-gray-500">
-
-                                    Complaint Number
-
-                                </p>
-
-                                <p class="font-semibold text-gray-900 mt-1">
-
-                                    {{ $complaint->complaint_no }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </x-form.card>
-
-
-
-                {{-- ================================================= --}}
-                {{-- CONSUMER INFORMATION --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-6 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-cyan-100 text-cyan-600
-                            flex items-center justify-center">
-
-                                <i class="fas fa-user"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Consumer Information
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Customer associated with this complaint.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-6">
-
-                        @if ($complaint->consumer)
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                                <div>
-
-                                    <p class="text-xs text-gray-500">
-
-                                        Consumer Name
-
-                                    </p>
-
-                                    <p class="font-semibold text-gray-900 mt-1">
-
-                                        {{ $complaint->consumer->full_name }}
-
-                                    </p>
-
-                                </div>
-
-
-                                <div>
-
-                                    <p class="text-xs text-gray-500">
-
-                                        Consumer Number
-
-                                    </p>
-
-                                    <p class="font-semibold text-gray-900 mt-1">
-
-                                        {{ $complaint->consumer->consumer_no ?? '—' }}
-
-                                    </p>
-
-                                </div>
-
-                            </div>
-                        @else
-                            <div
-                                class="p-4 rounded-xl
-                            bg-gray-50 border border-gray-200
-                            text-gray-500">
-
-                                <i class="fas fa-user-slash mr-2"></i>
-
-                                Walk-in Consumer / No registered consumer record.
-
-                            </div>
-                        @endif
-
-                    </div>
-
-                </x-form.card>
-
-
-
-                {{-- ================================================= --}}
-                {{-- COMPLETE LOCATION --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-6 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-green-100 text-green-600
-                            flex items-center justify-center">
-
-                                <i class="fas fa-location-dot"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Complete Problem Location
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Exact location where maintenance intervention is required.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-6 space-y-6">
-
-
-                        {{-- ADDRESS --}}
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Complete Address
-
-                            </p>
-
-                            <div class="mt-2 p-4 rounded-xl
-                            bg-gray-50 border border-gray-200">
-
-                                <div class="flex items-start gap-3">
-
-                                    <i
-                                        class="fas fa-location-dot
-                                    text-green-600 mt-1"></i>
-
-                                    <p class="font-medium text-gray-900">
-
-                                        {{ $complaint->address ?: 'No address recorded.' }}
-
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- LANDMARK --}}
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                            text-gray-500 font-medium">
-
-                                Landmark
-
-                            </p>
-
-                            <p class="font-medium text-gray-900 mt-1">
-
-                                {{ $complaint->landmark ?: 'No landmark provided.' }}
-
-                            </p>
-
-                        </div>
-
-
-
-                        {{-- COORDINATES --}}
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <div class="p-4 rounded-xl
-                            bg-gray-50 border border-gray-200">
-
-                                <p class="text-xs text-gray-500">
-
-                                    Latitude
-
-                                </p>
-
-                                <p class="font-mono font-medium
-                                text-gray-900 mt-1">
-
-                                    {{ $complaint->latitude ?? 'Not recorded' }}
-
-                                </p>
-
-                            </div>
-
-
-                            <div class="p-4 rounded-xl
-                            bg-gray-50 border border-gray-200">
-
-                                <p class="text-xs text-gray-500">
-
-                                    Longitude
-
-                                </p>
-
-                                <p class="font-mono font-medium
-                                text-gray-900 mt-1">
-
-                                    {{ $complaint->longitude ?? 'Not recorded' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- ================================================= --}}
-                        {{-- MAP --}}
-                        {{-- ================================================= --}}
-
-                        @if ($complaint->latitude !== null && $complaint->longitude !== null)
-                            <div>
-
-                                <div
-                                    class="flex flex-col sm:flex-row
-                                sm:items-center
-                                sm:justify-between
-                                gap-3 mb-3">
-
-                                    <div>
-
-                                        <p
-                                            class="text-sm font-semibold
-                                        text-gray-900">
-
-                                            Reported Problem Location
-
-                                        </p>
-
-                                        <p class="text-xs text-gray-500 mt-1">
-
-                                            OpenStreetMap location of the reported complaint.
-
-                                        </p>
-
-                                    </div>
-
-
-                                    <a href="https://www.google.com/maps?q={{ $complaint->latitude }},{{ $complaint->longitude }}"
-                                        target="_blank" rel="noopener noreferrer"
-                                        class="inline-flex items-center
-                                    justify-center gap-2
-                                    px-3 py-2 rounded-lg
-                                    border border-gray-300
-                                    text-sm text-gray-700
-                                    hover:bg-gray-50 transition">
-
-                                        <i class="fas fa-external-link-alt"></i>
-
-                                        Open External Map
-
-                                    </a>
-
-                                </div>
-
-
-                                {{-- IMPORTANT: MAP CONTAINER --}}
-
-                                <div id="complaint-map"
-                                    class="w-full h-[430px]
-                                rounded-2xl
-                                border border-gray-300
-                                overflow-hidden
-                                relative z-0
-                                bg-gray-100">
-                                </div>
-
-                            </div>
-                        @else
-                            <div
-                                class="p-5 rounded-xl
-                            bg-gray-50 border border-gray-200
-                            text-gray-500">
-
-                                <i class="fas fa-map-location-dot mr-2"></i>
-
-                                No GPS coordinates were recorded for this complaint.
-
-                            </div>
-                        @endif
-
-                    </div>
-
-                </x-form.card>
-
-
-
-                {{-- ================================================= --}}
-                {{-- PHOTO EVIDENCE --}}
-                {{-- ================================================= --}}
-
-                @if ($complaint->photo)
-                    <x-form.card>
-
-                        <div class="px-6 py-5 border-b border-gray-100">
-
-                            <div class="flex items-center gap-3">
-
-                                <div
-                                    class="w-10 h-10 rounded-xl
-                                bg-purple-100 text-purple-600
-                                flex items-center justify-center">
-
-                                    <i class="fas fa-camera"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <h3 class="font-semibold text-gray-900">
-
-                                        Photo Evidence
-
-                                    </h3>
-
-                                    <p class="text-sm text-gray-500 mt-1">
-
-                                        Photo submitted with the complaint.
-
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="p-6">
-
-                            <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
-                                class="w-full max-w-4xl
-                            rounded-2xl
-                            border border-gray-200
-                            shadow-sm">
-
-                        </div>
-
-                    </x-form.card>
-                @endif
-
-
-
-                {{-- ================================================= --}}
-                {{-- CUSTOMER SERVICE VERIFICATION --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-6 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-emerald-100 text-emerald-600
-                            flex items-center justify-center">
-
-                                <i class="fas fa-shield"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Customer Service Verification
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Verification record before maintenance processing.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-6">
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-
-                            {{-- VERIFIED BY --}}
-
-                            <div>
-
-                                <p class="text-xs text-gray-500">
-
-                                    Verified By
-
-                                </p>
-
-                                <p class="font-semibold text-gray-900 mt-1">
-
-                                    @if ($complaint->verifier)
-                                        {{ $complaint->verifier->first_name }}
-                                        {{ $complaint->verifier->last_name }}
-                                    @else
-                                        —
-                                    @endif
-
-                                </p>
-
-                            </div>
-
-
-
-                            {{-- VERIFIED AT --}}
-
-                            <div>
-
-                                <p class="text-xs text-gray-500">
-
-                                    Verified At
-
-                                </p>
-
-                                <p class="font-semibold text-gray-900 mt-1">
-
-                                    {{ $complaint->verified_at?->format('M d, Y h:i A') ?? 'Not yet verified' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- VERIFICATION REASON --}}
-
-                        @if ($complaint->verification_reason)
-                            <div class="mt-5">
-
-                                <p class="text-xs text-gray-500">
-
-                                    Verification Notes
-
-                                </p>
-
-                                <div
-                                    class="mt-2 p-4 rounded-xl
-                                bg-gray-50 border border-gray-200
-                                text-gray-700 whitespace-pre-line">
-
-                                    {{ $complaint->verification_reason }}
-
-                                </div>
-
-                            </div>
-                        @endif
-
-                    </div>
-
-                </x-form.card>
-
-            </div>
-
-
-
-            {{-- ===================================================== --}}
-            {{-- RIGHT SIDEBAR --}}
-            {{-- ===================================================== --}}
-
-            <div class="space-y-6">
-
-
-                {{-- ================================================= --}}
-                {{-- TECHNICIAN ASSIGNMENT --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-5 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-indigo-100 text-indigo-600
-                            flex items-center justify-center">
-
-                                <i class="fas fa-wrench"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Technician Assignment
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Assign maintenance personnel.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-5">
-
-                        @if ($complaint->status === 'Verified')
-
-
-                            <form method="POST"
-                                action="{{ route('maintenance-manager.complaints.assign', $complaint) }}"
-                                class="space-y-5">
-
-                                @csrf
-
-
-                                {{-- TECHNICIAN --}}
-
-                                <div>
-
-                                    <label for="technician_id"
-                                        class="block text-sm font-semibold
-                                    text-gray-700 mb-2">
-
-                                        Maintenance Technician
-
-                                    </label>
-
-
-                                    <select id="technician_id" name="technician_id" required
-                                        class="w-full rounded-xl
-                                    border-gray-300
-                                    focus:border-indigo-500
-                                    focus:ring-indigo-500">
-
-                                        <option value="">
-                                            Select technician
-                                        </option>
-
-
-                                        @foreach ($technicians as $technician)
-                                            <option value="{{ $technician->id }}">
-
-                                                {{ $technician->first_name }}
-                                                {{ $technician->last_name }}
-
-                                                @if ($technician->employee_no)
-                                                    — {{ $technician->employee_no }}
-                                                @endif
-
-                                            </option>
-                                        @endforeach
-
-                                    </select>
-
-
-                                    @error('technician_id')
-                                        <p class="text-sm text-red-600 mt-2">
-
-                                            {{ $message }}
-
-                                        </p>
-                                    @enderror
-
-                                </div>
-
-
-
-                                {{-- WARNING --}}
-
-                                <div
-                                    class="rounded-xl
-                                bg-blue-50
-                                border border-blue-100
-                                p-4">
-
-                                    <div class="flex gap-3">
-
-                                        <i
-                                            class="fas fa-circle-info
-                                        text-blue-600 mt-0.5"></i>
-
-                                        <p class="text-sm text-blue-700">
-
-                                            Assigning this complaint will change
-                                            its status from
-                                            <strong>Verified</strong>
-                                            to
-                                            <strong>Assigned</strong>.
-
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-
-
-                                {{-- ASSIGN BUTTON --}}
-
-                                <button type="submit"
-                                    onclick="return confirm(
-                                    'Assign this complaint to the selected technician?'
-                                )"
-                                    class="w-full inline-flex
-                                items-center justify-center
-                                gap-2
-                                px-4 py-3
-                                rounded-xl
-                                bg-indigo-600
-                                text-white
-                                font-medium
-                                hover:bg-indigo-700
-                                transition">
-
-                                    <i class="fas fa-user-check"></i>
-
-                                    Assign Technician
-
-                                </button>
-
-                            </form>
-                        @elseif ($complaint->status === 'Assigned')
-                            {{-- ALREADY ASSIGNED --}}
-
-                            <div class="space-y-4">
-
-
-                                <div
-                                    class="rounded-xl
-                                bg-green-50
-                                border border-green-100
-                                p-4">
-
-                                    <div class="flex gap-3">
-
-                                        <div
-                                            class="w-9 h-9 rounded-lg
-                                        bg-green-100
-                                        text-green-600
-                                        flex items-center
-                                        justify-center
-                                        shrink-0">
-
-                                            <i class="fas fa-user-check"></i>
-
-                                        </div>
-
-                                        <div>
-
-                                            <p
-                                                class="font-semibold
-                                            text-green-900">
-
-                                                Technician Assigned
-
-                                            </p>
-
-                                            <p class="text-sm text-green-700 mt-1">
-
-                                                This complaint has already
-                                                been assigned.
-
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-
-
-                                @if ($complaint->technician)
-
-                                    <div class="border border-gray-200
-                                    rounded-xl p-4">
-
-                                        <p
-                                            class="text-xs uppercase
-                                        tracking-wide text-gray-500">
-
-                                            Assigned Technician
-
-                                        </p>
-
-
-                                        <div class="flex items-center
-                                        gap-3 mt-3">
-
-                                            <div
-                                                class="w-11 h-11 rounded-full
-                                            bg-indigo-100
-                                            text-indigo-600
-                                            flex items-center
-                                            justify-center">
-
-                                                <i class="fas fa-user-wrench"></i>
-
-                                            </div>
-
-
-                                            <div>
-
-                                                <p
-                                                    class="font-semibold
-                                                text-gray-900">
-
-                                                    {{ $complaint->technician->first_name }}
-                                                    {{ $complaint->technician->last_name }}
-
-                                                </p>
-
-
-                                                <p
-                                                    class="text-xs
-                                                text-gray-500">
-
-                                                    Maintenance Technician
-
-                                                </p>
-
-
-                                                @if ($complaint->technician->employee_no)
-                                                    <p
-                                                        class="text-xs
-                                                    text-gray-500 mt-1">
-
-                                                        Employee No:
-                                                        {{ $complaint->technician->employee_no }}
-
-                                                    </p>
-                                                @endif
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                @endif
-
-                            </div>
-                        @else
-                            <div
-                                class="p-4 rounded-xl
-                            bg-gray-50
-                            border border-gray-200">
-
-                                <p class="text-sm text-gray-600">
-
-                                    <i class="fas fa-circle-info mr-2"></i>
-
-                                    Technician assignment is unavailable
-                                    for the current complaint status.
-
-                                </p>
-
-                            </div>
-
-                        @endif
-
-                    </div>
-
-                </x-form.card>
-
-
-
-                {{-- ================================================= --}}
-                {{-- CUSTOMER SERVICE --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-5 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-cyan-100 text-cyan-600
-                            flex items-center justify-center">
-
-                                <i class="fas fa-headset"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Customer Service
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Complaint intake personnel.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-5">
-
-                        @if ($complaint->customerService)
-                            <div class="flex items-center gap-3">
-
-                                <div
-                                    class="w-11 h-11 rounded-full
-                                bg-cyan-100
-                                text-cyan-600
-                                flex items-center
-                                justify-center">
-
-                                    <i class="fas fa-headset"></i>
-
-                                </div>
-
-
-                                <div>
-
-                                    <p class="font-semibold text-gray-900">
-
-                                        {{ $complaint->customerService->first_name }}
-                                        {{ $complaint->customerService->last_name }}
-
-                                    </p>
-
-                                    <p class="text-xs text-gray-500 mt-1">
-
-                                        Customer Service Representative
-
-                                    </p>
-
-                                </div>
-
-                            </div>
-                        @else
-                            <p class="text-gray-400">
-
-                                No Customer Service representative recorded.
-
-                            </p>
-                        @endif
-
-                    </div>
-
-                </x-form.card>
-
-
-
-                {{-- ================================================= --}}
-                {{-- TIMELINE --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="px-5 py-5 border-b border-gray-100">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-10 h-10 rounded-xl
-                            bg-gray-100
-                            text-gray-600
-                            flex items-center
-                            justify-center">
-
-                                <i class="fas fa-clock-rotate-left"></i>
-
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-semibold text-gray-900">
-
-                                    Complaint Timeline
-
-                                </h3>
-
-                                <p class="text-sm text-gray-500 mt-1">
-
-                                    Important complaint events.
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-5 space-y-5">
-
-
-                        {{-- CREATED --}}
-
-                        <div class="flex gap-3">
-
-                            <div
-                                class="w-8 h-8 rounded-full
-                            bg-gray-100
-                            text-gray-600
-                            flex items-center
-                            justify-center
-                            shrink-0">
-
-                                <i class="fas fa-plus text-xs"></i>
-
-                            </div>
-
-                            <div>
-
-                                <p class="text-sm font-semibold text-gray-900">
-
-                                    Complaint Created
-
-                                </p>
-
-                                <p class="text-xs text-gray-500 mt-1">
-
-                                    {{ $complaint->created_at?->format('M d, Y h:i A') ?? '—' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- VERIFIED --}}
-
-                        <div class="flex gap-3">
-
-                            <div
-                                class="w-8 h-8 rounded-full
-                            @if ($complaint->verified_at) bg-green-100 text-green-600
-                            @else
-                                bg-gray-100 text-gray-400 @endif
-                            flex items-center
-                            justify-center
-                            shrink-0">
-
-                                <i class="fas fa-check text-xs"></i>
-
-                            </div>
-
-                            <div>
-
-                                <p class="text-sm font-semibold text-gray-900">
-
-                                    Complaint Verified
-
-                                </p>
-
-                                <p class="text-xs text-gray-500 mt-1">
-
-                                    {{ $complaint->verified_at?->format('M d, Y h:i A') ?? 'Not yet verified' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- ASSIGNED --}}
-
-                        <div class="flex gap-3">
-
-                            <div
-                                class="w-8 h-8 rounded-full
-                            @if ($complaint->assigned_to) bg-indigo-100 text-indigo-600
-                            @else
-                                bg-gray-100 text-gray-400 @endif
-                            flex items-center
-                            justify-center
-                            shrink-0">
-
-                                <i class="fas fa-user-check text-xs"></i>
-
-                            </div>
-
-                            <div>
-
-                                <p class="text-sm font-semibold text-gray-900">
-
-                                    Technician Assignment
-
-                                </p>
-
-                                <p class="text-xs text-gray-500 mt-1">
-
-                                    @if ($complaint->assigned_to)
-                                        Technician assigned
-                                    @else
-                                        Waiting for technician assignment
-                                    @endif
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- COMPLETED --}}
-
-                        <div class="flex gap-3">
-
-                            <div
-                                class="w-8 h-8 rounded-full
-                            @if ($complaint->completed_at) bg-green-100 text-green-600
-                            @else
-                                bg-gray-100 text-gray-400 @endif
-                            flex items-center
-                            justify-center
-                            shrink-0">
-
-                                <i class="fas fa-flag-checkered text-xs"></i>
-
-                            </div>
-
-                            <div>
-
-                                <p class="text-sm font-semibold text-gray-900">
-
-                                    Completed
-
-                                </p>
-
-                                <p class="text-xs text-gray-500 mt-1">
-
-                                    {{ $complaint->completed_at?->format('M d, Y h:i A') ?? 'Not yet completed' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </x-form.card>
-
-
-
-                {{-- ================================================= --}}
-                {{-- DATABASE INFORMATION --}}
-                {{-- ================================================= --}}
-
-                <x-form.card>
-
-                    <div class="p-5">
-
-                        <div class="grid grid-cols-2 gap-4">
-
-                            <div>
-
-                                <p class="text-xs text-gray-500">
-
-                                    Complaint ID
-
-                                </p>
-
-                                <p class="font-mono font-semibold
-                                text-gray-900 mt-1">
-
-                                    #{{ $complaint->id }}
-
-                                </p>
-
-                            </div>
-
-
-                            <div>
-
-                                <p class="text-xs text-gray-500">
-
-                                    Last Updated
-
-                                </p>
-
-                                <p class="font-medium text-gray-900 mt-1">
-
-                                    {{ $complaint->updated_at?->format('M d, Y h:i A') ?? '—' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </x-form.card>
-
-            </div>
+            </span>
 
         </div>
 
     </div>
 
 
+    {{-- ========================================================= --}}
+    {{-- MAIN GRID --}}
+    {{-- ========================================================= --}}
 
-    {{-- ============================================================= --}}
-    {{-- LEAFLET / OPENSTREETMAP --}}
-    {{-- ============================================================= --}}
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-    @if ($complaint->latitude !== null && $complaint->longitude !== null)
-        @push('styles')
-            {{-- Leaflet CSS --}}
 
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+        {{-- ===================================================== --}}
+        {{-- LEFT / MAIN CONTENT --}}
+        {{-- ===================================================== --}}
 
-            <style>
-                #complaint-map {
-                    min-height: 430px;
-                    width: 100%;
-                    z-index: 0;
-                }
+        <div class="xl:col-span-2 space-y-6">
 
-                #complaint-map .leaflet-container {
-                    font-family: inherit;
-                }
-            </style>
-        @endpush
 
+            {{-- ================================================= --}}
+            {{-- COMPLAINT INFORMATION --}}
+            {{-- ================================================= --}}
 
-        @push('scripts')
-            {{-- Leaflet JS --}}
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                <div class="px-5 py-4 border-b border-gray-100">
 
+                    <h2 class="font-bold text-gray-900">
+                        Complaint Information
+                    </h2>
 
-            <script>
-                document.addEventListener(
-                    'DOMContentLoaded',
-                    function() {
+                    <p class="text-xs text-gray-500 mt-1">
+                        Details submitted by the consumer
+                    </p>
 
-                        const mapElement =
-                            document.getElementById('complaint-map');
+                </div>
 
 
-                        if (!mapElement) {
+                <div class="p-5 space-y-6">
 
-                            console.warn(
-                                'Complaint map element not found.'
-                            );
+                    {{-- SUBJECT --}}
+                    <div>
 
-                            return;
+                        <p class="text-xs uppercase tracking-wide
+                                  font-semibold text-gray-400">
+                            Subject
+                        </p>
 
-                        }
+                        <p class="mt-1 text-base font-semibold text-gray-900">
+                            {{ $complaint->subject }}
+                        </p>
 
+                    </div>
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | COORDINATES
-                        |--------------------------------------------------------------------------
-                        */
 
-                        const latitude =
-                            Number(@json((float) $complaint->latitude));
+                    {{-- DESCRIPTION --}}
+                    <div>
 
-                        const longitude =
-                            Number(@json((float) $complaint->longitude));
+                        <p class="text-xs uppercase tracking-wide
+                                  font-semibold text-gray-400">
+                            Description
+                        </p>
 
+                        <div class="mt-2 rounded-xl bg-gray-50 border border-gray-100 p-4">
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | VALIDATE COORDINATES
-                        |--------------------------------------------------------------------------
-                        */
+                            <p class="text-sm leading-6 text-gray-700 whitespace-pre-line">
+                                {{ $complaint->description }}
+                            </p>
 
-                        if (
-                            !Number.isFinite(latitude) ||
-                            !Number.isFinite(longitude)
-                        ) {
+                        </div>
 
-                            console.error(
-                                'Invalid complaint coordinates:',
-                                latitude,
-                                longitude
-                            );
+                    </div>
 
-                            return;
 
-                        }
+                    {{-- CATEGORY + PRIORITY --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
+                        <div>
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | CHECK LEAFLET
-                        |--------------------------------------------------------------------------
-                        */
+                            <p class="text-xs uppercase tracking-wide
+                                      font-semibold text-gray-400">
+                                Complaint Category
+                            </p>
 
-                        if (typeof L === 'undefined') {
+                            <p class="mt-1 text-sm font-semibold text-gray-800">
+                                {{ $complaint->category?->name ?? 'Uncategorized' }}
+                            </p>
 
-                            console.error(
-                                'Leaflet failed to load.'
-                            );
+                        </div>
 
-                            return;
 
-                        }
+                        <div>
 
+                            <p class="text-xs uppercase tracking-wide
+                                      font-semibold text-gray-400">
+                                Priority
+                            </p>
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | CREATE MAP
-                        |--------------------------------------------------------------------------
-                        */
+                            <p class="mt-1 text-sm font-semibold text-gray-800">
+                                {{ $complaint->priority ?? 'Not specified' }}
+                            </p>
 
-                        const map =
-                            L.map(
-                                'complaint-map', {
-                                    zoomControl: true,
-                                    attributionControl: true
-                                }
-                            );
+                        </div>
 
+                    </div>
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | OPENSTREETMAP TILE LAYER
-                        |--------------------------------------------------------------------------
-                        */
 
-                        L.tileLayer(
-                            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                maxZoom: 19,
+                    {{-- LOCATION --}}
+                    <div>
 
-                                attribution: '&copy; OpenStreetMap contributors'
-                            }
-                        ).addTo(map);
+                        <p class="text-xs uppercase tracking-wide
+                                  font-semibold text-gray-400">
+                            Complaint Location
+                        </p>
 
+                        <div class="mt-2 p-4 rounded-xl bg-gray-50 border border-gray-100">
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | CENTER MAP
-                        |--------------------------------------------------------------------------
-                        */
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ $complaint->address }}
+                            </p>
 
-                        map.setView(
-                            [
-                                latitude,
-                                longitude
-                            ],
-                            17
-                        );
+                            @if($complaint->landmark)
 
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Landmark:
+                                    {{ $complaint->landmark }}
+                                </p>
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | MARKER
-                        |--------------------------------------------------------------------------
-                        */
+                            @endif
 
-                        const marker =
-                            L.marker(
-                                [
-                                    latitude,
-                                    longitude
-                                ]
-                            ).addTo(map);
 
+                            @if($complaint->latitude && $complaint->longitude)
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | POPUP
-                        |--------------------------------------------------------------------------
-                        */
+                                <div class="mt-3 flex flex-wrap gap-2">
 
-                        const complaintNumber =
-                            @json($complaint->complaint_no);
+                                    <span class="inline-flex items-center px-2.5 py-1
+                                                 rounded-lg bg-white border border-gray-200
+                                                 text-xs text-gray-500">
+                                        Latitude:
+                                        {{ number_format($complaint->latitude, 6) }}
+                                    </span>
 
-                        const subject =
-                            @json($complaint->subject);
+                                    <span class="inline-flex items-center px-2.5 py-1
+                                                 rounded-lg bg-white border border-gray-200
+                                                 text-xs text-gray-500">
+                                        Longitude:
+                                        {{ number_format($complaint->longitude, 6) }}
+                                    </span>
 
-                        const address =
-                            @json($complaint->address ?? '');
+                                </div>
 
-                        const landmark =
-                            @json($complaint->landmark ?? '');
+                            @endif
 
+                        </div>
 
-                        marker.bindPopup(`
+                    </div>
 
-                        <div style="min-width:220px">
 
-                            <div
-                                style="
-                                    font-weight:600;
-                                    color:#111827;
-                                    margin-bottom:6px;
-                                "
-                            >
+                    {{-- PHOTO --}}
+                    @if($complaint->photo)
 
-                                <i
-                                    class="fas fa-file-circle-exclamation"
-                                    style="color:#2563eb"
-                                ></i>
+                        <div>
 
-                                ${complaintNumber}
+                            <p class="text-xs uppercase tracking-wide
+                                      font-semibold text-gray-400">
+                                Submitted Photo
+                            </p>
 
-                            </div>
+                            <div class="mt-2">
 
-
-                            <div
-                                style="
-                                    font-weight:500;
-                                    color:#1f2937;
-                                    margin-bottom:5px;
-                                "
-                            >
-
-                                ${subject}
-
-                            </div>
-
-
-                            <div
-                                style="
-                                    color:#4b5563;
-                                    font-size:13px;
-                                    margin-bottom:4px;
-                                "
-                            >
-
-                                <strong>Address:</strong>
-                                ${address}
-
-                            </div>
-
-
-                            ${
-                                landmark
-                                    ? `
-                                                    <div
-                                                        style="
-                                                            color:#6b7280;
-                                                            font-size:13px;
-                                                            margin-bottom:4px;
-                                                        "
-                                                    >
-
-                                                        <strong>Landmark:</strong>
-                                                        ${landmark}
-
-                                                    </div>
-                                                  `
-                                    : ''
-                            }
-
-
-                            <div
-                                style="
-                                    color:#9ca3af;
-                                    font-size:12px;
-                                "
-                            >
-
-                                ${latitude},
-                                ${longitude}
+                                <img
+                                    src="{{ asset('storage/' . $complaint->photo) }}"
+                                    alt="Complaint photo"
+                                    class="w-full max-h-[450px] object-cover
+                                           rounded-xl border border-gray-200"
+                                >
 
                             </div>
 
                         </div>
 
-                    `).openPopup();
+                    @endif
+
+                </div>
+
+            </div>
 
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | FIX MAP SIZE
-                        |--------------------------------------------------------------------------
-                        */
+            {{-- ================================================= --}}
+            {{-- CONSUMER --}}
+            {{-- ================================================= --}}
 
-                        function refreshMap() {
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
-                            map.invalidateSize({
-                                animate: false,
-                                pan: false
-                            });
+                <div class="px-5 py-4 border-b border-gray-100">
 
-                        }
+                    <h2 class="font-bold text-gray-900">
+                        Consumer Information
+                    </h2>
 
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | INITIAL REFRESH
-                        |--------------------------------------------------------------------------
-                        */
-
-                        requestAnimationFrame(
-                            function() {
-
-                                refreshMap();
-
-                                setTimeout(
-                                    refreshMap,
-                                    100
-                                );
-
-                                setTimeout(
-                                    refreshMap,
-                                    300
-                                );
-
-                                setTimeout(
-                                    refreshMap,
-                                    600
-                                );
-
-                                setTimeout(
-                                    refreshMap,
-                                    1000
-                                );
-
-                            }
-                        );
+                </div>
 
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | WINDOW RESIZE
-                        |--------------------------------------------------------------------------
-                        */
+                <div class="p-5">
 
-                        window.addEventListener(
-                            'resize',
-                            refreshMap
-                        );
+                    <div class="flex items-center gap-4">
+
+                        <div class="w-14 h-14 rounded-2xl bg-blue-100
+                                    text-blue-700 flex items-center justify-center
+                                    text-lg font-bold shrink-0">
+
+                            {{ strtoupper(
+                                substr($complaint->consumer?->first_name ?? $complaint->complainant_name ?? 'C', 0, 1)
+                                .
+                                substr($complaint->consumer?->last_name ?? '', 0, 1)
+                            ) }}
+
+                        </div>
 
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | TAB / VISIBILITY CHANGE
-                        |--------------------------------------------------------------------------
-                        */
+                        <div>
 
-                        document.addEventListener(
-                            'visibilitychange',
-                            function() {
+                            <h3 class="font-bold text-gray-900">
+                                {{ $complaint->consumer?->full_name
+                                    ?? $complaint->complainant_name
+                                    ?? 'Unknown Consumer' }}
+                            </h3>
 
-                                if (
-                                    document.visibilityState ===
-                                    'visible'
-                                ) {
+                            @if($complaint->consumer?->account_number)
 
-                                    setTimeout(
-                                        refreshMap,
-                                        200
-                                    );
+                                <p class="text-sm text-blue-600 mt-0.5">
+                                    Account No:
+                                    {{ $complaint->consumer->account_number }}
+                                </p>
 
-                                }
+                            @endif
 
-                            }
-                        );
+                            @if($complaint->complainant_phone)
 
-                    }
-                );
-            </script>
-        @endpush
-    @endif
+                                <p class="text-sm text-gray-500 mt-0.5">
+                                    {{ $complaint->complainant_phone }}
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- ================================================= --}}
+            {{-- VERIFICATION --}}
+            {{-- ================================================= --}}
+
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+                <div class="px-5 py-4 border-b border-gray-100">
+
+                    <h2 class="font-bold text-gray-900">
+                        Verification
+                    </h2>
+
+                </div>
+
+
+                <div class="p-5">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                        <div>
+
+                            <p class="text-xs uppercase tracking-wide
+                                      font-semibold text-gray-400">
+                                Verified By
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-gray-800">
+                                {{ $complaint->verifier?->full_name
+                                    ?? $complaint->verifiedBy?->full_name
+                                    ?? 'Not available' }}
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            <p class="text-xs uppercase tracking-wide
+                                      font-semibold text-gray-400">
+                                Verified At
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-gray-800">
+                                {{ $complaint->verified_at?->format('M d, Y h:i A')
+                                    ?? 'Not available' }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    @if($complaint->verification_reason)
+
+                        <div class="mt-5">
+
+                            <p class="text-xs uppercase tracking-wide
+                                      font-semibold text-gray-400">
+                                Verification Notes
+                            </p>
+
+                            <p class="mt-2 text-sm text-gray-700 leading-6">
+                                {{ $complaint->verification_reason }}
+                            </p>
+
+                        </div>
+
+                    @endif
+
+                </div>
+
+            </div>
+
+
+            {{-- ================================================= --}}
+            {{-- MAINTENANCE REPORT --}}
+            {{-- ================================================= --}}
+
+            @if($complaint->maintenanceReport)
+
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+                    <div class="px-5 py-4 border-b border-gray-100
+                                flex items-center justify-between">
+
+                        <div>
+
+                            <h2 class="font-bold text-gray-900">
+                                Maintenance Report
+                            </h2>
+
+                            <p class="text-xs text-gray-500 mt-1">
+                                Technician-submitted maintenance documentation
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="p-5">
+
+                        <div class="rounded-xl bg-green-50 border border-green-100 p-4">
+
+                            <div class="flex items-start gap-3">
+
+                                <svg class="w-5 h-5 text-green-600 mt-0.5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M5 13l4 4L19 7"/>
+                                </svg>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-green-800">
+                                        Maintenance report submitted
+                                    </p>
+
+                                    <p class="mt-1 text-xs text-green-700">
+                                        The maintenance team has submitted a report
+                                        for this complaint.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @endif
+
+        </div>
+
+
+        {{-- ===================================================== --}}
+        {{-- RIGHT SIDEBAR --}}
+        {{-- ===================================================== --}}
+
+        <div class="space-y-6">
+
+
+            {{-- ================================================= --}}
+            {{-- ASSIGN TECHNICIANS --}}
+            {{-- ================================================= --}}
+
+            @if($complaint->status === 'Verified' && $complaint->technicians->isEmpty())
+
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+                    <div class="px-5 py-4 border-b border-gray-100">
+
+                        <h2 class="font-bold text-gray-900">
+                            Assign Maintenance Team
+                        </h2>
+
+                        <p class="text-xs text-gray-500 mt-1">
+                            Select the technicians who will handle this complaint.
+                        </p>
+
+                    </div>
+
+
+                    <form
+                        method="POST"
+                        action="{{ route('maintenance-manager.complaints.assign', $complaint) }}"
+                        id="assignmentForm"
+                        class="p-5"
+                    >
+
+                        @csrf
+
+
+                        {{-- SELECTED COUNTER --}}
+                        <div class="mb-4 flex items-center justify-between
+                                    rounded-xl bg-blue-50 border border-blue-100 p-3">
+
+                            <div>
+
+                                <p class="text-xs font-semibold text-blue-800">
+                                    Maintenance Team
+                                </p>
+
+                                <p class="text-[11px] text-blue-600 mt-0.5">
+                                    You can select up to 3 technicians.
+                                </p>
+
+                            </div>
+
+
+                            <span
+                                id="selectedCount"
+                                class="inline-flex items-center justify-center
+                                       min-w-8 h-8 px-2 rounded-full
+                                       bg-blue-600 text-white text-xs font-bold"
+                            >
+                                0
+                            </span>
+
+                        </div>
+
+
+                        {{-- TECHNICIANS --}}
+                        <div class="space-y-3">
+
+                            @forelse($technicians as $technician)
+
+                                <label
+                                    class="technician-card block cursor-pointer"
+                                    data-technician-name="{{ $technician->full_name }}"
+                                >
+
+                                    <input
+                                        type="checkbox"
+                                        name="technician_ids[]"
+                                        value="{{ $technician->id }}"
+                                        class="technician-checkbox peer sr-only"
+                                    >
+
+
+                                    <div class="rounded-xl border-2 border-gray-200
+                                                bg-white p-3 transition-all
+                                                peer-checked:border-blue-500
+                                                peer-checked:bg-blue-50
+                                                hover:border-blue-300">
+
+                                        <div class="flex items-center gap-3">
+
+                                            {{-- AVATAR --}}
+                                            <div class="w-10 h-10 rounded-xl
+                                                        bg-blue-100 text-blue-700
+                                                        flex items-center justify-center
+                                                        text-xs font-bold shrink-0">
+
+                                                {{ strtoupper(
+                                                    substr($technician->first_name ?? '', 0, 1)
+                                                    .
+                                                    substr($technician->last_name ?? '', 0, 1)
+                                                ) }}
+
+                                            </div>
+
+
+                                            {{-- NAME --}}
+                                            <div class="min-w-0 flex-1">
+
+                                                <p class="text-sm font-semibold text-gray-900">
+                                                    {{ $technician->full_name }}
+                                                </p>
+
+                                                @if($technician->employee_id)
+
+                                                    <p class="text-[11px] text-gray-500">
+                                                        Employee ID:
+                                                        {{ $technician->employee_id }}
+                                                    </p>
+
+                                                @endif
+
+                                                @if($technician->position?->name)
+
+                                                    <p class="text-[11px] text-gray-400">
+                                                        {{ $technician->position->name }}
+                                                    </p>
+
+                                                @endif
+
+                                            </div>
+
+
+                                            {{-- CHECK --}}
+                                            <div class="w-6 h-6 rounded-full border-2
+                                                        border-gray-300 flex items-center
+                                                        justify-center shrink-0
+                                                        peer-checked:bg-blue-600
+                                                        peer-checked:border-blue-600">
+
+                                                <svg
+                                                    class="w-3.5 h-3.5 text-white opacity-0
+                                                           peer-checked:opacity-100"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path stroke-linecap="round"
+                                                          stroke-linejoin="round"
+                                                          stroke-width="3"
+                                                          d="M5 13l4 4L19 7"/>
+                                                </svg>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </label>
+
+                            @empty
+
+                                <div class="rounded-xl border border-gray-200
+                                            bg-gray-50 p-5 text-center">
+
+                                    <p class="text-sm font-medium text-gray-700">
+                                        No active technicians available.
+                                    </p>
+
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Please check the technician accounts.
+                                    </p>
+
+                                </div>
+
+                            @endforelse
+
+                        </div>
+
+
+                        {{-- ERROR --}}
+                        @error('technician_ids')
+                            <p class="mt-3 text-xs font-medium text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+
+                        {{-- SUBMIT --}}
+                        <button
+                            type="submit"
+                            id="assignButton"
+                            disabled
+                            class="mt-5 w-full inline-flex items-center
+                                   justify-center gap-2 px-4 py-3 rounded-xl
+                                   bg-blue-600 text-white text-sm font-semibold
+                                   hover:bg-blue-700 transition
+                                   disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+
+                            <svg class="w-4 h-4"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M17 20h5V4H2v16h5M9 20v-6h6v6"/>
+                            </svg>
+
+                            Assign Maintenance Team
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            @endif
+
+
+            {{-- ================================================= --}}
+            {{-- CURRENT TEAM --}}
+            {{-- ================================================= --}}
+
+            @if($complaint->technicians->count())
+
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+                    <div class="px-5 py-4 border-b border-gray-100">
+
+                        <div class="flex items-center justify-between">
+
+                            <div>
+
+                                <h2 class="font-bold text-gray-900">
+                                    Assigned Maintenance Team
+                                </h2>
+
+                                <p class="text-xs text-gray-500 mt-1">
+                                    {{ $complaint->technicians->count() }}
+                                    {{ $complaint->technicians->count() === 1 ? 'technician' : 'technicians' }}
+                                    assigned
+                                </p>
+
+                            </div>
+
+
+                            <div class="w-9 h-9 rounded-xl bg-indigo-50
+                                        flex items-center justify-center">
+
+                                <svg class="w-5 h-5 text-indigo-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M17 20h5V4H2v16h5M9 20v-6h6v6"/>
+                                </svg>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="p-5 space-y-3">
+
+                        @foreach($complaint->technicians as $technician)
+
+                            <div class="flex items-center gap-3 rounded-xl
+                                        border border-gray-100 bg-gray-50 p-3">
+
+                                <div class="w-10 h-10 rounded-xl bg-blue-100
+                                            text-blue-700 flex items-center
+                                            justify-center text-xs font-bold shrink-0">
+
+                                    {{ strtoupper(
+                                        substr($technician->first_name ?? '', 0, 1)
+                                        .
+                                        substr($technician->last_name ?? '', 0, 1)
+                                    ) }}
+
+                                </div>
+
+
+                                <div class="min-w-0 flex-1">
+
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        {{ $technician->full_name }}
+                                    </p>
+
+                                    @if($technician->employee_id)
+
+                                        <p class="text-[11px] text-gray-500">
+                                            ID: {{ $technician->employee_id }}
+                                        </p>
+
+                                    @endif
+
+                                    @if($technician->pivot?->assignment_role)
+
+                                        <span class="inline-flex mt-1 px-2 py-0.5
+                                                     rounded-md bg-white border
+                                                     border-gray-200 text-[10px]
+                                                     font-medium text-gray-500">
+
+                                            {{ $technician->pivot->assignment_role }}
+
+                                        </span>
+
+                                    @endif
+
+                                </div>
+
+
+                                @if($technician->pivot?->status)
+
+                                    <span class="text-[10px] font-semibold
+                                                 text-gray-500 shrink-0">
+
+                                        {{ $technician->pivot->status }}
+
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
+                </div>
+
+            @endif
+
+
+            {{-- ================================================= --}}
+            {{-- COMPLAINT TIMELINE --}}
+            {{-- ================================================= --}}
+
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+                <div class="px-5 py-4 border-b border-gray-100">
+
+                    <h2 class="font-bold text-gray-900">
+                        Complaint Progress
+                    </h2>
+
+                </div>
+
+
+                <div class="p-5">
+
+                    <div class="relative space-y-6">
+
+
+                        {{-- SUBMITTED --}}
+                        <div class="flex gap-3">
+
+                            <div class="w-8 h-8 rounded-full bg-blue-100
+                                        text-blue-600 flex items-center
+                                        justify-center shrink-0">
+
+                                <svg class="w-4 h-4"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M5 13l4 4L19 7"/>
+                                </svg>
+
+                            </div>
+
+                            <div>
+
+                                <p class="text-sm font-semibold text-gray-900">
+                                    Submitted
+                                </p>
+
+                                <p class="text-xs text-gray-500">
+                                    {{ $complaint->created_at?->format('M d, Y h:i A') }}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- VERIFIED --}}
+                        @if($complaint->verified_at)
+
+                            <div class="flex gap-3">
+
+                                <div class="w-8 h-8 rounded-full bg-blue-100
+                                            text-blue-600 flex items-center
+                                            justify-center shrink-0">
+
+                                    <svg class="w-4 h-4"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M5 13l4 4L19 7"/>
+                                    </svg>
+
+                                </div>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        Verified
+                                    </p>
+
+                                    <p class="text-xs text-gray-500">
+                                        {{ $complaint->verified_at->format('M d, Y h:i A') }}
+                                    </p>
+
+                                    <p class="text-xs text-blue-600 mt-1">
+                                        Verified by:
+                                        <span class="font-semibold">
+                                            {{ $complaint->verifier?->full_name
+                                                ?? $complaint->verifiedBy?->full_name
+                                                ?? 'Unknown' }}
+                                        </span>
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+
+                        {{-- ASSIGNED --}}
+                        @if($complaint->technicians->count())
+
+                            <div class="flex gap-3">
+
+                                <div class="w-8 h-8 rounded-full bg-indigo-100
+                                            text-indigo-600 flex items-center
+                                            justify-center shrink-0">
+
+                                    <svg class="w-4 h-4"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M17 20h5V4H2v16h5M9 20v-6h6v6"/>
+                                    </svg>
+
+                                </div>
+
+                                <div class="min-w-0">
+
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        Assigned
+                                    </p>
+
+                                    <p class="text-xs text-gray-500">
+                                        Maintenance team assigned
+                                    </p>
+
+                                    <div class="mt-2 space-y-1">
+
+                                        @foreach($complaint->technicians as $technician)
+
+                                            <p class="text-xs text-indigo-600">
+                                                • {{ $technician->full_name }}
+                                            </p>
+
+                                        @endforeach
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+
+                        {{-- IN PROGRESS --}}
+                        @if(in_array($complaint->status, ['In Progress', 'Completed', 'Closed']))
+
+                            <div class="flex gap-3">
+
+                                <div class="w-8 h-8 rounded-full bg-amber-100
+                                            text-amber-600 flex items-center
+                                            justify-center shrink-0">
+
+                                    <svg class="w-4 h-4"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M12 8v4l3 2"/>
+                                    </svg>
+
+                                </div>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        In Progress
+                                    </p>
+
+                                    <p class="text-xs text-gray-500">
+                                        Maintenance work is underway.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+
+                        {{-- COMPLETED --}}
+                        @if(in_array($complaint->status, ['Completed', 'Closed']))
+
+                            <div class="flex gap-3">
+
+                                <div class="w-8 h-8 rounded-full bg-green-100
+                                            text-green-600 flex items-center
+                                            justify-center shrink-0">
+
+                                    <svg class="w-4 h-4"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M5 13l4 4L19 7"/>
+                                    </svg>
+
+                                </div>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        Completed
+                                    </p>
+
+                                    <p class="text-xs text-gray-500">
+                                        Maintenance work has been completed.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+
+                        {{-- CLOSED --}}
+                        @if($complaint->status === 'Closed')
+
+                            <div class="flex gap-3">
+
+                                <div class="w-8 h-8 rounded-full bg-gray-100
+                                            text-gray-600 flex items-center
+                                            justify-center shrink-0">
+
+                                    <svg class="w-4 h-4"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M5 13l4 4L19 7"/>
+                                    </svg>
+
+                                </div>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        Closed
+                                    </p>
+
+                                    <p class="text-xs text-gray-500">
+                                        Complaint case finalized.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- REPORT LINK --}}
+            <a
+                href="{{ route('maintenance-manager.complaints.report', $complaint) }}"
+                target="_blank"
+                class="w-full inline-flex items-center justify-center gap-2
+                       px-4 py-3 rounded-xl bg-gray-900 text-white
+                       text-sm font-semibold hover:bg-gray-800 transition"
+            >
+
+                <svg class="w-4 h-4"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2h-4.5L15 6H9L10.5 4H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+
+                View / Print Report
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{{-- ============================================================= --}}
+{{-- MULTI-TECHNICIAN SELECTION SCRIPT --}}
+{{-- ============================================================= --}}
+
+@if($complaint->status === 'Verified' && $complaint->technicians->isEmpty())
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const checkboxes = document.querySelectorAll('.technician-checkbox');
+    const selectedCount = document.getElementById('selectedCount');
+    const assignButton = document.getElementById('assignButton');
+    const maxTechnicians = 3;
+
+    function updateSelection() {
+
+        const selected = Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked);
+
+        const count = selected.length;
+
+        selectedCount.textContent = count;
+
+        assignButton.disabled = count === 0;
+
+        checkboxes.forEach(function (checkbox) {
+
+            if (!checkbox.checked && count >= maxTechnicians) {
+
+                checkbox.disabled = true;
+
+                checkbox
+                    .closest('.technician-card')
+                    ?.classList
+                    .add('opacity-50', 'cursor-not-allowed');
+
+            } else {
+
+                checkbox.disabled = false;
+
+                checkbox
+                    .closest('.technician-card')
+                    ?.classList
+                    .remove('opacity-50', 'cursor-not-allowed');
+
+            }
+
+        });
+
+        if (count > 0) {
+
+            assignButton.innerHTML = `
+                <svg class="w-4 h-4"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 20h5V4H2v16h5M9 20v-6h6v6"/>
+                </svg>
+
+                Assign ${count} Technician${count > 1 ? 's' : ''}
+            `;
+
+        } else {
+
+            assignButton.innerHTML = `
+                <svg class="w-4 h-4"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 20h5V4H2v16h5M9 20v-6h6v6"/>
+                </svg>
+
+                Assign Maintenance Team
+            `;
+
+        }
+
+    }
+
+
+    checkboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener('change', updateSelection);
+
+    });
+
+
+    updateSelection();
+
+});
+
+</script>
+
+@endif
 
 @endsection

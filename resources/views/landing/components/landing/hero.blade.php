@@ -19,21 +19,63 @@
 
                 <p class="mt-8 text-xl leading-9">
 
-                    A Maintenance Knowledge Management System with AI-Based Repair Case Recommendation.
+                    An Intelligent Water Service and Complaint Support System
+                    that helps consumers report concerns, receive AI-assisted guidance,
+                    and enables Sagay Water District personnel to efficiently manage
+                    and respond to service complaints.
 
                 </p>
 
-                <div class="mt-10 flex gap-4">
+                <div class="mt-10 flex flex-wrap gap-4">
 
+                    {{-- Consumer Portal --}}
+                    <a href="{{ route('consumer.login') }}"
+                        class="inline-flex items-center gap-2
+               bg-white
+               text-decoration-none
+               text-sky-700
+               px-8 py-4
+               rounded-xl
+               font-semibold
+               shadow-lg
+               hover:bg-sky-50
+               transition">
+
+                        <i class="fas fa-user"></i>
+
+                        Consumer Portal
+
+                    </a>
+
+                    {{-- Staff Login --}}
                     <a href="{{ route('login') }}"
-                       class="bg-white text-decoration-none text-sky-700 px-8 py-4 rounded-xl font-semibold">
+                        class="inline-flex items-center gap-2
+               border
+               text-white
+               text-decoration-none
+               border-white
+               px-8 py-4
+               rounded-xl
+               font-semibold
+               hover:bg-white/10
+               transition">
 
-                        Login
+                        <i class="fas fa-building"></i>
+
+                        Staff Login
 
                     </a>
 
                     <a href="#features"
-                       class="border text-white text-decoration-none border-white px-8 py-4 rounded-xl">
+                        class="inline-flex items-center gap-2
+               border
+               text-white
+               text-decoration-none
+               border-white/50
+               px-8 py-4
+               rounded-xl
+               hover:bg-white/10
+               transition">
 
                         Learn More
 
@@ -45,8 +87,7 @@
 
             <div>
 
-                <img src="{{ asset('images/logo/landing/hero.png') }}"
-                     class="rounded-3xl shadow-2xl w-full">
+                <img src="{{ asset('images/logo/landing/hero.png') }}" class="rounded-3xl shadow-2xl w-full">
 
             </div>
 

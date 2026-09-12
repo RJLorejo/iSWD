@@ -15,7 +15,7 @@ class ComplaintVerificationController extends Controller
             'category',
             'customerService',
             'verifier',
-            'technician',
+            'technicians',
         ]);
 
         /*

@@ -6,19 +6,6 @@
 
     <div class="max-w-7xl mx-auto space-y-8">
 
-        {{-- SUCCESS MESSAGE --}}
-        @if (session('success'))
-            <div class="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-circle-check"></i>
-
-                    <span>
-                        {{ session('success') }}
-                    </span>
-                </div>
-            </div>
-        @endif
-
 
         {{-- PAGE HEADER --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

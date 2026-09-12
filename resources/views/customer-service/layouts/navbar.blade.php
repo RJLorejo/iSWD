@@ -108,7 +108,7 @@
 
                     </div>
 
-                    <a href="{{ route('customer-service.profile.show') }}" class="block px-5 py-3 hover:bg-gray-100">
+                    <a href="{{ route('profile.show') }}" class="block px-5 py-3 hover:bg-gray-100">
 
                         <i class="fa-solid fa-user mr-2"></i>
 

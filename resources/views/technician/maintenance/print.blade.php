@@ -364,7 +364,12 @@
     <div class="footer">
 
         <p>
-            Technician:
+            Assigned Maintenance Team:
+            {{ $complaint->technicians->pluck('full_name')->join(', ') ?: 'N/A' }}
+        </p>
+
+        <p>
+            Report Prepared / Submitted By:
             {{ $complaint->maintenanceReport->technician?->full_name ?? 'N/A' }}
         </p>
 

@@ -16,15 +16,25 @@ class MaintenanceHistoryController extends Controller
     {
         $technicianId = Auth::id();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Maintenance History Query
+        |--------------------------------------------------------------------------
+        */
+
         $query = Complaint::query()
             ->with([
                 'consumer',
                 'category',
                 'maintenanceReport',
-                'technician',
+                'technicians',
             ])
-            ->where('assigned_to', $technicianId)
-            ->where('status', 'Completed');
+            ->whereHas('technicians', function ($q) use ($technicianId) {
+
+                $q->where('users.id', $technicianId);
+
+            })
+            ->where('complaints.status', 'Completed');
 
         /*
         |--------------------------------------------------------------------------
@@ -33,13 +43,16 @@ class MaintenanceHistoryController extends Controller
         */
 
         if ($request->filled('search')) {
+
             $search = $request->search;
 
             $query->where(function ($q) use ($search) {
+
                 $q->where('complaint_no', 'like', "%{$search}%")
                     ->orWhere('subject', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
                     ->orWhere('address', 'like', "%{$search}%");
+
             });
         }
 
@@ -50,6 +63,7 @@ class MaintenanceHistoryController extends Controller
         */
 
         if ($request->filled('from')) {
+
             $query->whereDate(
                 'completed_at',
                 '>=',
@@ -58,6 +72,7 @@ class MaintenanceHistoryController extends Controller
         }
 
         if ($request->filled('to')) {
+
             $query->whereDate(
                 'completed_at',
                 '<=',
@@ -80,19 +95,54 @@ class MaintenanceHistoryController extends Controller
         |--------------------------------------------------------------------------
         | Statistics
         |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        | technicians is a relationship, not a complaints table column.
+        | Therefore we must use whereHas('technicians').
+        |
         */
 
         $baseQuery = Complaint::query()
-            ->where('assigned_to', $technicianId)
-            ->where('status', 'Completed');
+            ->whereHas('technicians', function ($q) use ($technicianId) {
 
-        $totalCompleted = (clone $baseQuery)->count();
+                $q->where('users.id', $technicianId);
+
+            })
+            ->where('complaints.status', 'Completed');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Total Completed
+        |--------------------------------------------------------------------------
+        */
+
+        $totalCompleted = (clone $baseQuery)
+            ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Completed With Maintenance Report
+        |--------------------------------------------------------------------------
+        */
 
         $withReports = (clone $baseQuery)
             ->whereHas('maintenanceReport')
             ->count();
 
-        $withoutReports = $totalCompleted - $withReports;
+        /*
+        |--------------------------------------------------------------------------
+        | Completed Without Maintenance Report
+        |--------------------------------------------------------------------------
+        */
+
+        $withoutReports =
+            $totalCompleted - $withReports;
+
+        /*
+        |--------------------------------------------------------------------------
+        | View
+        |--------------------------------------------------------------------------
+        */
 
         return view(
             'technician.maintenance-history.index',

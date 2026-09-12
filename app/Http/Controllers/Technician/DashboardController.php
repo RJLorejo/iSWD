@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Auth;
 class DashboardController extends Controller
 {
     /**
-     * Display technician dashboard.
+     * Display the Maintenance Technician dashboard.
      */
     public function index()
     {
-        $technicianId = Auth::id();
+        $technician = Auth::user();
+
+        $assignedComplaints = $technician->assignedComplaints();
 
         /*
         |--------------------------------------------------------------------------
@@ -21,21 +23,27 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $assignedCount = Complaint::where('assigned_to', $technicianId)
-            ->where('status', 'Assigned')
+        $assignedCount = (clone $assignedComplaints)
+            ->where('complaints.status', 'Assigned')
             ->count();
 
-        $inProgressCount = Complaint::where('assigned_to', $technicianId)
-            ->where('status', 'In Progress')
+        $inProgressCount = (clone $assignedComplaints)
+            ->where('complaints.status', 'In Progress')
             ->count();
 
-        $completedCount = Complaint::where('assigned_to', $technicianId)
-            ->where('status', 'Completed')
+        $completedCount = (clone $assignedComplaints)
+            ->where('complaints.status', 'Completed')
             ->count();
 
-        $urgentCount = Complaint::where('assigned_to', $technicianId)
-            ->whereIn('priority', ['High', 'Critical'])
-            ->whereIn('status', ['Assigned', 'In Progress'])
+        $urgentCount = (clone $assignedComplaints)
+            ->whereIn('complaints.priority', [
+                'High',
+                'Critical',
+            ])
+            ->whereIn('complaints.status', [
+                'Assigned',
+                'In Progress',
+            ])
             ->count();
 
         /*
@@ -44,7 +52,7 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalCount = Complaint::where('assigned_to', $technicianId)
+        $totalCount = (clone $assignedComplaints)
             ->count();
 
         /*
@@ -53,8 +61,8 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $activeCount = Complaint::where('assigned_to', $technicianId)
-            ->whereIn('status', [
+        $activeCount = (clone $assignedComplaints)
+            ->whereIn('complaints.status', [
                 'Assigned',
                 'In Progress',
             ])
@@ -62,30 +70,33 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | CURRENT COMPLAINTS
+        | CURRENT WORK
         |--------------------------------------------------------------------------
+        |
+        | Highest priority complaints appear first.
+        |
         */
 
-        $currentComplaints = Complaint::with([
-            'consumer',
-            'category',
-            'technician',
-            'verifier',
-        ])
-            ->where('assigned_to', $technicianId)
-            ->whereIn('status', [
+        $currentComplaints = (clone $assignedComplaints)
+            ->with([
+                'consumer',
+                'category',
+                'technicians',
+                'verifier',
+            ])
+            ->whereIn('complaints.status', [
                 'Assigned',
                 'In Progress',
             ])
             ->orderByRaw("
                 CASE
-                    WHEN priority = 'Critical' THEN 1
-                    WHEN priority = 'High' THEN 2
-                    WHEN priority = 'Medium' THEN 3
+                    WHEN complaints.priority = 'Critical' THEN 1
+                    WHEN complaints.priority = 'High' THEN 2
+                    WHEN complaints.priority = 'Medium' THEN 3
                     ELSE 4
                 END
             ")
-            ->latest('updated_at')
+            ->latest('complaints.updated_at')
             ->take(6)
             ->get();
 
@@ -95,30 +106,35 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $recentCompleted = Complaint::with([
-            'consumer',
-            'category',
-            'technician',
-        ])
-            ->where('assigned_to', $technicianId)
-            ->where('status', 'Completed')
-            ->whereNotNull('completed_at')
-            ->latest('completed_at')
+        $recentCompleted = (clone $assignedComplaints)
+            ->with([
+                'consumer',
+                'category',
+                'technicians',
+            ])
+            ->where('complaints.status', 'Completed')
+            ->whereNotNull('complaints.completed_at')
+            ->latest('complaints.completed_at')
             ->take(5)
             ->get();
 
         /*
         |--------------------------------------------------------------------------
-        | RECENTLY UPDATED
+        | RECENT ACTIVITY
         |--------------------------------------------------------------------------
+        |
+        | This shows the technician's latest assigned complaints regardless
+        | of current status.
+        |
         */
 
-        $recentActivity = Complaint::with([
-            'consumer',
-            'category',
-        ])
-            ->where('assigned_to', $technicianId)
-            ->latest('updated_at')
+        $recentActivity = (clone $assignedComplaints)
+            ->with([
+                'consumer',
+                'category',
+                'technicians',
+            ])
+            ->latest('complaints.updated_at')
             ->take(5)
             ->get();
 

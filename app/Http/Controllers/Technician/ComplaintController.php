@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Technician;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Technician\CompleteComplaintRequest;
 use App\Models\Complaint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,16 +22,20 @@ class ComplaintController extends Controller
         |--------------------------------------------------------------------------
         | BASE QUERY
         |--------------------------------------------------------------------------
+        | complaint_technicians is now the source of truth for assignment.
         */
-
         $query = Complaint::with([
             'consumer',
             'category',
             'customerService',
             'verifier',
-            'technician',
+            'technicians',
+            'maintenanceReport',
         ])
-            ->where('assigned_to', $technicianId)
+            ->withCount('technicians')
+            ->whereHas('technicians', function ($q) use ($technicianId) {
+                $q->where('users.id', $technicianId);
+            })
             ->whereIn('status', [
                 'Assigned',
                 'In Progress',
@@ -42,26 +47,28 @@ class ComplaintController extends Controller
         | SEARCH
         |--------------------------------------------------------------------------
         */
-
         if ($request->filled('search')) {
-
             $search = trim($request->search);
 
             $query->where(function ($q) use ($search) {
-
                 $q->where('complaint_no', 'like', "%{$search}%")
                     ->orWhere('subject', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
                     ->orWhere('address', 'like', "%{$search}%")
-                    ->orWhere('landmark', 'like', "%{$search}%");
+                    ->orWhere('landmark', 'like', "%{$search}%")
 
-                $q->orWhereHas('consumer', function ($consumer) use ($search) {
+                    ->orWhereHas('consumer', function ($consumer) use ($search) {
+                        $consumer
+                            ->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('account_number', 'like', "%{$search}%");
+                    })
 
-                    $consumer
-                        ->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('consumer_no', 'like', "%{$search}%");
-                });
+                    ->orWhereHas('technicians', function ($technician) use ($search) {
+                        $technician
+                            ->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -70,9 +77,7 @@ class ComplaintController extends Controller
         | STATUS FILTER
         |--------------------------------------------------------------------------
         */
-
         if ($request->filled('status')) {
-
             $allowedStatuses = [
                 'Assigned',
                 'In Progress',
@@ -80,11 +85,7 @@ class ComplaintController extends Controller
             ];
 
             if (in_array($request->status, $allowedStatuses, true)) {
-
-                $query->where(
-                    'status',
-                    $request->status
-                );
+                $query->where('status', $request->status);
             }
         }
 
@@ -93,9 +94,7 @@ class ComplaintController extends Controller
         | PRIORITY FILTER
         |--------------------------------------------------------------------------
         */
-
         if ($request->filled('priority')) {
-
             $allowedPriorities = [
                 'Low',
                 'Medium',
@@ -104,11 +103,7 @@ class ComplaintController extends Controller
             ];
 
             if (in_array($request->priority, $allowedPriorities, true)) {
-
-                $query->where(
-                    'priority',
-                    $request->priority
-                );
+                $query->where('priority', $request->priority);
             }
         }
 
@@ -116,35 +111,33 @@ class ComplaintController extends Controller
         |--------------------------------------------------------------------------
         | ORDERING
         |--------------------------------------------------------------------------
+        | Active work appears first, followed by priority.
         */
-
-        $query->orderByRaw("
-            CASE
-                WHEN status = 'In Progress' THEN 1
-                WHEN status = 'Assigned' THEN 2
-                WHEN status = 'Completed' THEN 3
-                ELSE 4
-            END
-        ");
-
-        $query->orderByRaw("
-            CASE
-                WHEN priority = 'Critical' THEN 1
-                WHEN priority = 'High' THEN 2
-                WHEN priority = 'Medium' THEN 3
-                WHEN priority = 'Low' THEN 4
-                ELSE 5
-            END
-        ");
-
-        $query->latest('updated_at');
+        $query
+            ->orderByRaw("
+                CASE
+                    WHEN status = 'In Progress' THEN 1
+                    WHEN status = 'Assigned' THEN 2
+                    WHEN status = 'Completed' THEN 3
+                    ELSE 4
+                END
+            ")
+            ->orderByRaw("
+                CASE
+                    WHEN priority = 'Critical' THEN 1
+                    WHEN priority = 'High' THEN 2
+                    WHEN priority = 'Medium' THEN 3
+                    WHEN priority = 'Low' THEN 4
+                    ELSE 5
+                END
+            ")
+            ->latest('updated_at');
 
         /*
         |--------------------------------------------------------------------------
         | PAGINATION
         |--------------------------------------------------------------------------
         */
-
         $complaints = $query
             ->paginate(10)
             ->withQueryString();
@@ -154,40 +147,28 @@ class ComplaintController extends Controller
         | STATISTICS
         |--------------------------------------------------------------------------
         */
-
-        $assignedCount = Complaint::where(
-            'assigned_to',
-            $technicianId
-        )
+        $assignedCount = $this->assignedComplaintsQuery($technicianId)
             ->where('status', 'Assigned')
             ->count();
 
-        $inProgressCount = Complaint::where(
-            'assigned_to',
-            $technicianId
-        )
+        $inProgressCount = $this->assignedComplaintsQuery($technicianId)
             ->where('status', 'In Progress')
             ->count();
 
-        $completedCount = Complaint::where(
-            'assigned_to',
-            $technicianId
-        )
+        $completedCount = $this->assignedComplaintsQuery($technicianId)
             ->where('status', 'Completed')
             ->count();
 
-        $urgentCount = Complaint::where(
-            'assigned_to',
-            $technicianId
-        )
-            ->whereIn('priority', [
-                'High',
-                'Critical',
-            ])
-            ->whereIn('status', [
-                'Assigned',
-                'In Progress',
-            ])
+        $urgentCount = $this->assignedComplaintsQuery($technicianId)
+            ->whereIn('priority', ['High', 'Critical'])
+            ->whereIn('status', ['Assigned', 'In Progress'])
+            ->count();
+
+        $totalCount = $this->assignedComplaintsQuery($technicianId)
+            ->count();
+
+        $activeCount = $this->assignedComplaintsQuery($technicianId)
+            ->whereIn('status', ['Assigned', 'In Progress'])
             ->count();
 
         /*
@@ -195,7 +176,6 @@ class ComplaintController extends Controller
         | RETURN
         |--------------------------------------------------------------------------
         */
-
         return view(
             'technician.complaints.index',
             compact(
@@ -203,7 +183,9 @@ class ComplaintController extends Controller
                 'assignedCount',
                 'inProgressCount',
                 'completedCount',
-                'urgentCount'
+                'urgentCount',
+                'totalCount',
+                'activeCount'
             )
         );
     }
@@ -214,38 +196,20 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | SECURITY
-        |--------------------------------------------------------------------------
-        */
-
-        abort_unless(
-            (int) $complaint->assigned_to === (int) Auth::id(),
-            403
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOAD RELATIONSHIPS
-        |--------------------------------------------------------------------------
-        */
-
         $complaint->load([
             'consumer',
             'category',
             'customerService',
             'verifier',
-            'technician',
+            'technicians',
             'maintenanceReport',
-            'maintenanceReport.technician',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN
-        |--------------------------------------------------------------------------
-        */
+        $isAssignedToMe = $complaint->technicians()
+            ->where('users.id', auth()->id())
+            ->exists();
+
+        abort_unless($isAssignedToMe, 403);
 
         return view(
             'technician.complaints.show',
@@ -259,46 +223,34 @@ class ComplaintController extends Controller
      */
     public function start(Complaint $complaint)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | SECURITY
-        |--------------------------------------------------------------------------
-        */
-
-        abort_unless(
-            (int) $complaint->assigned_to === (int) Auth::id(),
-            403
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATION
-        |--------------------------------------------------------------------------
-        */
+        $this->ensureAssignedToMe($complaint);
 
         if ($complaint->status !== 'Assigned') {
-
             return back()->with(
                 'error',
                 'Only assigned complaints can be started.'
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE
-        |--------------------------------------------------------------------------
-        */
+        DB::transaction(function () use ($complaint) {
 
-        $complaint->update([
-            'status' => 'In Progress',
-        ]);
+            $complaint->update([
+                'status' => 'In Progress',
+            ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | Update this technician's assignment record
+            |--------------------------------------------------------------------------
+            */
+            $complaint->technicians()->updateExistingPivot(
+                Auth::id(),
+                [
+                    'status' => 'In Progress',
+                    'started_at' => now(),
+                ]
+            );
+        });
 
         return back()->with(
             'success',
@@ -309,53 +261,51 @@ class ComplaintController extends Controller
 
     /**
      * Complete maintenance work.
+     *
+     * This action should only be available after the technician
+     * has completed the required maintenance report.
      */
-    public function complete(Complaint $complaint)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | SECURITY
-        |--------------------------------------------------------------------------
-        */
-
-        abort_unless(
-            (int) $complaint->assigned_to === (int) Auth::id(),
-            403
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATION
-        |--------------------------------------------------------------------------
-        */
+    public function complete(
+        CompleteComplaintRequest $request,
+        Complaint $complaint
+    ) {
+        $this->ensureAssignedToMe($complaint);
 
         if ($complaint->status !== 'In Progress') {
-
             return back()->with(
                 'error',
                 'Only complaints currently in progress can be completed.'
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | TRANSACTION
-        |--------------------------------------------------------------------------
-        */
-
         DB::transaction(function () use ($complaint) {
 
+            /*
+            |--------------------------------------------------------------------------
+            | Mark this technician's assignment as completed
+            |--------------------------------------------------------------------------
+            */
+            $complaint->technicians()->updateExistingPivot(
+                Auth::id(),
+                [
+                    'status' => 'Completed',
+                    'completed_at' => now(),
+                ]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Complaint becomes Completed
+            |--------------------------------------------------------------------------
+            |
+            | Manager can now review/validate the maintenance report.
+            |
+            */
             $complaint->update([
                 'status' => 'Completed',
                 'completed_at' => now(),
             ]);
         });
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
 
         return redirect()
             ->route(
@@ -364,7 +314,35 @@ class ComplaintController extends Controller
             )
             ->with(
                 'success',
-                'Maintenance work has been marked as completed.'
+                'Maintenance work has been marked as completed and is now ready for manager review.'
             );
+    }
+
+
+    /**
+     * Make sure the logged-in technician is assigned to the complaint.
+     */
+    private function ensureAssignedToMe(Complaint $complaint): void
+    {
+        abort_unless(
+            $complaint->technicians()
+                ->where('users.id', Auth::id())
+                ->exists(),
+            403
+        );
+    }
+
+
+    /**
+     * Reusable assigned-complaint query.
+     */
+    private function assignedComplaintsQuery(int $technicianId)
+    {
+        return Complaint::whereHas(
+            'technicians',
+            function ($q) use ($technicianId) {
+                $q->where('users.id', $technicianId);
+            }
+        );
     }
 }

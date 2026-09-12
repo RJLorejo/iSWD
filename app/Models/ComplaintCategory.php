@@ -17,22 +17,41 @@ class ComplaintCategory extends Model
 
         'description',
 
+        'category_type',
+
+        'requires_maintenance',
+
         'is_active',
 
     ];
+
 
     protected $casts = [
 
         'is_active' => 'boolean',
 
+        'requires_maintenance' => 'boolean',
+
     ];
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function complaints()
     {
         return $this->hasMany(Complaint::class);
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate Category Code
+    |--------------------------------------------------------------------------
+    */
 
     public static function generateCode(string $name): string
     {
@@ -43,22 +62,35 @@ class ComplaintCategory extends Model
         if (count($words) > 1) {
 
             $code = collect($words)
-                ->map(fn($word) => strtoupper(substr($word, 0, 1)))
+                ->map(
+                    fn($word) =>
+                    strtoupper(substr($word, 0, 1))
+                )
                 ->implode('');
         } else {
 
-            $code = strtoupper(substr($name, 0, 5));
+            $code = strtoupper(
+                substr($name, 0, 5)
+            );
         }
 
+
         $original = $code;
+
         $counter = 2;
 
-        while (self::withTrashed()->where('code', $code)->exists()) {
+
+        while (
+            self::withTrashed()
+            ->where('code', $code)
+            ->exists()
+        ) {
 
             $code = $original . $counter;
 
             $counter++;
         }
+
 
         return $code;
     }

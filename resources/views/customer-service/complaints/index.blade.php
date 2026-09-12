@@ -194,8 +194,10 @@
 
                 <div class="text-sm text-gray-500">
 
-                    {{ $complaints->total() }}
-                    {{ Str::plural('complaint', $complaints->total()) }}
+                    Showing {{ $complaints->firstItem() ?? 0 }}
+                    –
+                    {{ $complaints->lastItem() ?? 0 }}
+                    of {{ $complaints->total() }}
 
                 </div>
 

@@ -102,6 +102,23 @@
 
 <body>
 
+
+    <div class="no-print" style="margin-bottom:20px;">
+
+        <button onclick="window.print()"
+            style="
+            padding:10px 18px;
+            background:#2563eb;
+            color:white;
+            border:0;
+            border-radius:6px;
+            cursor:pointer;
+        ">
+            Print
+        </button>
+
+    </div>
+
     <div class="header">
 
         <h1>
@@ -204,6 +221,14 @@
 
                     <td>
                         {{ $complaint->complaint_no }}
+
+                        <div class="text-xs text-gray-400 mt-1">
+
+                            <i class="far fa-clock mr-1"></i>
+
+                            {{ $complaint->created_at?->format('M d, Y h:i A') }}
+
+                        </div>
                     </td>
 
                     <td>
@@ -215,7 +240,36 @@
                     </td>
 
                     <td>
-                        {{ $complaint->consumer?->full_name ?? 'Walk-in Consumer' }}
+                        @if ($complaint->consumer)
+                            <div class="font-medium text-gray-900">
+                                {{ $complaint->consumer->full_name }}
+                            </div>
+
+                            <div class="text-xs text-gray-500">
+                                {{ $complaint->consumer->consumer_no }}
+                            </div>
+                        @elseif ($complaint->complainant_name)
+                            <div class="font-medium text-gray-900">
+                                {{ $complaint->complainant_name }}
+                            </div>
+
+                            @if ($complaint->complainant_phone)
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-phone mr-1"></i>
+                                    {{ $complaint->complainant_phone }}
+                                </div>
+                            @endif
+                        @else
+                            <span class="text-gray-400">
+                                No complainant information
+                            </span>
+                        @endif
+                        <div class="text-xs text-gray-500 mt-1">
+
+                            {{ $complaint->address }}
+
+                        </div>
+
                     </td>
 
                     <td>

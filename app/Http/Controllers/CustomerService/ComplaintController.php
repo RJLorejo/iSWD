@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\CustomerService;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreComplaintRequest;
-use App\Http\Requests\UpdateComplaintRequest;
-use App\Http\Requests\VerifyComplaintRequest;
-use App\Http\Requests\RejectComplaintRequest;
+use App\Http\Requests\CustomerService\StoreComplaintRequest;
+use App\Http\Requests\CustomerService\UpdateComplaintRequest;
+use App\Http\Requests\CustomerService\VerifyComplaintRequest;
+use App\Http\Requests\CustomerService\RejectComplaintRequest;
+
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
 use App\Models\Consumer;
@@ -27,7 +28,7 @@ class ComplaintController extends Controller
         $query = Complaint::with([
             'consumer',
             'category',
-            'technician',
+            'technicians',
             'customerService',
             'verifier',
         ]);
@@ -378,7 +379,7 @@ class ComplaintController extends Controller
                 'status' =>
                 'Pending',
 
-                'assigned_to' =>
+                'technicians' =>
                 null,
 
                 /*
@@ -453,7 +454,7 @@ class ComplaintController extends Controller
         $complaint->load([
             'consumer',
             'category',
-            'technician',
+            'technicians',
             'customerService',
             'verifier',
             'maintenanceReport',
@@ -488,7 +489,7 @@ class ComplaintController extends Controller
         $complaint->load([
             'consumer',
             'category',
-            'technician',
+            'technicians',
             'customerService',
             'verifier',
         ]);

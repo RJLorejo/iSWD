@@ -17,7 +17,7 @@
 
             <p class="text-xs text-sky-200 text-center">
 
-                Administrator Panel
+                Manager Panel
 
             </p>
 
@@ -43,7 +43,7 @@
 
                 <div class="text-xs text-sky-200">
 
-                    Administrator
+                    Maintenance Manager
 
                 </div>
 
@@ -55,7 +55,8 @@
 
     <nav class="mt-5 px-3 space-y-2">
 
-        <a href="{{ route('maintenance-manager.dashboard') }}" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+        <a href="{{ route('maintenance-manager.dashboard') }}"
+            class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
 
             <i class="fa-solid fa-chart-line w-6"></i>
 
@@ -67,11 +68,48 @@
             class="flex items-center gap-4 px-4 py-3 rounded-xl
            hover:bg-white/20 transition">
 
-            <i class="fas fa-clipboard-check w-6"></i>
+            <i class="fa-solid fa-circle-exclamation w-6"></i>
 
             <span>
                 Complaints
             </span>
+
+            @php
+                $isVerified = \App\Models\Complaint::where('status', 'Verified')->count();
+            @endphp
+
+            @if ($isVerified > 0)
+                <span class="ml-auto px-2 py-0.5 text-xs rounded-full
+                     bg-amber-100 text-amber-700">
+
+                    {{ $isVerified }}
+
+                </span>
+            @endif
+
+        </a>
+
+        <a href="{{ route('maintenance-manager.maintenance-reviews.index') }}"
+            class="flex items-center gap-4 px-4 py-3 rounded-xl
+           hover:bg-white/20 transition">
+            <i class="fas fa-clipboard-check w-5"></i>
+
+            <span>
+                Maintenance Reviews
+            </span>
+
+            @php
+                $pendingReviews = \App\Models\MaintenanceReport::where('review_status', 'Pending Review')->count();
+            @endphp
+
+            @if ($pendingReviews > 0)
+                <span class="ml-auto px-2 py-0.5 text-xs rounded-full
+                     bg-amber-100 text-amber-700">
+
+                    {{ $pendingReviews }}
+
+                </span>
+            @endif
 
         </a>
 
@@ -84,39 +122,21 @@
 
         </a>
 
-        <a href="{{ route('complaints.index') }}"
-            class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
 
-            <i class="fa-solid fa-circle-exclamation w-6"></i>
+            <i class="fa-solid fa-chart-column w-6"></i>
 
-            <span x-show="!sidebarMini">Complaint Assignment</span>
+            <span x-show="!sidebarMini">Reports</span>
 
         </a>
 
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
 
-            <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+            <i class="fa-solid fa-gear w-6"></i>
 
-                <i class="fa-solid fa-book-open w-6"></i>
+            <span x-show="!sidebarMini">Settings</span>
 
-                <span x-show="!sidebarMini">Knowledge Base</span>
-
-            </a>
-
-            <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
-
-                <i class="fa-solid fa-chart-column w-6"></i>
-
-                <span x-show="!sidebarMini">Reports</span>
-
-            </a>
-
-            <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
-
-                <i class="fa-solid fa-gear w-6"></i>
-
-                <span x-show="!sidebarMini">Settings</span>
-
-            </a>
+        </a>
 
     </nav>
 

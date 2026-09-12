@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ComplaintCategory;
-use App\Http\Requests\StoreComplaintCategoryRequest;
-use App\Http\Requests\UpdateComplaintCategoryRequest;
+use App\Http\Requests\Admin\StoreComplaintCategoryRequest;
+use App\Http\Requests\Admin\UpdateComplaintCategoryRequest;
 
 class ComplaintCategoryController extends Controller
 {

@@ -46,12 +46,44 @@
 
             </div>
 
-            <a href="{{ route('login') }}"
-                class="bg-sky-700 text-white text-decoration-none px-6 py-3 rounded-xl hover:bg-sky-800 transition">
+            <div class="flex items-center gap-3">
 
-                Login
+                {{-- Consumer Portal --}}
+                <a href="{{ route('consumer.login') }}"
+                    class="hidden sm:inline-flex items-center gap-2
+               px-5 py-3
+               rounded-xl
+               border border-sky-200
+               text-sky-700
+               font-semibold
+               hover:bg-sky-50
+               transition">
 
-            </a>
+                    <i class="fas fa-user"></i>
+
+                    Consumer Portal
+
+                </a>
+
+                {{-- Employee / Staff Login --}}
+                <a href="{{ route('login') }}"
+                    class="inline-flex items-center gap-2
+               bg-sky-700
+               text-white
+               text-decoration-none
+               px-6 py-3
+               rounded-xl
+               font-semibold
+               hover:bg-sky-800
+               transition">
+
+                    <i class="fas fa-right-to-bracket"></i>
+
+                    Staff Login
+
+                </a>
+
+            </div>
 
         </div>
 

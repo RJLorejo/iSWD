@@ -12,8 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-use App\Http\Requests\UpdateUserRequest;
-use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Admin\StoreUserRequest;
 
 
 class UserController extends Controller

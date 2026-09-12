@@ -11,84 +11,87 @@ class Consumer extends Model
 
     protected $fillable = [
 
-        'consumer_no',
+        'account_number',
 
         'user_id',
 
         'first_name',
-
         'middle_name',
-
         'last_name',
-
         'suffix',
 
         'sex',
 
-        'birth_date',
-
         'phone',
-
         'email',
 
         'is_active',
-
     ];
 
     protected $casts = [
 
-        'birth_date' => 'date',
 
         'is_active' => 'boolean',
-
     ];
 
     /*
     |--------------------------------------------------------------------------
-    | Relationships
+    | User Account
     |--------------------------------------------------------------------------
     */
 
     public function user()
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function address()
-    {
-        return $this->hasOne(ConsumerAddress::class);
-    }
-
-    public function serviceConnections()
-    {
-        return $this->hasMany(ServiceConnection::class);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Accessors
-    |--------------------------------------------------------------------------
-    */
-
-    public function getFullNameAttribute()
-    {
-        return trim(
-
-            "{$this->first_name} {$this->middle_name} {$this->last_name} {$this->suffix}"
-
+        return $this->belongsTo(
+            User::class,
+            'user_id'
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Consumer Number Generator
+    | Address
     |--------------------------------------------------------------------------
     */
 
-    public static function generateConsumerNo(): string
+    public function address()
     {
-        $next = self::max('id') + 1;
+        return $this->hasOne(
+            ConsumerAddress::class
+        );
+    }
 
-        return 'CON-' . str_pad($next, 6, '0', STR_PAD_LEFT);
+    /*
+    |--------------------------------------------------------------------------
+    | Complaints
+    |--------------------------------------------------------------------------
+    */
+
+    public function complaints()
+    {
+        return $this->hasMany(
+            Complaint::class,
+            'consumer_id'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Display Name
+    |--------------------------------------------------------------------------
+    */
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(
+            $this->first_name . ' ' .
+                ($this->middle_name
+                    ? $this->middle_name . ' '
+                    : '') .
+                $this->last_name .
+                ($this->suffix
+                    ? ' ' . $this->suffix
+                    : '')
+        );
     }
 }

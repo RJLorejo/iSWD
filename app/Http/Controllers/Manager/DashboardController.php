@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
@@ -12,41 +13,75 @@ class DashboardController extends Controller
     {
         /*
         |--------------------------------------------------------------------------
-        | Complaint Statistics
+        | MAINTENANCE CASE STATISTICS
         |--------------------------------------------------------------------------
         */
 
+        // Verified complaints
         $verifiedComplaints = Complaint::where(
-            'status',
+            'complaints.status',
             'Verified'
         )->count();
 
-        $assignedComplaints = Complaint::where(
-            'status',
+
+        // Verified complaints that do not yet have a technician
+        $unassignedCases = Complaint::where(
+            'complaints.status',
+            'Verified'
+        )
+            ->whereDoesntHave('technicians')
+            ->count();
+
+
+        // Assigned complaints
+        $assignedCases = Complaint::where(
+            'complaints.status',
             'Assigned'
         )->count();
 
+
+        // Complaints currently being worked on
         $inProgressComplaints = Complaint::where(
-            'status',
+            'complaints.status',
             'In Progress'
         )->count();
 
-        $completedComplaints = Complaint::where(
-            'status',
-            'Completed'
-        )->count();
 
-        $criticalComplaints = Complaint::where(
-            'priority',
-            'Critical'
+        /*
+        |--------------------------------------------------------------------------
+        | REPORTS FOR REVIEW
+        |--------------------------------------------------------------------------
+        |
+        | TEMPORARY VALUE FOR THE CURRENT PROTOTYPE.
+        |
+        | Replace this with the actual MaintenanceReport query
+        | once the report workflow is finalized.
+        |
+        */
+
+        $reportsForReview = 2;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMPLETED TODAY
+        |--------------------------------------------------------------------------
+        */
+
+        $completedToday = Complaint::where(
+            'complaints.status',
+            'Completed'
         )
-            ->whereNotIn('status', ['Completed', 'Closed'])
+            ->whereDate(
+                'complaints.updated_at',
+                Carbon::today()
+            )
             ->count();
 
 
         /*
         |--------------------------------------------------------------------------
-        | Technician Statistics
+        | TECHNICIAN COUNT
         |--------------------------------------------------------------------------
         */
 
@@ -57,7 +92,7 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Recent Verified Complaints
+        | RECENT VERIFIED COMPLAINTS
         |--------------------------------------------------------------------------
         */
 
@@ -65,36 +100,50 @@ class DashboardController extends Controller
             'consumer',
             'category',
         ])
-            ->where('status', 'Verified')
-            ->latest()
+            ->where(
+                'complaints.status',
+                'Verified'
+            )
+            ->latest('complaints.created_at')
             ->take(5)
             ->get();
 
 
         /*
         |--------------------------------------------------------------------------
-        | Assigned / Active Complaints
+        | ACTIVE COMPLAINTS
         |--------------------------------------------------------------------------
+        |
+        | A complaint may have multiple assigned technicians.
+        |
         */
 
         $activeComplaints = Complaint::with([
             'consumer',
             'category',
-            'technician',
+            'technicians',
         ])
-            ->whereIn('status', [
-                'Assigned',
-                'In Progress',
-            ])
-            ->latest()
+            ->whereIn(
+                'complaints.status',
+                [
+                    'Assigned',
+                    'In Progress',
+                ]
+            )
+            ->latest('complaints.created_at')
             ->take(5)
             ->get();
 
 
         /*
         |--------------------------------------------------------------------------
-        | Technician Workload
+        | TECHNICIAN WORKLOAD
         |--------------------------------------------------------------------------
+        |
+        | Because one complaint can have multiple technicians,
+        | assignedComplaints must use the complaint_technicians
+        | pivot relationship.
+        |
         */
 
         $technicians = User::role(
@@ -102,10 +151,13 @@ class DashboardController extends Controller
         )
             ->withCount([
                 'assignedComplaints as active_complaints_count' => function ($query) {
-                    $query->whereIn('status', [
-                        'Assigned',
-                        'In Progress',
-                    ]);
+                    $query->whereIn(
+                        'complaints.status',
+                        [
+                            'Assigned',
+                            'In Progress',
+                        ]
+                    );
                 },
             ])
             ->orderByDesc('active_complaints_count')
@@ -113,18 +165,53 @@ class DashboardController extends Controller
             ->get();
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | CASE STATUS CHART
+        |--------------------------------------------------------------------------
+        */
+
+        $caseStatusChart = [
+            'labels' => [
+                'Verified',
+                'Unassigned',
+                'Assigned',
+                'In Progress',
+                'For Review',
+                'Completed',
+            ],
+
+            'data' => [
+                $verifiedComplaints,
+                $unassignedCases,
+                $assignedCases,
+                $inProgressComplaints,
+                $reportsForReview,
+                $completedToday,
+            ],
+        ];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RETURN DASHBOARD
+        |--------------------------------------------------------------------------
+        */
+
         return view(
             'maintenance-manager.dashboard',
             compact(
                 'verifiedComplaints',
-                'assignedComplaints',
+                'unassignedCases',
+                'assignedCases',
                 'inProgressComplaints',
-                'completedComplaints',
-                'criticalComplaints',
+                'reportsForReview',
+                'completedToday',
                 'technicianCount',
                 'recentVerifiedComplaints',
                 'activeComplaints',
-                'technicians'
+                'technicians',
+                'caseStatusChart'
             )
         );
     }

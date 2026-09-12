@@ -11,8 +11,8 @@
     <div class="space-y-6">
 
         {{-- PAGE HEADER --}}
-        <x-form.page-header title="Customer Service Dashboard"
-            subtitle="Manage consumers, service connections, and customer complaints." />
+        <x-form.page-header title=""
+            subtitle="Manage consumers and customer complaints." />
 
         {{-- STATISTICS --}}
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

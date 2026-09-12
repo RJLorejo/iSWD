@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class ConsumerAddress extends Model
 {
     protected $fillable = [
+
         'consumer_id',
+
         'house_no',
         'street',
         'purok',
@@ -17,12 +19,34 @@ class ConsumerAddress extends Model
         'zip_code',
     ];
 
+    protected $casts = [
+
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consumer
+    |--------------------------------------------------------------------------
+    */
+
     public function consumer()
     {
-        return $this->belongsTo(Consumer::class);
+        return $this->belongsTo(
+            Consumer::class,
+            'consumer_id'
+        );
     }
 
-    public function getFullAddressAttribute()
+    /*
+    |--------------------------------------------------------------------------
+    | Full Address
+    |--------------------------------------------------------------------------
+    */
+
+    public function getFullAddressAttribute(): string
     {
         return collect([
             $this->house_no,
@@ -31,7 +55,8 @@ class ConsumerAddress extends Model
             $this->barangay,
             $this->municipality,
             $this->province,
-            $this->zip_code,
-        ])->filter()->implode(', ');
+        ])
+            ->filter()
+            ->implode(', ');
     }
 }

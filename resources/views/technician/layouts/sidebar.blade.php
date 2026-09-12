@@ -110,6 +110,31 @@
                 My Complaints
             </span>
 
+            @php
+                $isReturned = \App\Models\MaintenanceReport::where('review_status', 'Returned')->count();
+            @endphp
+
+            @if ($isReturned > 0)
+                <span class="ml-auto px-2 py-0.5 text-xs rounded-full
+                     bg-amber-100 text-amber-700">
+
+                    {{ $isReturned }}
+
+                </span>
+            @endif
+            @php
+                $isAssigned = \App\Models\Complaint::where('status', 'Assigned')->count();
+            @endphp
+
+            @if ($isAssigned > 0)
+                <span class="ml-auto px-2 py-0.5 text-xs rounded-full
+                     bg-amber-100 text-amber-700">
+
+                    {{ $isAssigned }}
+
+                </span>
+            @endif
+
         </a>
 
 

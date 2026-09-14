@@ -292,7 +292,7 @@
 
                         </p>
 
-                        <a href="#" class="text-sky-700 font-semibold">
+                        <a href="{{ route('consumer.login')}}" class="text-sky-700 font-semibold">
 
                             Open Consumer Portal
 

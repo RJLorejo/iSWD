@@ -213,21 +213,21 @@
                                 <td class="px-6 py-4">
 
                                     {{ $report->technician?->first_name }}
-                                    {{ $report->technician?->last_name }}
+                                    {{ $report->technicians?->last_name }}
 
                                 </td>
 
 
                                 <td class="px-6 py-4 text-sm">
 
-                                    {{ $report->complaint?->category?->category_name ?? '—' }}
+                                    {{ $report->complaint?->category?->name ?? '—' }}
 
                                 </td>
 
 
                                 <td class="px-6 py-4 text-sm text-slate-500">
 
-                                    {{ $report->submitted_at ? $report->submitted_at->format('M d, Y h:i A') : '—' }}
+                                    {{ $report->submitted_at ? $report->submitted_at->format('M d, Y h:i A') : 'Not yet submitted' }}
 
                                 </td>
 

@@ -97,22 +97,6 @@
 
         </a>
 
-        <a href="{{ route('complaints.index') }}"
-            class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
-
-            <i class="fa-solid fa-circle-exclamation w-6"></i>
-
-            <span x-show="!sidebarMini">Complaints</span>
-
-        </a>
-
-        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
-
-            <i class="fa-solid fa-book-open w-6"></i>
-
-            <span x-show="!sidebarMini">Knowledge Base</span>
-
-        </a>
 
         <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
 

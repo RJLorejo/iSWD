@@ -136,7 +136,6 @@ class MaintenanceReviewController extends Controller
         $maintenanceReport->load([
             'complaint.consumer',
             'complaint.category',
-            'complaint.technician',
             'technician',
             'reviewer',
         ]);
@@ -162,6 +161,26 @@ class MaintenanceReviewController extends Controller
             ],
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent approval before technician submission
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$maintenanceReport->submitted_at) {
+
+            return back()->with(
+                'error',
+                'This maintenance report cannot be approved because the technician has not submitted it yet.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent approving an already approved report
+        |--------------------------------------------------------------------------
+        */
+
         if ($maintenanceReport->review_status === 'Approved') {
 
             return back()->with(
@@ -184,7 +203,7 @@ class MaintenanceReviewController extends Controller
                 'reviewed_at' => now(),
 
                 'review_remarks' =>
-                $request->review_remarks,
+                    $request->review_remarks,
             ]);
         });
 
@@ -214,8 +233,28 @@ class MaintenanceReviewController extends Controller
             ],
         ], [
             'review_remarks.required' =>
-            'Please provide the reason or corrections required.',
+                'Please provide the reason or corrections required.',
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent returning before technician submission
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$maintenanceReport->submitted_at) {
+
+            return back()->with(
+                'error',
+                'This maintenance report cannot be returned because the technician has not submitted it yet.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent returning an approved report
+        |--------------------------------------------------------------------------
+        */
 
         if ($maintenanceReport->review_status === 'Approved') {
 
@@ -239,7 +278,7 @@ class MaintenanceReviewController extends Controller
                 'reviewed_at' => now(),
 
                 'review_remarks' =>
-                $validated['review_remarks'],
+                    $validated['review_remarks'],
             ]);
         });
 

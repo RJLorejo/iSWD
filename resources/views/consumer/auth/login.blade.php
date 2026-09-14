@@ -67,7 +67,7 @@
                 @endif
 
 
-                <form method="POST" action="{{ route('login') }}" class="space-y-6" x-data="{ loading: false }"
+                <form method="POST" action="{{ route('consumer.login') }}" class="space-y-6" x-data="{ loading: false }"
                     @submit="loading=true">
 
                     @csrf

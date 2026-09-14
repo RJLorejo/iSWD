@@ -46,24 +46,7 @@
 
             </div>
 
-            <div class="flex items-center gap-3">
-
-                {{-- Consumer Portal --}}
-                <a href="{{ route('consumer.login') }}"
-                    class="hidden sm:inline-flex items-center gap-2
-               px-5 py-3
-               rounded-xl
-               border border-sky-200
-               text-sky-700
-               font-semibold
-               hover:bg-sky-50
-               transition">
-
-                    <i class="fas fa-user"></i>
-
-                    Consumer Portal
-
-                </a>
+            <div class="flex items-center">
 
                 {{-- Employee / Staff Login --}}
                 <a href="{{ route('login') }}"

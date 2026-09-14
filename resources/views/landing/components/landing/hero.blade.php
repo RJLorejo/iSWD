@@ -47,25 +47,6 @@
 
                     </a>
 
-                    {{-- Staff Login --}}
-                    <a href="{{ route('login') }}"
-                        class="inline-flex items-center gap-2
-               border
-               text-white
-               text-decoration-none
-               border-white
-               px-8 py-4
-               rounded-xl
-               font-semibold
-               hover:bg-white/10
-               transition">
-
-                        <i class="fas fa-building"></i>
-
-                        Staff Login
-
-                    </a>
-
                     <a href="#features"
                         class="inline-flex items-center gap-2
                border

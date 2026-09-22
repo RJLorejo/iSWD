@@ -11,6 +11,8 @@ use App\Http\Requests\CustomerService\RejectComplaintRequest;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
 use App\Models\Consumer;
+use App\Models\Division;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +29,7 @@ class ComplaintController extends Controller
     {
         $query = Complaint::with([
             'consumer',
+            'division',
             'category',
             'technicians',
             'customerService',
@@ -38,10 +41,9 @@ class ComplaintController extends Controller
         | Search
         |--------------------------------------------------------------------------
         */
-
         if ($request->filled('search')) {
 
-            $search = $request->search;
+            $search = trim($request->search);
 
             $query->where(function ($q) use ($search) {
 
@@ -50,12 +52,6 @@ class ComplaintController extends Controller
                     'like',
                     "%{$search}%"
                 )
-
-                    ->orWhere(
-                        'subject',
-                        'like',
-                        "%{$search}%"
-                    )
 
                     ->orWhere(
                         'description',
@@ -69,25 +65,17 @@ class ComplaintController extends Controller
                         "%{$search}%"
                     )
 
-                    // Walk-in complainant
                     ->orWhere(
                         'complainant_name',
                         'like',
                         "%{$search}%"
                     )
 
-                    ->orWhere(
-                        'complainant_phone',
-                        'like',
-                        "%{$search}%"
-                    )
-
-                    // Registered consumer
                     ->orWhereHas(
                         'consumer',
-                        function ($consumer) use ($search) {
+                        function ($consumerQuery) use ($search) {
 
-                            $consumer
+                            $consumerQuery
                                 ->where(
                                     'first_name',
                                     'like',
@@ -102,21 +90,27 @@ class ComplaintController extends Controller
                                     'consumer_no',
                                     'like',
                                     "%{$search}%"
-                                )
-                                ->orWhere(
-                                    'phone',
-                                    'like',
-                                    "%{$search}%"
                                 );
                         }
                     )
 
-                    // Category
+                    ->orWhereHas(
+                        'division',
+                        function ($divisionQuery) use ($search) {
+
+                            $divisionQuery->where(
+                                'name',
+                                'like',
+                                "%{$search}%"
+                            );
+                        }
+                    )
+
                     ->orWhereHas(
                         'category',
-                        function ($category) use ($search) {
+                        function ($categoryQuery) use ($search) {
 
-                            $category
+                            $categoryQuery
                                 ->where(
                                     'name',
                                     'like',
@@ -150,15 +144,15 @@ class ComplaintController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Priority Filter
+        | Division Filter
         |--------------------------------------------------------------------------
         */
 
-        if ($request->filled('priority')) {
+        if ($request->filled('division_id')) {
 
             $query->where(
-                'priority',
-                $request->priority
+                'division_id',
+                $request->division_id
             );
         }
 
@@ -181,27 +175,38 @@ class ComplaintController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalComplaints = Complaint::count();
+        $totalComplaints =
+            Complaint::count();
 
-        $pendingComplaints = Complaint::where(
-            'status',
-            'Pending'
-        )->count();
+        $pendingComplaints =
+            Complaint::where(
+                'status',
+                'Pending'
+            )->count();
 
-        $inProgressComplaints = Complaint::where(
-            'status',
-            'In Progress'
-        )->count();
+        $inProgressComplaints =
+            Complaint::where(
+                'status',
+                'In Progress'
+            )->count();
 
-        $completedComplaints = Complaint::where(
-            'status',
-            'Completed'
-        )->count();
+        $completedComplaints =
+            Complaint::where(
+                'status',
+                'Completed'
+            )->count();
 
-        $criticalComplaints = Complaint::where(
-            'priority',
-            'Critical'
-        )->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Divisions For Filters
+        |--------------------------------------------------------------------------
+        */
+
+        $divisions = Division::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
 
         return view(
@@ -212,7 +217,7 @@ class ComplaintController extends Controller
                 'pendingComplaints',
                 'inProgressComplaints',
                 'completedComplaints',
-                'criticalComplaints'
+                'divisions'
             )
         );
     }
@@ -226,211 +231,299 @@ class ComplaintController extends Controller
 
     public function create()
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Consumers
+        |--------------------------------------------------------------------------
+        */
+
         $consumers = Consumer::query()
             ->where('is_active', true)
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
 
-        $categories = ComplaintCategory::query()
+
+        /*
+        |--------------------------------------------------------------------------
+        | Divisions + Complaint Types
+        |--------------------------------------------------------------------------
+        */
+
+        $divisions = Division::query()
             ->where('is_active', true)
+            ->with([
+                'complaintTypes' => function ($query) {
+
+                    $query
+                        ->where('is_active', true)
+                        ->orderBy('name');
+                },
+            ])
             ->orderBy('name')
             ->get();
+
 
         return view(
             'customer-service.complaints.create',
             compact(
                 'consumers',
-                'categories'
+                'divisions'
             )
         );
     }
 
+
     /*
-|--------------------------------------------------------------------------
-| STORE
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | STORE
+    |--------------------------------------------------------------------------
+    */
 
     public function store(StoreComplaintRequest $request)
     {
-        DB::transaction(function () use ($request) {
-
-            $photoPath = null;
-
-            /*
+        /*
         |--------------------------------------------------------------------------
-        | Upload Photo
+        | Validated Data
         |--------------------------------------------------------------------------
         */
 
-            if ($request->hasFile('photo')) {
+        $validated =
+            $request->validated();
 
-                $photoPath = $request
-                    ->file('photo')
-                    ->store(
-                        'complaints',
-                        'public'
-                    );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Division
+        |--------------------------------------------------------------------------
+        */
+
+        $division = Division::query()
+            ->where(
+                'id',
+                $validated['division_id']
+            )
+            ->where(
+                'is_active',
+                true
+            )
+            ->firstOrFail();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Complaint Type Belongs To Division
+        |--------------------------------------------------------------------------
+        */
+
+        ComplaintCategory::query()
+            ->where(
+                'id',
+                $validated['complaint_category_id']
+            )
+            ->where(
+                'division_id',
+                $division->id
+            )
+            ->where(
+                'is_active',
+                true
+            )
+            ->firstOrFail();
+
+
+        DB::transaction(
+            function () use (
+                $request,
+                $validated,
+                $division
+            ) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Photo
+                |--------------------------------------------------------------------------
+                */
+
+                $photoPath = null;
+
+                if ($request->hasFile('photo')) {
+
+                    $photoPath = $request
+                        ->file('photo')
+                        ->store(
+                            'complaints',
+                            'public'
+                        );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Determine Complainant
+                |--------------------------------------------------------------------------
+                */
+
+                $complainantType =
+                    $validated['complainant_type'];
+
+                $consumerId = null;
+
+                $complainantName = null;
+
+                $complainantPhone = null;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Registered Consumer
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $complainantType ===
+                    'registered'
+                ) {
+
+                    $consumerId =
+                        $validated['consumer_id'];
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Walk-in Complainant
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $complainantType ===
+                    'walk_in'
+                ) {
+
+                    $complainantName =
+                        $validated['complainant_name'];
+
+                    $complainantPhone =
+                        $validated['complainant_phone'] ?? null;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Create Complaint
+                |--------------------------------------------------------------------------
+                */
+
+                Complaint::create([
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Complaint Number
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'complaint_no' =>
+                    Complaint::generateComplaintNo(),
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Complainant
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'consumer_id' =>
+                    $consumerId,
+
+                    'complainant_name' =>
+                    $complainantName,
+
+                    'complainant_phone' =>
+                    $complainantPhone,
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Classification
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'division_id' =>
+                    $division->id,
+
+                    'complaint_category_id' =>
+                    $validated['complaint_category_id'],
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Workflow
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'status' =>
+                    'Pending',
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Customer Service
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'customer_service_id' =>
+                    auth()->id(),
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Complaint Information
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'description' =>
+                    $validated['description'],
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Location
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'address' =>
+                    $validated['address'],
+
+                    'landmark' =>
+                    $validated['landmark']
+                        ?? null,
+
+                    /*
+                    | Coordinates remain stored in the database.
+                    | They are hidden from the Customer Service UI.
+                    */
+
+                    'latitude' =>
+                    $validated['latitude']
+                        ?? null,
+
+                    'longitude' =>
+                    $validated['longitude']
+                        ?? null,
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Evidence
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'photo' =>
+                    $photoPath,
+                ]);
             }
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Determine Complainant
-        |--------------------------------------------------------------------------
-        */
-
-            $complainantType = $request->input(
-                'complainant_type'
-            );
-
-            $consumerId = null;
-
-            $complainantName = null;
-
-            $complainantPhone = null;
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Registered Consumer
-        |--------------------------------------------------------------------------
-        */
-
-            if ($complainantType === 'registered') {
-
-                $consumerId = $request->input(
-                    'consumer_id'
-                );
-            }
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Walk-in Complainant
-        |--------------------------------------------------------------------------
-        */
-
-            if ($complainantType === 'walk_in') {
-
-                $complainantName =
-                    $request->input(
-                        'complainant_name'
-                    );
-
-                $complainantPhone =
-                    $request->input(
-                        'complainant_phone'
-                    );
-            }
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Create Complaint
-        |--------------------------------------------------------------------------
-        */
-
-            Complaint::create([
-
-                /*
-            |--------------------------------------------------------------------------
-            | Complaint Number
-            |--------------------------------------------------------------------------
-            */
-
-                'complaint_no' =>
-                Complaint::generateComplaintNo(),
-
-                /*
-            |--------------------------------------------------------------------------
-            | Complainant
-            |--------------------------------------------------------------------------
-            */
-
-                'consumer_id' =>
-                $consumerId,
-
-                'complainant_name' =>
-                $complainantName,
-
-                'complainant_phone' =>
-                $complainantPhone,
-
-                /*
-            |--------------------------------------------------------------------------
-            | Classification
-            |--------------------------------------------------------------------------
-            */
-
-                'complaint_category_id' =>
-                $request->complaint_category_id,
-
-                'priority' =>
-                $request->priority,
-
-                /*
-            |--------------------------------------------------------------------------
-            | Workflow
-            |--------------------------------------------------------------------------
-            */
-
-                'status' =>
-                'Pending',
-
-                'technicians' =>
-                null,
-
-                /*
-            |--------------------------------------------------------------------------
-            | Customer Service
-            |--------------------------------------------------------------------------
-            */
-
-                'customer_service_id' =>
-                auth()->id(),
-
-                /*
-            |--------------------------------------------------------------------------
-            | Complaint Information
-            |--------------------------------------------------------------------------
-            */
-
-                'subject' =>
-                $request->subject,
-
-                'description' =>
-                $request->description,
-
-                /*
-            |--------------------------------------------------------------------------
-            | Location
-            |--------------------------------------------------------------------------
-            */
-
-                'address' =>
-                $request->address,
-
-                'landmark' =>
-                $request->landmark,
-
-                'latitude' =>
-                $request->latitude,
-
-                'longitude' =>
-                $request->longitude,
-
-                /*
-            |--------------------------------------------------------------------------
-            | Evidence
-            |--------------------------------------------------------------------------
-            */
-
-                'photo' =>
-                $photoPath,
-            ]);
-        });
+        );
 
 
         return redirect()
@@ -443,22 +536,26 @@ class ComplaintController extends Controller
             );
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | SHOW
     |--------------------------------------------------------------------------
     */
 
-    public function show(Complaint $complaint)
-    {
+    public function show(
+        Complaint $complaint
+    ) {
         $complaint->load([
             'consumer',
+            'division',
             'category',
             'technicians',
             'customerService',
             'verifier',
             'maintenanceReport',
         ]);
+
 
         return view(
             'customer-service.complaints.show',
@@ -473,194 +570,304 @@ class ComplaintController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function edit(Complaint $complaint)
-    {
+    public function edit(
+        Complaint $complaint
+    ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Consumers
+        |--------------------------------------------------------------------------
+        */
+
         $consumers = Consumer::query()
             ->where('is_active', true)
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
 
-        $categories = ComplaintCategory::query()
+
+        /*
+        |--------------------------------------------------------------------------
+        | Divisions + Complaint Types
+        |--------------------------------------------------------------------------
+        */
+
+        $divisions = Division::query()
             ->where('is_active', true)
+            ->with([
+                'complaintTypes' =>
+                function ($query) {
+
+                    $query
+                        ->where(
+                            'is_active',
+                            true
+                        )
+                        ->orderBy('name');
+                },
+            ])
             ->orderBy('name')
             ->get();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Complaint Relationships
+        |--------------------------------------------------------------------------
+        */
+
         $complaint->load([
             'consumer',
+            'division',
             'category',
             'technicians',
             'customerService',
             'verifier',
         ]);
 
+
         return view(
             'customer-service.complaints.edit',
             compact(
                 'complaint',
                 'consumers',
-                'categories'
+                'divisions'
             )
         );
     }
+
+
     /*
-|--------------------------------------------------------------------------
-| UPDATE
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | UPDATE
+    |--------------------------------------------------------------------------
+    */
 
     public function update(
         UpdateComplaintRequest $request,
         Complaint $complaint
     ) {
-
-        DB::transaction(function () use (
-            $request,
-            $complaint
-        ) {
-
-            /*
+        /*
         |--------------------------------------------------------------------------
-        | Determine Complainant
+        | Validated Data
         |--------------------------------------------------------------------------
         */
 
-            $complainantType =
-                $request->input('complainant_type');
-
-            $consumerId = null;
-
-            $complainantName = null;
-
-            $complainantPhone = null;
+        $validated =
+            $request->validated();
 
 
-            /*
+        /*
         |--------------------------------------------------------------------------
-        | Registered Consumer
+        | Verify Division
         |--------------------------------------------------------------------------
         */
 
-            if ($complainantType === 'registered') {
+        $division = Division::query()
+            ->where(
+                'id',
+                $validated['division_id']
+            )
+            ->where(
+                'is_active',
+                true
+            )
+            ->firstOrFail();
 
-                $consumerId =
-                    $request->input('consumer_id');
-            }
 
-
-            /*
+        /*
         |--------------------------------------------------------------------------
-        | Walk-in Complainant
-        |--------------------------------------------------------------------------
-        */
-
-            if ($complainantType === 'walk_in') {
-
-                $complainantName =
-                    $request->input(
-                        'complainant_name'
-                    );
-
-                $complainantPhone =
-                    $request->input(
-                        'complainant_phone'
-                    );
-            }
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Complaint Data
+        | Verify Complaint Type Belongs To Division
         |--------------------------------------------------------------------------
         */
 
-            $data = [
+        ComplaintCategory::query()
+            ->where(
+                'id',
+                $validated['complaint_category_id']
+            )
+            ->where(
+                'division_id',
+                $division->id
+            )
+            ->where(
+                'is_active',
+                true
+            )
+            ->firstOrFail();
+
+
+        DB::transaction(
+            function () use (
+                $request,
+                $validated,
+                $complaint,
+                $division
+            ) {
 
                 /*
-            |--------------------------------------------------------------------------
-            | Complainant
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Determine Complainant
+                |--------------------------------------------------------------------------
+                */
 
-                'consumer_id' =>
-                $consumerId,
+                $complainantType =
+                    $validated['complainant_type'];
 
-                'complainant_name' =>
-                $complainantName,
+                $consumerId = null;
 
-                'complainant_phone' =>
-                $complainantPhone,
+                $complainantName = null;
 
-                /*
-            |--------------------------------------------------------------------------
-            | Classification
-            |--------------------------------------------------------------------------
-            */
+                $complainantPhone = null;
 
-                'complaint_category_id' =>
-                $request->complaint_category_id,
-
-                'priority' =>
-                $request->priority,
 
                 /*
-            |--------------------------------------------------------------------------
-            | Complaint Information
-            |--------------------------------------------------------------------------
-            */
-
-                'subject' =>
-                $request->subject,
-
-                'description' =>
-                $request->description,
-
-                /*
-            |--------------------------------------------------------------------------
-            | Location
-            |--------------------------------------------------------------------------
-            */
-
-                'address' =>
-                $request->address,
-
-                'landmark' =>
-                $request->landmark,
-
-                'latitude' =>
-                $request->latitude,
-
-                'longitude' =>
-                $request->longitude,
-            ];
-
-            if ($request->hasFile('photo')) {
+                |--------------------------------------------------------------------------
+                | Registered Consumer
+                |--------------------------------------------------------------------------
+                */
 
                 if (
-                    $complaint->photo &&
-                    Storage::disk('public')->exists(
-                        $complaint->photo
-                    )
+                    $complainantType ===
+                    'registered'
                 ) {
 
-                    Storage::disk('public')->delete(
-                        $complaint->photo
-                    );
+                    $consumerId =
+                        $validated['consumer_id'];
                 }
 
 
-                $data['photo'] =
-                    $request
-                    ->file('photo')
-                    ->store(
-                        'complaints',
-                        'public'
-                    );
+                /*
+                |--------------------------------------------------------------------------
+                | Walk-in Complainant
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $complainantType ===
+                    'walk_in'
+                ) {
+
+                    $complainantName =
+                        $validated['complainant_name'];
+
+                    $complainantPhone =
+                        $validated['complainant_phone'] ?? null;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Complaint Data
+                |--------------------------------------------------------------------------
+                */
+
+                $data = [
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Complainant
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'consumer_id' =>
+                    $consumerId,
+
+                    'complainant_name' =>
+                    $complainantName,
+
+                    'complainant_phone' =>
+                    $complainantPhone,
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Classification
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'division_id' =>
+                    $division->id,
+
+                    'complaint_category_id' =>
+                    $validated['complaint_category_id'],
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Complaint Information
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'description' =>
+                    $validated['description'],
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Location
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'address' =>
+                    $validated['address'],
+
+                    'landmark' =>
+                    $validated['landmark']
+                        ?? null,
+
+                    'latitude' =>
+                    $validated['latitude']
+                        ?? null,
+
+                    'longitude' =>
+                    $validated['longitude']
+                        ?? null,
+                ];
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Replace Photo
+                |--------------------------------------------------------------------------
+                */
+
+                if ($request->hasFile('photo')) {
+
+                    if (
+                        $complaint->photo &&
+                        Storage::disk('public')
+                        ->exists(
+                            $complaint->photo
+                        )
+                    ) {
+
+                        Storage::disk('public')
+                            ->delete(
+                                $complaint->photo
+                            );
+                    }
+
+
+                    $data['photo'] =
+                        $request
+                        ->file('photo')
+                        ->store(
+                            'complaints',
+                            'public'
+                        );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Update
+                |--------------------------------------------------------------------------
+                */
+
+                $complaint->update($data);
             }
-
-
-            $complaint->update($data);
-        });
+        );
 
 
         return redirect()
@@ -674,15 +881,18 @@ class ComplaintController extends Controller
             );
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | DELETE
     |--------------------------------------------------------------------------
     */
 
-    public function destroy(Complaint $complaint)
-    {
+    public function destroy(
+        Complaint $complaint
+    ) {
         $complaint->delete();
+
 
         return redirect()
             ->route(
@@ -705,8 +915,16 @@ class ComplaintController extends Controller
         VerifyComplaintRequest $request,
         Complaint $complaint
     ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Only Pending Complaints
+        |--------------------------------------------------------------------------
+        */
 
-        if ($complaint->status !== 'Pending') {
+        if (
+            $complaint->status !==
+            'Pending'
+        ) {
 
             return back()->with(
                 'error',
@@ -715,26 +933,29 @@ class ComplaintController extends Controller
         }
 
 
-        DB::transaction(function () use (
-            $request,
-            $complaint
-        ) {
+        DB::transaction(
+            function () use (
+                $request,
+                $complaint
+            ) {
 
-            $complaint->update([
+                $complaint->update([
 
-                'status' =>
-                'Verified',
+                    'status' =>
+                    'Verified',
 
-                'verified_by' =>
-                auth()->id(),
+                    'verified_by' =>
+                    auth()->id(),
 
-                'verified_at' =>
-                now(),
+                    'verified_at' =>
+                    now(),
 
-                'verification_reason' =>
-                $request->verification_reason,
-            ]);
-        });
+                    'verification_reason' =>
+                    $request
+                        ->verification_reason,
+                ]);
+            }
+        );
 
 
         return redirect()
@@ -759,8 +980,16 @@ class ComplaintController extends Controller
         RejectComplaintRequest $request,
         Complaint $complaint
     ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Only Pending Complaints
+        |--------------------------------------------------------------------------
+        */
 
-        if ($complaint->status !== 'Pending') {
+        if (
+            $complaint->status !==
+            'Pending'
+        ) {
 
             return back()->with(
                 'error',
@@ -769,26 +998,29 @@ class ComplaintController extends Controller
         }
 
 
-        DB::transaction(function () use (
-            $request,
-            $complaint
-        ) {
+        DB::transaction(
+            function () use (
+                $request,
+                $complaint
+            ) {
 
-            $complaint->update([
+                $complaint->update([
 
-                'status' =>
-                'Rejected',
+                    'status' =>
+                    'Rejected',
 
-                'verified_by' =>
-                auth()->id(),
+                    'verified_by' =>
+                    auth()->id(),
 
-                'verified_at' =>
-                now(),
+                    'verified_at' =>
+                    now(),
 
-                'verification_reason' =>
-                $request->verification_reason,
-            ]);
-        });
+                    'verification_reason' =>
+                    $request
+                        ->verification_reason,
+                ]);
+            }
+        );
 
 
         return redirect()

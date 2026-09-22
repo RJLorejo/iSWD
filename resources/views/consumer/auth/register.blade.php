@@ -4,11 +4,15 @@
 
 @section('content')
 
-    <div class="min-h-screen bg-slate-50 py-12 px-6">
+    <div class="min-h-screen bg-slate-50 py-12 px-4 sm:px-6">
 
         <div class="max-w-4xl mx-auto">
 
-            {{-- Header --}}
+
+            {{-- ========================================================= --}}
+            {{-- HEADER --}}
+            {{-- ========================================================= --}}
+
             <div class="text-center mb-10">
 
                 <a href="{{ route('landing') }}" class="inline-flex items-center gap-3">
@@ -21,7 +25,7 @@
                             iSWD
                         </h1>
 
-                        <p class="text-xs text-gray-500">
+                        <p class="text-xs text-slate-500">
                             Sagay Water District
                         </p>
 
@@ -29,29 +33,90 @@
 
                 </a>
 
+
                 <h2 class="mt-8 text-3xl font-bold text-slate-800">
                     Create Consumer Account
                 </h2>
 
                 <p class="mt-2 text-slate-500 max-w-2xl mx-auto">
-
                     Register your water service account to submit and monitor
                     complaints through the iSWD Consumer Portal.
-
                 </p>
+
+
+                {{-- Verification Notice --}}
+
+                <div
+                    class="mt-6 max-w-2xl mx-auto
+                           rounded-2xl border border-amber-200
+                           bg-amber-50 px-5 py-4">
+
+                    <div class="flex items-start gap-3 text-left">
+
+                        <div
+                            class="w-10 h-10 rounded-xl
+                                   bg-amber-100
+                                   flex items-center justify-center
+                                   shrink-0">
+
+                            <i class="fa-solid fa-shield-halved
+                                       text-amber-600"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <p class="text-sm font-semibold text-amber-900">
+                                Account Verification Required
+                            </p>
+
+                            <p class="text-sm text-amber-800 mt-1 leading-6">
+                                Your registration will be reviewed by
+                                Sagay Water District before your online
+                                account is activated.
+                            </p>
+
+                            <p class="text-xs text-amber-700 mt-2 leading-5">
+                                Enter the account number and registered
+                                consumer name exactly as they appear in
+                                Sagay Water District records.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
 
-            {{-- Validation Summary --}}
+            {{-- ========================================================= --}}
+            {{-- VALIDATION ERRORS --}}
+            {{-- ========================================================= --}}
+
             @if ($errors->any())
 
-                <div class="mb-6 bg-red-50 border border-red-200
-                        rounded-2xl p-5">
+                <div
+                    class="mb-6 rounded-2xl
+                           border border-red-200
+                           bg-red-50 p-5">
 
-                    <div class="flex gap-3">
+                    <div class="flex items-start gap-3">
 
-                        <i class="fas fa-circle-exclamation text-red-600 mt-1"></i>
+                        <div
+                            class="w-10 h-10 rounded-xl
+                                   bg-red-100
+                                   flex items-center justify-center
+                                   shrink-0">
+
+                            <i
+                                class="fa-solid fa-circle-exclamation
+                                       text-red-600"></i>
+
+                        </div>
+
 
                         <div>
 
@@ -59,8 +124,10 @@
                                 Please check the following:
                             </h3>
 
-                            <ul class="mt-2 list-disc list-inside
-                                   text-sm text-red-700">
+                            <ul
+                                class="mt-2 list-disc list-inside
+                                       text-sm text-red-700
+                                       space-y-1">
 
                                 @foreach ($errors->all() as $error)
                                     <li>
@@ -79,55 +146,102 @@
             @endif
 
 
-            {{-- Registration Card --}}
-            <div class="bg-white rounded-3xl shadow-lg border
-                    border-slate-200 overflow-hidden">
+            {{-- ========================================================= --}}
+            {{-- REGISTRATION CARD --}}
+            {{-- ========================================================= --}}
 
-                <form method="POST" action="{{ route('consumer.register.store') }}" class="..." x-data="{ loading: false }"
-                    @submit="loading=true">
+            <div
+                class="bg-white rounded-3xl
+                       shadow-lg border border-slate-200
+                       overflow-hidden">
+
+                <form method="POST" action="{{ route('consumer.register.store') }}" x-data="{ loading: false }"
+                    @submit="loading = true">
 
                     @csrf
 
 
+                    {{-- ================================================= --}}
+                    {{-- WATER SERVICE ACCOUNT --}}
+                    {{-- ================================================= --}}
 
-                    {{-- Account Information --}}
-                    <div class="p-8 border-b">
+                    <div class="p-6 sm:p-8 border-b border-slate-200">
 
                         <div class="mb-6">
 
-                            <h3 class="text-xl font-bold text-slate-800">
+                            <div class="flex items-center gap-3">
 
-                                Water Service Account
+                                <div
+                                    class="w-10 h-10 rounded-xl
+                                           bg-sky-100 text-sky-700
+                                           flex items-center justify-center">
 
-                            </h3>
+                                    <i class="fa-solid fa-droplet"></i>
 
-                            <p class="text-sm text-slate-500 mt-1">
+                                </div>
 
-                                Use the account number shown on your water bill.
+                                <div>
 
-                            </p>
+                                    <h3 class="text-xl font-bold text-slate-800">
+                                        Water Service Account
+                                    </h3>
+
+                                    <p class="text-sm text-slate-500 mt-1">
+                                        Use the account number shown on your
+                                        Sagay Water District bill.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
                         </div>
+
 
                         <div>
 
                             <label for="account_number"
                                 class="block text-sm font-semibold
-                                   text-slate-700 mb-2">
-                                Account Number <span class="text-red-500">*</span>
+                                       text-slate-700 mb-2">
+
+                                Account Number
+
+                                <span class="text-red-500">
+                                    *
+                                </span>
+
                             </label>
 
+
                             <input id="account_number" type="text" name="account_number"
-                                value="{{ old('account_number') }}" required
-                                class="w-full rounded-xl border-slate-300
-                                   focus:border-sky-500
-                                   focus:ring-sky-500
-                                   px-4 py-3"
-                                placeholder="Enter your water account number">
+                                value="{{ old('account_number') }}" required autocomplete="off"
+                                class="w-full rounded-xl
+                                       border-slate-300
+                                       focus:border-sky-500
+                                       focus:ring-sky-500
+                                       px-4 py-3
+                                       @error('account_number')
+                                           border-red-400
+                                       @enderror"
+                                placeholder="Example: 14D-122-120">
 
-                            <p class="mt-2 text-xs text-slate-500">
 
-                                This helps identify your water service account.
+                            @error('account_number')
+                                <p class="mt-2 text-sm text-red-600">
+
+                                    <i class="fa-solid fa-circle-exclamation mr-1"></i>
+
+                                    {{ $message }}
+
+                                </p>
+                            @enderror
+
+
+                            <p class="mt-2 text-xs text-slate-500 leading-5">
+
+                                Enter the account number exactly as shown on
+                                your water bill. This will be checked during
+                                account verification.
 
                             </p>
 
@@ -136,112 +250,176 @@
                     </div>
 
 
-                    {{-- Personal Information --}}
-                    <div class="p-8 border-b">
+                    {{-- ================================================= --}}
+                    {{-- PERSONAL INFORMATION --}}
+                    {{-- ================================================= --}}
+
+                    <div class="p-6 sm:p-8 border-b border-slate-200">
 
                         <div class="mb-6">
 
-                            <h3 class="text-xl font-bold text-slate-800">
-                                Personal Information
-                            </h3>
+                            <div class="flex items-center gap-3">
 
-                            <p class="text-sm text-slate-500 mt-1">
-                                Enter the information associated with your water service account.
-                            </p>
+                                <div
+                                    class="w-10 h-10 rounded-xl
+                                           bg-sky-100 text-sky-700
+                                           flex items-center justify-center">
+
+                                    <i class="fa-solid fa-user"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h3 class="text-xl font-bold text-slate-800">
+                                        Personal Information
+                                    </h3>
+
+                                    <p class="text-sm text-slate-500 mt-1">
+                                        Enter the registered account holder's
+                                        information exactly as recorded by
+                                        Sagay Water District.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
+
                         <div class="grid md:grid-cols-2 gap-6">
 
+
                             {{-- First Name --}}
+
                             <div>
 
                                 <label for="first_name"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
-                                    First Name <span class="text-red-500">*</span>
+                                           text-slate-700 mb-2">
+
+                                    First Name
+
+                                    <span class="text-red-500">*</span>
+
                                 </label>
 
                                 <input id="first_name" type="text" name="first_name" value="{{ old('first_name') }}"
                                     required
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3
+                                           @error('first_name')
+                                               border-red-400
+                                           @enderror">
+
+                                @error('first_name')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
 
                             </div>
 
 
                             {{-- Middle Name --}}
+
                             <div>
 
                                 <label for="middle_name"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     Middle Name
                                 </label>
 
                                 <input id="middle_name" type="text" name="middle_name" value="{{ old('middle_name') }}"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
 
                             </div>
 
 
                             {{-- Last Name --}}
+
                             <div>
 
                                 <label for="last_name"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
-                                    Last Name <span class="text-red-500">*</span>
+                                           text-slate-700 mb-2">
+
+                                    Last Name
+
+                                    <span class="text-red-500">*</span>
+
                                 </label>
 
                                 <input id="last_name" type="text" name="last_name" value="{{ old('last_name') }}"
                                     required
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3
+                                           @error('last_name')
+                                               border-red-400
+                                           @enderror">
+
+                                @error('last_name')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
 
                             </div>
 
 
                             {{-- Suffix --}}
+
                             <div>
 
                                 <label for="suffix"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     Suffix
                                 </label>
 
                                 <input id="suffix" type="text" name="suffix" value="{{ old('suffix') }}"
                                     placeholder="Jr., Sr., III"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
 
                             </div>
 
 
                             {{-- Sex --}}
+
                             <div>
 
                                 <label for="sex"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
-                                    Sex <span class="text-red-500">*</span>
+                                           text-slate-700 mb-2">
+
+                                    Sex
+
+                                    <span class="text-red-500">*</span>
+
                                 </label>
 
                                 <select id="sex" name="sex" required
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
 
                                     <option value="">
                                         Select sex
@@ -257,6 +435,12 @@
 
                                 </select>
 
+                                @error('sex')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
                             </div>
 
                         </div>
@@ -264,57 +448,106 @@
                     </div>
 
 
-                    {{-- Contact Information --}}
-                    <div class="p-8 border-b">
+                    {{-- ================================================= --}}
+                    {{-- CONTACT INFORMATION --}}
+                    {{-- ================================================= --}}
+
+                    <div class="p-6 sm:p-8 border-b border-slate-200">
 
                         <div class="mb-6">
 
-                            <h3 class="text-xl font-bold text-slate-800">
-                                Contact Information
-                            </h3>
+                            <div class="flex items-center gap-3">
 
-                            <p class="text-sm text-slate-500 mt-1">
-                                Used for account access and complaint updates.
-                            </p>
+                                <div
+                                    class="w-10 h-10 rounded-xl
+                                           bg-sky-100 text-sky-700
+                                           flex items-center justify-center">
+
+                                    <i class="fa-solid fa-address-book"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h3 class="text-xl font-bold text-slate-800">
+                                        Contact Information
+                                    </h3>
+
+                                    <p class="text-sm text-slate-500 mt-1">
+                                        Used for portal access and account updates.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
+
                         <div class="grid md:grid-cols-2 gap-6">
 
+
                             {{-- Phone --}}
+
                             <div>
 
                                 <label for="phone"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
-                                    Mobile Number <span class="text-red-500">*</span>
+                                           text-slate-700 mb-2">
+
+                                    Mobile Number
+
+                                    <span class="text-red-500">*</span>
+
                                 </label>
 
-                                <input id="phone" type="text" name="phone" value="{{ old('phone') }}" required
-                                    placeholder="09XXXXXXXXX"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                <input id="phone" type="text" name="phone" value="{{ old('phone') }}"
+                                    required placeholder="09XXXXXXXXX"
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
+
+                                @error('phone')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
 
                             </div>
 
 
                             {{-- Email --}}
+
                             <div>
 
                                 <label for="email"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
-                                    Email Address <span class="text-red-500">*</span>
+                                           text-slate-700 mb-2">
+
+                                    Email Address
+
+                                    <span class="text-red-500">*</span>
+
                                 </label>
 
                                 <input id="email" type="email" name="email" value="{{ old('email') }}"
-                                    required placeholder="you@example.com"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    required autocomplete="email" placeholder="you@example.com"
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3
+                                           @error('email')
+                                               border-red-400
+                                           @enderror">
+
+                                @error('email')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
 
                             </div>
 
@@ -323,129 +556,173 @@
                     </div>
 
 
-                    {{-- Address --}}
-                    <div class="p-8 border-b">
+                    {{-- ================================================= --}}
+                    {{-- SERVICE ADDRESS --}}
+                    {{-- ================================================= --}}
+
+                    <div class="p-6 sm:p-8 border-b border-slate-200">
 
                         <div class="mb-6">
 
-                            <h3 class="text-xl font-bold text-slate-800">
-                                Service Address
-                            </h3>
+                            <div class="flex items-center gap-3">
 
-                            <p class="text-sm text-slate-500 mt-1">
-                                Provide the location of the registered water service.
-                            </p>
+                                <div
+                                    class="w-10 h-10 rounded-xl
+                                           bg-sky-100 text-sky-700
+                                           flex items-center justify-center">
+
+                                    <i class="fa-solid fa-location-dot"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h3 class="text-xl font-bold text-slate-800">
+                                        Service Address
+                                    </h3>
+
+                                    <p class="text-sm text-slate-500 mt-1">
+                                        Provide the location of the registered
+                                        water service.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
+
                         <div class="grid md:grid-cols-2 gap-6">
 
-                            {{-- House --}}
+
+                            {{-- House Number --}}
+
                             <div>
 
                                 <label for="house_no"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     House / Building No.
                                 </label>
 
                                 <input id="house_no" type="text" name="house_no" value="{{ old('house_no') }}"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
 
                             </div>
 
 
                             {{-- Street --}}
+
                             <div>
 
                                 <label for="street"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     Street
                                 </label>
 
                                 <input id="street" type="text" name="street" value="{{ old('street') }}"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
 
                             </div>
 
 
                             {{-- Purok --}}
+
                             <div>
 
                                 <label for="purok"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     Purok
                                 </label>
 
                                 <input id="purok" type="text" name="purok" value="{{ old('purok') }}"
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
 
                             </div>
 
 
                             {{-- Barangay --}}
+
                             <div>
 
                                 <label for="barangay"
                                     class="block text-sm font-semibold
-                                       text-slate-700 mb-2">
-                                    Barangay <span class="text-red-500">*</span>
+                                           text-slate-700 mb-2">
+
+                                    Barangay
+
+                                    <span class="text-red-500">*</span>
+
                                 </label>
 
                                 <input id="barangay" type="text" name="barangay" value="{{ old('barangay') }}"
-                                    required
-                                    class="w-full rounded-xl border-slate-300
-                                       focus:border-sky-500
-                                       focus:ring-sky-500
-                                       px-4 py-3"
-                                    placeholder="Barangay">
+                                    required placeholder="Barangay"
+                                    class="w-full rounded-xl
+                                           border-slate-300
+                                           focus:border-sky-500
+                                           focus:ring-sky-500
+                                           px-4 py-3">
+
+                                @error('barangay')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
 
                             </div>
 
 
-                            {{-- Municipality --}}
+                            {{-- City --}}
+
                             <div>
 
                                 <label
                                     class="block text-sm font-semibold
-                                          text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     Municipality / City
                                 </label>
 
                                 <input type="text" value="Sagay City" disabled
-                                    class="w-full rounded-xl border-slate-200
-                                       bg-slate-100
-                                       text-slate-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-200
+                                           bg-slate-100
+                                           text-slate-500
+                                           px-4 py-3">
 
                             </div>
 
 
                             {{-- Province --}}
+
                             <div>
 
                                 <label
                                     class="block text-sm font-semibold
-                                          text-slate-700 mb-2">
+                                           text-slate-700 mb-2">
                                     Province
                                 </label>
 
                                 <input type="text" value="Negros Occidental" disabled
-                                    class="w-full rounded-xl border-slate-200
-                                       bg-slate-100
-                                       text-slate-500
-                                       px-4 py-3">
+                                    class="w-full rounded-xl
+                                           border-slate-200
+                                           bg-slate-100
+                                           text-slate-500
+                                           px-4 py-3">
 
                             </div>
 
@@ -454,51 +731,99 @@
                     </div>
 
 
-                    {{-- Password --}}
-                    <div class="p-8 border-b">
+                    {{-- ================================================= --}}
+                    {{-- ACCOUNT SECURITY --}}
+                    {{-- ================================================= --}}
+
+                    <div class="p-6 sm:p-8 border-b border-slate-200">
 
                         <div class="mb-6">
 
-                            <h3 class="text-xl font-bold text-slate-800">
-                                Account Security
-                            </h3>
+                            <div class="flex items-center gap-3">
+
+                                <div
+                                    class="w-10 h-10 rounded-xl
+                                           bg-sky-100 text-sky-700
+                                           flex items-center justify-center">
+
+                                    <i class="fa-solid fa-lock"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h3 class="text-xl font-bold text-slate-800">
+                                        Account Security
+                                    </h3>
+
+                                    <p class="text-sm text-slate-500 mt-1">
+                                        Create the password you will use after
+                                        your registration has been approved.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
+
                         <div class="grid md:grid-cols-2 gap-6">
 
+
                             {{-- Password --}}
+
                             <div>
 
-                                <label for="password" class="block text-sm font-semibold text-slate-700 mb-2">
+                                <label for="password"
+                                    class="block text-sm font-semibold
+                                           text-slate-700 mb-2">
 
-                                    Password <span class="text-red-500">*</span>
+                                    Password
+
+                                    <span class="text-red-500">*</span>
 
                                 </label>
+
 
                                 <div class="relative">
 
                                     <input id="password" type="password" name="password" required
                                         autocomplete="new-password"
-                                        class="w-full rounded-xl border border-slate-300
-                       focus:border-sky-500
-                       focus:ring-sky-500
-                       px-4 py-3 pr-12"
+                                        class="w-full rounded-xl
+                                               border border-slate-300
+                                               focus:border-sky-500
+                                               focus:ring-sky-500
+                                               px-4 py-3 pr-12"
                                         placeholder="Minimum 8 characters">
 
-                                    <button type="button" onclick="togglePassword('password', 'passwordEye')"
+
+                                    <button type="button"
+                                        onclick="
+                                            togglePassword(
+                                                'password',
+                                                'passwordEye'
+                                            )
+                                        "
                                         class="absolute inset-y-0 right-0
-                       flex items-center px-4
-                       text-slate-400
-                       hover:text-sky-600
-                       transition"
+                                               flex items-center px-4
+                                               text-slate-400
+                                               hover:text-sky-600
+                                               transition"
                                         aria-label="Show password">
 
-                                        <i id="passwordEye" class="fas fa-eye"></i>
+                                        <i id="passwordEye" class="fa-solid fa-eye"></i>
 
                                     </button>
 
                                 </div>
+
+
+                                <p class="mt-2 text-xs text-slate-500">
+                                    Use at least 8 characters with uppercase,
+                                    lowercase, and a number.
+                                </p>
+
 
                                 @error('password')
                                     <p class="mt-2 text-sm text-red-600">
@@ -509,49 +834,52 @@
                             </div>
 
 
-                            {{-- Confirm Password --}}
+                            {{-- Password Confirmation --}}
+
                             <div>
 
                                 <label for="password_confirmation"
-                                    class="block text-sm font-semibold text-slate-700 mb-2">
+                                    class="block text-sm font-semibold
+                                           text-slate-700 mb-2">
 
-                                    Confirm Password <span class="text-red-500">*</span>
+                                    Confirm Password
+
+                                    <span class="text-red-500">*</span>
 
                                 </label>
+
 
                                 <div class="relative">
 
                                     <input id="password_confirmation" type="password" name="password_confirmation"
                                         required autocomplete="new-password"
-                                        class="w-full rounded-xl border border-slate-300
-                       focus:border-sky-500
-                       focus:ring-sky-500
-                       px-4 py-3 pr-12"
+                                        class="w-full rounded-xl
+                                               border border-slate-300
+                                               focus:border-sky-500
+                                               focus:ring-sky-500
+                                               px-4 py-3 pr-12"
                                         placeholder="Repeat your password">
 
+
                                     <button type="button"
-                                        onclick="togglePassword(
-                    'password_confirmation',
-                    'passwordConfirmationEye'
-                )"
+                                        onclick="
+                                            togglePassword(
+                                                'password_confirmation',
+                                                'passwordConfirmationEye'
+                                            )
+                                        "
                                         class="absolute inset-y-0 right-0
-                       flex items-center px-4
-                       text-slate-400
-                       hover:text-sky-600
-                       transition"
+                                               flex items-center px-4
+                                               text-slate-400
+                                               hover:text-sky-600
+                                               transition"
                                         aria-label="Show password">
 
-                                        <i id="passwordConfirmationEye" class="fas fa-eye"></i>
+                                        <i id="passwordConfirmationEye" class="fa-solid fa-eye"></i>
 
                                     </button>
 
                                 </div>
-
-                                @error('password_confirmation')
-                                    <p class="mt-2 text-sm text-red-600">
-                                        {{ $message }}
-                                    </p>
-                                @enderror
 
                             </div>
 
@@ -560,73 +888,176 @@
                     </div>
 
 
-                    {{-- Terms --}}
-                    <div class="p-8">
+                    {{-- ================================================= --}}
+                    {{-- TERMS AND SUBMIT --}}
+                    {{-- ================================================= --}}
 
-                        <label class="flex items-start gap-3">
+                    <div class="p-6 sm:p-8">
 
-                            <input type="checkbox" name="terms" value="1" required
+                        <label class="flex items-start gap-3
+                                   cursor-pointer">
+
+                            <input type="checkbox" name="terms" value="1" required @checked(old('terms'))
                                 class="mt-1 rounded
-                                   border-slate-300
-                                   text-sky-600
-                                   focus:ring-sky-500">
+                                       border-slate-300
+                                       text-sky-600
+                                       focus:ring-sky-500">
 
-                            <span class="text-sm text-slate-600 leading-6">
 
-                                I certify that the information provided is accurate
-                                and belongs to the registered water service account.
-                                I understand that false information may result in
-                                account restriction or complaint verification.
+                            <span class="text-sm text-slate-600
+                                       leading-6">
+
+                                I certify that the information provided is
+                                accurate and belongs to the registered
+                                Sagay Water District service account.
+
+                                I understand that my registration must be
+                                verified before my online account can be
+                                activated.
 
                             </span>
 
                         </label>
 
 
+                        @error('terms')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+
+                        {{-- Verification Process --}}
+
+                        <div
+                            class="mt-6 rounded-2xl
+                                   border border-sky-100
+                                   bg-sky-50 p-5">
+
+                            <p class="text-sm font-semibold text-sky-900">
+                                What happens after registration?
+                            </p>
+
+
+                            <div class="mt-4 grid
+                                       sm:grid-cols-3 gap-4">
+
+                                <div class="flex items-start gap-3">
+
+                                    <div
+                                        class="w-8 h-8 rounded-full
+                                               bg-sky-600 text-white
+                                               flex items-center justify-center
+                                               text-xs font-bold shrink-0">
+                                        1
+                                    </div>
+
+                                    <p class="text-xs text-slate-600 leading-5">
+                                        Submit your account information.
+                                    </p>
+
+                                </div>
+
+
+                                <div class="flex items-start gap-3">
+
+                                    <div
+                                        class="w-8 h-8 rounded-full
+                                               bg-sky-600 text-white
+                                               flex items-center justify-center
+                                               text-xs font-bold shrink-0">
+                                        2
+                                    </div>
+
+                                    <p class="text-xs text-slate-600 leading-5">
+                                        SWD verifies your account number
+                                        and registered name.
+                                    </p>
+
+                                </div>
+
+
+                                <div class="flex items-start gap-3">
+
+                                    <div
+                                        class="w-8 h-8 rounded-full
+                                               bg-sky-600 text-white
+                                               flex items-center justify-center
+                                               text-xs font-bold shrink-0">
+                                        3
+                                    </div>
+
+                                    <p class="text-xs text-slate-600 leading-5">
+                                        Once approved, you can sign in to
+                                        the Consumer Portal.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
                         {{-- Buttons --}}
-                        <div class="mt-8 flex flex-col sm:flex-row
-                                justify-end gap-3">
+
+                        <div class="mt-8 flex flex-col
+                                   sm:flex-row justify-end gap-3">
 
                             <a href="{{ route('consumer.login') }}"
                                 class="px-6 py-3 rounded-xl
-                                   border border-slate-300
-                                   text-slate-700
-                                   text-center
-                                   hover:bg-slate-50">
+                                       border border-slate-300
+                                       text-slate-700
+                                       font-medium
+                                       text-center
+                                       hover:bg-slate-50
+                                       transition">
 
                                 Already have an account?
 
                             </a>
 
-                            {{-- Create Account --}}
+
                             <button type="submit" :disabled="loading"
                                 class="px-7 py-3 rounded-xl
-           bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600
-           hover:scale-[1.02]
-           text-white
-           font-semibold
-           shadow-lg
-           transition
-           duration-300
-           disabled:opacity-70
-           disabled:cursor-not-allowed
-           disabled:hover:scale-100">
+                                       bg-gradient-to-r
+                                       from-sky-700
+                                       via-blue-700
+                                       to-cyan-600
+                                       hover:scale-[1.02]
+                                       text-white
+                                       font-semibold
+                                       shadow-lg
+                                       transition duration-300
+                                       disabled:opacity-70
+                                       disabled:cursor-not-allowed
+                                       disabled:hover:scale-100">
+
 
                                 {{-- Normal State --}}
-                                <span x-show="!loading" class="flex items-center justify-center gap-2">
 
-                                    <i class="fa-solid fa-user-plus"></i>
+                                <span x-show="!loading"
+                                    class="flex items-center
+                                           justify-center gap-2">
 
-                                    Create Account
+                                    <i class="fa-solid fa-paper-plane"></i>
+
+                                    Submit Registration
 
                                 </span>
 
+
                                 {{-- Loading State --}}
-                                <span x-show="loading" class="flex items-center justify-center gap-2">
 
-                                    <i class="fa-solid fa-spinner animate-spin"></i>
+                                <span x-show="loading" x-cloak
+                                    class="flex items-center
+                                           justify-center gap-2">
 
-                                    Creating Account...
+                                    <i
+                                        class="fa-solid fa-spinner
+                                               animate-spin"></i>
+
+                                    Submitting Registration...
 
                                 </span>
 
@@ -641,36 +1072,66 @@
             </div>
 
 
+            {{-- Footer --}}
+
             <p class="text-center text-xs text-slate-400 mt-6">
-
                 Sagay Water District Consumer Portal
-
             </p>
 
         </div>
 
     </div>
 
-    <script>
-        function togglePassword(inputId, iconId) {
 
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
+    {{-- ============================================================= --}}
+    {{-- PASSWORD VISIBILITY --}}
+    {{-- ============================================================= --}}
+
+    <script>
+        function togglePassword(
+            inputId,
+            iconId
+        ) {
+
+            const input =
+                document.getElementById(
+                    inputId
+                );
+
+            const icon =
+                document.getElementById(
+                    iconId
+                );
+
+
+            if (!input || !icon) {
+                return;
+            }
+
 
             if (input.type === 'password') {
 
                 input.type = 'text';
 
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                icon.classList.remove(
+                    'fa-eye'
+                );
+
+                icon.classList.add(
+                    'fa-eye-slash'
+                );
 
             } else {
 
                 input.type = 'password';
 
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                icon.classList.remove(
+                    'fa-eye-slash'
+                );
 
+                icon.classList.add(
+                    'fa-eye'
+                );
             }
         }
     </script>

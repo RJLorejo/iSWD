@@ -50,16 +50,12 @@
                                     {{ $complaint->complaint_no }}
                                 </p>
 
-                                <h2 class="mt-1 font-semibold text-slate-800">
-                                    {{ $complaint->subject }}
-                                </h2>
-
                                 <p class="mt-1 text-sm text-slate-500">
-                                    {{ optional($complaint->category)->category_name ?? 'Water Service Concern' }}
+                                    {{ optional($complaint->category)->name ?? 'Water Service Concern' }}
                                 </p>
 
                                 <p class="mt-2 text-xs text-slate-400">
-                                    Submitted {{ $complaint->created_at->format('M d, Y h:i A') }}
+                                    Submitted: {{ $complaint->created_at->timezone('Asia/Manila')->format('F j, Y g:i A') }}
                                 </p>
 
                             </div>

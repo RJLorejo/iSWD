@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Division;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 
 class ComplaintCategory extends Model
 {
@@ -11,16 +14,12 @@ class ComplaintCategory extends Model
 
     protected $fillable = [
 
+        'division_id',
         'code',
-
         'name',
-
         'description',
-
         'category_type',
-
         'requires_maintenance',
-
         'is_active',
 
     ];
@@ -41,10 +40,17 @@ class ComplaintCategory extends Model
     |--------------------------------------------------------------------------
     */
 
+
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class);
+    }
+
     public function complaints()
     {
         return $this->hasMany(Complaint::class);
     }
+
 
 
     /*

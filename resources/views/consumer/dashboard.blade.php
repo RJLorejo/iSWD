@@ -32,7 +32,7 @@
                         Submit a Complaint
                     </a>
 
-                    <a href="#"
+                    <a href="{{ route('consumer.ai.index') }}"
                         class="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 font-semibold text-white backdrop-blur hover:bg-white/20 transition">
                         <i class="fas fa-robot"></i>
                         Ask AI Assistant
@@ -130,6 +130,93 @@
 
         </div>
 
+        {{-- Service Announcements --}}
+<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+    <div class="flex items-center justify-between">
+
+        <div>
+
+            <h2 class="text-lg font-bold text-slate-800">
+                Service Announcements
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Important updates from Sagay Water District.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ route('consumer.announcements.index') }}"
+            class="text-sm font-semibold text-sky-700 hover:text-sky-800"
+        >
+            View All
+        </a>
+
+    </div>
+
+
+    <div class="mt-5 space-y-3">
+
+        @forelse ($announcements as $announcement)
+
+            <a
+                href="{{ route(
+                    'consumer.announcements.show',
+                    $announcement
+                ) }}"
+                class="block rounded-xl border border-slate-100
+                       p-4 transition hover:bg-slate-50"
+            >
+
+                <div class="flex items-start gap-3">
+
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center
+                                rounded-xl bg-sky-100 text-sky-700">
+
+                        <i class="fa-solid fa-bullhorn"></i>
+
+                    </div>
+
+
+                    <div class="min-w-0">
+
+                        <p class="font-semibold text-slate-800">
+                            {{ $announcement->title }}
+                        </p>
+
+                        <p class="mt-1 line-clamp-2 text-sm text-slate-500">
+                            {{ $announcement->content }}
+                        </p>
+
+                        @if ($announcement->affected_barangay)
+
+                            <p class="mt-2 text-xs text-slate-400">
+                                <i class="fa-solid fa-location-dot mr-1"></i>
+                                {{ $announcement->affected_barangay }}
+                            </p>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        @empty
+
+            <p class="py-6 text-center text-sm text-slate-500">
+                No active service announcements.
+            </p>
+
+        @endforelse
+
+    </div>
+
+</div>
+
 
         {{-- RECENT COMPLAINTS --}}
         <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
@@ -178,14 +265,11 @@
                                     {{ $complaint->complaint_no }}
                                 </p>
 
-                                <p class="mt-1 text-sm font-medium text-slate-700">
-                                    {{ $complaint->subject }}
-                                </p>
 
                                 <p class="mt-1 text-xs text-slate-500">
-                                    {{ optional($complaint->category)->category_name ?? 'Water Service Concern' }}
+                                    {{ optional($complaint->category)->name ??'Water Service Concern' }}
                                     •
-                                    {{ $complaint->created_at->format('M d, Y') }}
+                                    {{ $complaint->created_at->timezone('Asia/Manila')->format('F j, Y g:i A') }}
                                 </p>
 
                             </div>
@@ -277,7 +361,7 @@
 
                 </div>
 
-                <a href="#"
+                <a href="{{ route('consumer.ai.index') }}"
                     class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition">
                     <i class="fas fa-comments"></i>
                     Ask Assistant

@@ -83,20 +83,28 @@ class UpdateComplaintRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
+            'division_id' => [
+                'required',
+                'integer',
+                Rule::exists('divisions', 'id')
+                    ->where(function ($query) {
+                        $query->where('is_active', true);
+                    }),
+            ],
+
             'complaint_category_id' => [
                 'required',
                 'integer',
-                'exists:complaint_categories,id',
-            ],
 
-            'priority' => [
-                'required',
-                Rule::in([
-                    'Low',
-                    'Medium',
-                    'High',
-                    'Critical',
-                ]),
+                Rule::exists('complaint_categories', 'id')
+                    ->where(function ($query) {
+                        $query
+                            ->where('is_active', true)
+                            ->where(
+                                'division_id',
+                                $this->input('division_id')
+                            );
+                    }),
             ],
 
             /*
@@ -104,12 +112,6 @@ class UpdateComplaintRequest extends FormRequest
             | Complaint Information
             |--------------------------------------------------------------------------
             */
-
-            'subject' => [
-                'required',
-                'string',
-                'max:255',
-            ],
 
             'description' => [
                 'required',
@@ -189,23 +191,17 @@ class UpdateComplaintRequest extends FormRequest
             'complainant_phone.max' =>
             'The complainant contact number must not exceed 30 characters.',
 
+            'division_id.required' =>
+            'Please select a division.',
+
+            'division_id.exists' =>
+            'The selected division does not exist or is inactive.',
+
             'complaint_category_id.required' =>
-            'Please select a complaint category.',
+            'Please select a complaint type.',
 
             'complaint_category_id.exists' =>
-            'The selected complaint category does not exist.',
-
-            'priority.required' =>
-            'Please select the complaint priority.',
-
-            'priority.in' =>
-            'The selected complaint priority is invalid.',
-
-            'subject.required' =>
-            'Please enter a complaint subject.',
-
-            'subject.max' =>
-            'The complaint subject must not exceed 255 characters.',
+            'The selected complaint type does not exist, is inactive, or is invalid.',
 
             'description.required' =>
             'Please describe the reported problem.',

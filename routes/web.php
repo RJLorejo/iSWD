@@ -2,72 +2,44 @@
 
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Controllers
-|--------------------------------------------------------------------------
-*/
-
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
 
-/*
-|--------------------------------------------------------------------------
-| Admin
-|--------------------------------------------------------------------------
-*/
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\ConsumerVerificationController;
 
-/*
-|--------------------------------------------------------------------------
-| Customer Service
-|--------------------------------------------------------------------------
-*/
 
 use App\Http\Controllers\CustomerService\DashboardController as CustomerServiceDashboard;
 use App\Http\Controllers\CustomerService\ComplaintController as CustomerServiceComplaintController;
 use App\Http\Controllers\CustomerService\ConsumerController;
 use App\Http\Controllers\CustomerService\ComplaintCategoryController;
 use App\Http\Controllers\CustomerService\ComplaintVerificationController;
+use App\Http\Controllers\CustomerService\DivisionController;
 
-/*
-|--------------------------------------------------------------------------
-| Maintenance Manager
-|--------------------------------------------------------------------------
-*/
 
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
 use App\Http\Controllers\Manager\ComplaintController as ManagerComplaintController;
 use App\Http\Controllers\Manager\MaintenanceReviewController;
 
-/*
-|--------------------------------------------------------------------------
-| Technician
-|--------------------------------------------------------------------------
-*/
 
 use App\Http\Controllers\Technician\DashboardController as TechnicianDashboard;
 use App\Http\Controllers\Technician\ComplaintController as TechnicianComplaintController;
 use App\Http\Controllers\Technician\MaintenanceReportController;
 use App\Http\Controllers\Technician\MaintenanceHistoryController;
 
-/*
-|--------------------------------------------------------------------------
-| Consumer
-|--------------------------------------------------------------------------
-*/
 
 use App\Http\Controllers\Consumer\DashboardController as ConsumerDashboardController;
 use App\Http\Controllers\Consumer\ComplaintController as ConsumerComplaintController;
 use App\Http\Controllers\Consumer\Auth\LoginController as ConsumerLoginController;
 use App\Http\Controllers\Consumer\Auth\RegisterController as ConsumerRegisterController;
-
-
+use App\Http\Controllers\Consumer\ServiceAnnouncementController;
+use App\Http\Controllers\Consumer\AIController;
+use App\Http\Controllers\Consumer\RegistrationStatusController;
 /*
 |--------------------------------------------------------------------------
 | Landing Page
@@ -145,6 +117,11 @@ Route::middleware(['auth', 'role:Administrator'])
         | User Management
         |--------------------------------------------------------------------------
         */
+        Route::get(
+            '/users/print/report',
+            [UserController::class, 'print']
+        )->name('users.print');
+
 
         Route::resource('users', UserController::class);
 
@@ -157,6 +134,8 @@ Route::middleware(['auth', 'role:Administrator'])
             '/users/{user}/toggle',
             [UserController::class, 'toggle']
         )->name('users.toggle');
+
+
 
 
         /*
@@ -180,6 +159,35 @@ Route::middleware(['auth', 'role:Administrator'])
         */
 
         Route::resource('positions', PositionController::class);
+
+        /*
+|--------------------------------------------------------------------------
+| Consumer Registration Verification
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/consumer-verifications',
+            [ConsumerVerificationController::class, 'index']
+        )->name('consumer-verifications.index');
+
+
+        Route::get(
+            '/consumer-verifications/{consumer}',
+            [ConsumerVerificationController::class, 'show']
+        )->name('consumer-verifications.show');
+
+
+        Route::patch(
+            '/consumer-verifications/{consumer}/approve',
+            [ConsumerVerificationController::class, 'approve']
+        )->name('consumer-verifications.approve');
+
+
+        Route::patch(
+            '/consumer-verifications/{consumer}/reject',
+            [ConsumerVerificationController::class, 'reject']
+        )->name('consumer-verifications.reject');
     });
 
 
@@ -241,6 +249,13 @@ Route::middleware(['auth', 'role:Customer Service'])
             ComplaintCategoryController::class
         )->except(['show']);
 
+
+        Route::resource(
+            'divisions',
+            DivisionController::class
+        )->except([
+            'show',
+        ]);
 
         /*
         |--------------------------------------------------------------------------
@@ -389,23 +404,6 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
 
         /*
         |--------------------------------------------------------------------------
-        | Complaint Actions
-        |--------------------------------------------------------------------------
-        */
-
-        Route::post(
-            '/complaints/{complaint}/start',
-            [TechnicianComplaintController::class, 'start']
-        )->name('complaints.start');
-
-        Route::post(
-            '/complaints/{complaint}/complete',
-            [TechnicianComplaintController::class, 'complete']
-        )->name('complaints.complete');
-
-
-        /*
-        |--------------------------------------------------------------------------
         | Maintenance Reports
         |--------------------------------------------------------------------------
         */
@@ -528,17 +526,51 @@ Route::middleware('guest')->group(function () {
 | CONSUMER PORTAL
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| CONSUMER REGISTRATION STATUS
+|--------------------------------------------------------------------------
+*/
 
-Route::middleware(['auth', 'role:Consumer'])
+Route::middleware([
+    'auth',
+    'role:Consumer',
+])
     ->prefix('consumer')
     ->name('consumer.')
     ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Dashboard
-        |--------------------------------------------------------------------------
-        */
+        Route::get(
+            '/registration-status',
+            [RegistrationStatusController::class, 'show']
+        )->name('registration.status');
+
+        Route::get(
+            '/registration/correct',
+            [RegistrationStatusController::class, 'edit']
+        )->name('registration.edit');
+
+        Route::put(
+            '/registration/resubmit',
+            [RegistrationStatusController::class, 'update']
+        )->name('registration.update');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| VERIFIED CONSUMER PORTAL
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware([
+    'auth',
+    'role:Consumer',
+    'consumer.verified',
+])
+    ->prefix('consumer')
+    ->name('consumer.')
+    ->group(function () {
 
         Route::get(
             '/dashboard',
@@ -546,21 +578,17 @@ Route::middleware(['auth', 'role:Consumer'])
         )->name('dashboard');
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Complaints
-        |--------------------------------------------------------------------------
-        */
-
         Route::get(
             '/complaints',
             [ConsumerComplaintController::class, 'index']
         )->name('complaints.index');
 
+
         Route::get(
             '/complaints/create',
             [ConsumerComplaintController::class, 'create']
         )->name('complaints.create');
+
 
         Route::post(
             '/complaints',
@@ -568,23 +596,47 @@ Route::middleware(['auth', 'role:Consumer'])
         )->name('complaints.store');
 
 
-        Route::get('/complaints/{complaint}/edit', [
-            ConsumerComplaintController::class,
-            'edit'
-        ])->name('complaints.edit');
+        Route::get(
+            '/complaints/{complaint}/edit',
+            [ConsumerComplaintController::class, 'edit']
+        )->name('complaints.edit');
 
-        Route::put('/complaints/{complaint}', [
-            ConsumerComplaintController::class,
-            'update'
-        ])->name('complaints.update');
+
+        Route::put(
+            '/complaints/{complaint}',
+            [ConsumerComplaintController::class, 'update']
+        )->name('complaints.update');
 
 
         Route::get(
             '/complaints/{complaint}',
             [ConsumerComplaintController::class, 'show']
         )->name('complaints.show');
-    });
 
+
+        Route::get(
+            '/announcements',
+            [ServiceAnnouncementController::class, 'index']
+        )->name('announcements.index');
+
+
+        Route::get(
+            '/announcements/{serviceAnnouncement}',
+            [ServiceAnnouncementController::class, 'show']
+        )->name('announcements.show');
+
+
+        Route::get(
+            '/ai-assistant',
+            [AIController::class, 'index']
+        )->name('ai.index');
+
+
+        Route::post(
+            '/ai-assistant/ask',
+            [AIController::class, 'ask']
+        )->name('ai.ask');
+    });
 
 
 require __DIR__ . '/auth.php';

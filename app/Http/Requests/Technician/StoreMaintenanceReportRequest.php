@@ -28,13 +28,13 @@ class StoreMaintenanceReportRequest extends FormRequest
             ],
 
             'work_performed' => [
-                'required',
+                'nullable',
                 'string',
                 'max:10000',
             ],
 
             'repair_procedure' => [
-                'required',
+                'nullable',
                 'string',
                 'max:10000',
             ],
@@ -64,7 +64,7 @@ class StoreMaintenanceReportRequest extends FormRequest
             ],
 
             'completion_remarks' => [
-                'required',
+                'nullable',
                 'string',
                 'max:10000',
             ],

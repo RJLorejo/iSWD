@@ -4,181 +4,416 @@
 
 @section('content')
 
-    {{-- ========================================================= --}}
-    {{-- PAGE HEADER --}}
-    {{-- ========================================================= --}}
+    <div class="max-w-7xl mx-auto space-y-6">
 
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        {{-- ========================================================= --}}
+        {{-- HEADER --}}
+        {{-- ========================================================= --}}
 
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-                Complaints
-            </h1>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-            <p class="text-sm text-gray-500 mt-1">
-                Manage consumer complaints, reported problems, and service issues.
-            </p>
+            <div>
+
+                <p class="text-sm text-gray-500">
+                    Complaint Management
+                </p>
+
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                    Complaints
+                </h1>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Manage consumer complaints, reported problems, and service concerns.
+                </p>
+
+            </div>
+
+
+            <a
+                href="{{ route('customer-service.complaints.create') }}"
+                class="inline-flex items-center justify-center gap-2
+                       px-5 py-3 rounded-xl
+                       bg-blue-600 text-white font-semibold
+                       hover:bg-blue-700 transition shadow-sm
+                       w-full sm:w-auto"
+            >
+
+                <i class="fas fa-plus"></i>
+
+                New Complaint
+
+            </a>
+
         </div>
 
-        <a href="{{ route('customer-service.complaints.create') }}"
-            class="inline-flex items-center justify-center gap-2 px-5 py-2.5
-                   rounded-xl bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600
-                   text-white font-medium shadow-sm hover:shadow-md
-                   hover:from-sky-800 hover:via-blue-800 hover:to-cyan-700
-                   transition">
 
-            <i class="fas fa-plus"></i>
+        {{-- ========================================================= --}}
+        {{-- FLASH MESSAGES --}}
+        {{-- ========================================================= --}}
 
-            <span>New Complaint</span>
+        @if (session('success'))
 
-        </a>
+            <div class="rounded-2xl border border-green-200 bg-green-50 p-4">
 
-    </div>
+                <div class="flex items-start gap-3">
 
+                    <i class="fas fa-circle-check text-green-600 mt-0.5"></i>
 
-    {{-- ========================================================= --}}
-    {{-- STATISTICS --}}
-    {{-- ========================================================= --}}
+                    <p class="text-sm font-medium text-green-800">
+                        {{ session('success') }}
+                    </p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5 mb-6">
+                </div>
 
-        <x-admin.stat-card title="Total Complaints" :value="$totalComplaints" icon="fas fa-file-alt" color="blue" />
+            </div>
 
-        <x-admin.stat-card title="Pending" :value="$pendingComplaints" icon="fas fa-clock" color="yellow" />
-
-        <x-admin.stat-card title="In Progress" :value="$inProgressComplaints" icon="fas fa-spinner" color="purple" />
-
-        <x-admin.stat-card title="Completed" :value="$completedComplaints" icon="fas fa-check-circle" color="green" />
-
-        <x-admin.stat-card title="Critical" :value="$criticalComplaints" icon="fas fa-exclamation-triangle" color="red" />
-
-    </div>
+        @endif
 
 
-    {{-- ========================================================= --}}
-    {{-- SEARCH / FILTER --}}
-    {{-- ========================================================= --}}
+        @if (session('error'))
 
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+            <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
 
-        <form method="GET" action="{{ route('customer-service.complaints.index') }}"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="flex items-start gap-3">
 
-            {{-- Search --}}
-            <div class="lg:col-span-2 relative">
+                    <i class="fas fa-circle-exclamation text-red-600 mt-0.5"></i>
 
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Search
-                </label>
+                    <p class="text-sm font-medium text-red-800">
+                        {{ session('error') }}
+                    </p>
 
-                <div class="relative">
+                </div>
 
-                    <i
-                        class="fas fa-search absolute left-3 top-1/2
-                        -translate-y-1/2 text-gray-400"></i>
+            </div>
 
-                    <input type="text" name="search" value="{{ request('search') }}"
-                        placeholder="Complaint no., consumer, subject..."
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl
-                               border-gray-300 focus:border-blue-500
-                               focus:ring-blue-500">
+        @endif
+
+
+        {{-- ========================================================= --}}
+        {{-- STATISTICS --}}
+        {{-- ========================================================= --}}
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+
+            {{-- TOTAL --}}
+
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
+
+                <div class="flex items-center justify-between gap-3">
+
+                    <div class="min-w-0">
+
+                        <p class="text-xs sm:text-sm text-gray-500">
+                            Total
+                        </p>
+
+                        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                            {{ $totalComplaints }}
+                        </p>
+
+                    </div>
+
+                    <div
+                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl
+                               bg-blue-100 text-blue-600
+                               flex items-center justify-center shrink-0"
+                    >
+
+                        <i class="fas fa-file-lines"></i>
+
+                    </div>
 
                 </div>
 
             </div>
 
 
-            {{-- Status --}}
-            <div>
+            {{-- PENDING --}}
 
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                </label>
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
 
-                <select name="status"
-                    class="w-full rounded-xl border-gray-300
-                           focus:border-blue-500 focus:ring-blue-500">
+                <div class="flex items-center justify-between gap-3">
 
-                    <option value="">All Status</option>
+                    <div class="min-w-0">
 
-                    @foreach (['Pending', 'Verified', 'Assigned', 'In Progress', 'Completed', 'Closed', 'Rejected'] as $status)
-                        <option value="{{ $status }}" @selected(request('status') === $status)>
-                            {{ $status }}
-                        </option>
-                    @endforeach
+                        <p class="text-xs sm:text-sm text-gray-500">
+                            Pending
+                        </p>
 
-                </select>
+                        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                            {{ $pendingComplaints }}
+                        </p>
 
-            </div>
+                    </div>
 
+                    <div
+                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl
+                               bg-yellow-100 text-yellow-600
+                               flex items-center justify-center shrink-0"
+                    >
 
-            {{-- Priority --}}
-            <div>
+                        <i class="fas fa-clock"></i>
 
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Priority
-                </label>
+                    </div>
 
-                <select name="priority"
-                    class="w-full rounded-xl border-gray-300
-                           focus:border-blue-500 focus:ring-blue-500">
-
-                    <option value="">All Priority</option>
-
-                    @foreach (['Low', 'Medium', 'High', 'Critical'] as $priority)
-                        <option value="{{ $priority }}" @selected(request('priority') === $priority)>
-                            {{ $priority }}
-                        </option>
-                    @endforeach
-
-                </select>
+                </div>
 
             </div>
 
 
-            {{-- Buttons --}}
-            <div class="flex items-end gap-2">
+            {{-- IN PROGRESS --}}
 
-                <button type="submit"
-                    class="flex-1 inline-flex items-center justify-center gap-2
-                           px-4 py-2.5 rounded-xl
-                           bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600
-                           text-white font-medium hover:opacity-95 transition">
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
 
-                    <i class="fas fa-filter"></i>
+                <div class="flex items-center justify-between gap-3">
 
-                    Filter
+                    <div class="min-w-0">
 
-                </button>
+                        <p class="text-xs sm:text-sm text-gray-500">
+                            In Progress
+                        </p>
 
+                        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                            {{ $inProgressComplaints }}
+                        </p>
 
-                <a href="{{ route('customer-service.complaints.index') }}"
-                    class="inline-flex items-center justify-center
-                           px-4 py-2.5 rounded-xl
-                           border border-gray-300 text-gray-600
-                           hover:bg-gray-50 transition"
-                    title="Clear Filters">
+                    </div>
 
-                    <i class="fas fa-rotate-left"></i>
+                    <div
+                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl
+                               bg-purple-100 text-purple-600
+                               flex items-center justify-center shrink-0"
+                    >
 
-                </a>
+                        <i class="fas fa-spinner"></i>
+
+                    </div>
+
+                </div>
 
             </div>
 
-        </form>
 
-    </div>
+            {{-- COMPLETED --}}
+
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
+
+                <div class="flex items-center justify-between gap-3">
+
+                    <div class="min-w-0">
+
+                        <p class="text-xs sm:text-sm text-gray-500">
+                            Completed
+                        </p>
+
+                        <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                            {{ $completedComplaints }}
+                        </p>
+
+                    </div>
+
+                    <div
+                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl
+                               bg-green-100 text-green-600
+                               flex items-center justify-center shrink-0"
+                    >
+
+                        <i class="fas fa-circle-check"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
 
 
-    {{-- ========================================================= --}}
-    {{-- COMPLAINT TABLE --}}
-    {{-- ========================================================= --}}
+        {{-- ========================================================= --}}
+        {{-- FILTERS --}}
+        {{-- ========================================================= --}}
 
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm">
 
-        <div class="px-6 py-5 border-b border-gray-100">
+            <div class="px-4 sm:px-6 py-5 border-b border-gray-100">
 
-            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+
+                    <div
+                        class="w-10 h-10 rounded-xl
+                               bg-blue-100 text-blue-600
+                               flex items-center justify-center"
+                    >
+
+                        <i class="fas fa-filter"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h2 class="font-semibold text-gray-900">
+                            Search & Filter
+                        </h2>
+
+                        <p class="text-sm text-gray-500">
+                            Find complaints by number, complainant, description, or status.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="GET"
+                action="{{ route('customer-service.complaints.index') }}"
+                class="p-4 sm:p-6"
+            >
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+                    {{-- SEARCH --}}
+
+                    <div class="lg:col-span-7">
+
+                        <label
+                            for="search"
+                            class="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                            Search
+                        </label>
+
+                        <div class="relative">
+
+                            <i
+                                class="fas fa-magnifying-glass
+                                       absolute left-4 top-1/2
+                                       -translate-y-1/2 text-gray-400"
+                            ></i>
+
+                            <input
+                                type="text"
+                                name="search"
+                                id="search"
+                                value="{{ request('search') }}"
+                                placeholder="Complaint no., complainant, complaint type, address..."
+                                class="w-full pl-11 pr-4 py-3 rounded-xl
+                                       border-gray-300
+                                       focus:border-blue-500 focus:ring-blue-500"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- STATUS --}}
+
+                    <div class="lg:col-span-3">
+
+                        <label
+                            for="status"
+                            class="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                            Status
+                        </label>
+
+                        <select
+                            name="status"
+                            id="status"
+                            class="w-full rounded-xl border-gray-300
+                                   focus:border-blue-500 focus:ring-blue-500"
+                        >
+
+                            <option value="">
+                                All Statuses
+                            </option>
+
+                            @foreach (
+                                [
+                                    'Pending',
+                                    'Verified',
+                                    'Assigned',
+                                    'In Progress',
+                                    'Completed',
+                                    'Closed',
+                                    'Rejected'
+                                ] as $status
+                            )
+
+                                <option
+                                    value="{{ $status }}"
+                                    @selected(request('status') === $status)
+                                >
+                                    {{ $status }}
+                                </option>
+
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+
+                    {{-- BUTTONS --}}
+
+                    <div class="lg:col-span-2 flex items-end gap-2">
+
+                        <button
+                            type="submit"
+                            class="flex-1 inline-flex items-center justify-center gap-2
+                                   px-4 py-3 rounded-xl
+                                   bg-blue-600 text-white font-semibold
+                                   hover:bg-blue-700 transition"
+                        >
+
+                            <i class="fas fa-filter"></i>
+
+                            <span class="lg:hidden xl:inline">
+                                Filter
+                            </span>
+
+                        </button>
+
+
+                        <a
+                            href="{{ route('customer-service.complaints.index') }}"
+                            title="Clear Filters"
+                            class="inline-flex items-center justify-center
+                                   w-12 h-12 rounded-xl
+                                   border border-gray-300
+                                   text-gray-600
+                                   hover:bg-gray-50 transition shrink-0"
+                        >
+
+                            <i class="fas fa-rotate-left"></i>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+        {{-- ========================================================= --}}
+        {{-- COMPLAINT RECORDS --}}
+        {{-- ========================================================= --}}
+
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+            {{-- HEADER --}}
+
+            <div
+                class="px-4 sm:px-6 py-5 border-b border-gray-100
+                       flex flex-col sm:flex-row
+                       sm:items-center sm:justify-between gap-2"
+            >
 
                 <div>
 
@@ -187,404 +422,548 @@
                     </h2>
 
                     <p class="text-sm text-gray-500 mt-1">
-                        List of reported consumer service problems.
+                        Consumer complaints currently recorded in the system.
                     </p>
 
                 </div>
 
-                <div class="text-sm text-gray-500">
-
-                    Showing {{ $complaints->firstItem() ?? 0 }}
-                    –
-                    {{ $complaints->lastItem() ?? 0 }}
-                    of {{ $complaints->total() }}
-
-                </div>
+                <span
+                    class="inline-flex items-center self-start sm:self-auto
+                           px-3 py-1.5 rounded-full
+                           bg-gray-100 text-gray-600
+                           text-sm font-medium"
+                >
+                    {{ $complaints->total() }}
+                    {{ Str::plural('complaint', $complaints->total()) }}
+                </span>
 
             </div>
 
-        </div>
 
+            {{-- ===================================================== --}}
+            {{-- MOBILE / TABLET CARDS --}}
+            {{-- ===================================================== --}}
 
-        <div class="overflow-x-auto">
+            <div class="lg:hidden divide-y divide-gray-100">
 
-            <table class="min-w-full divide-y divide-gray-100">
+                @forelse ($complaints as $complaint)
 
-                <thead class="bg-gray-50">
+                    <div class="p-4 sm:p-5">
 
-                    <tr>
+                        {{-- TOP --}}
 
-                        <th
-                            class="px-6 py-4 text-left text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Complaint
-                        </th>
+                        <div class="flex items-start justify-between gap-3">
 
-                        <th
-                            class="px-6 py-4 text-left text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Consumer
-                        </th>
+                            <div class="flex items-start gap-3 min-w-0">
 
-                        <th
-                            class="px-6 py-4 text-left text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Category
-                        </th>
+                                <div
+                                    class="w-11 h-11 rounded-xl
+                                           bg-blue-50 text-blue-600
+                                           flex items-center justify-center shrink-0"
+                                >
 
-                        <th
-                            class="px-6 py-4 text-left text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Location
-                        </th>
-
-                        <th
-                            class="px-6 py-4 text-center text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Priority
-                        </th>
-
-                        <th
-                            class="px-6 py-4 text-center text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-
-                        <th
-                            class="px-6 py-4 text-center text-xs font-semibold
-                                   text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody class="divide-y divide-gray-100">
-
-                    @forelse($complaints as $complaint)
-                        <tr class="hover:bg-gray-50 transition">
-
-                            {{-- Complaint --}}
-                            <td class="px-6 py-4">
-
-                                <div class="flex items-start gap-3">
-
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-blue-50
-                                                text-blue-600 flex items-center
-                                                justify-center shrink-0">
-
-                                        <i class="fas fa-file-circle-exclamation"></i>
-
-                                    </div>
-
-                                    <div class="min-w-0">
-
-                                        <div class="font-semibold text-gray-900">
-                                            {{ $complaint->complaint_no }}
-                                        </div>
-
-                                        <div class="text-sm text-gray-500 truncate max-w-xs">
-                                            {{ $complaint->subject }}
-                                        </div>
-
-                                        <div class="text-xs text-gray-400 mt-1">
-
-                                            <i class="far fa-clock mr-1"></i>
-
-                                            {{ $complaint->created_at?->format('M d, Y h:i A') }}
-
-                                        </div>
-
-                                    </div>
+                                    <i class="fas fa-file-circle-exclamation"></i>
 
                                 </div>
 
-                            </td>
+
+                                <div class="min-w-0">
+
+                                    <a
+                                        href="{{ route('customer-service.complaints.show', $complaint) }}"
+                                        class="font-bold text-gray-900 hover:text-blue-600"
+                                    >
+                                        {{ $complaint->complaint_no }}
+                                    </a>
+
+                                    <p class="text-xs text-gray-400 mt-1">
+
+                                        <i class="far fa-clock mr-1"></i>
+
+                                        {{ $complaint->created_at?->format('M d, Y h:i A') }}
+
+                                    </p>
+
+                                </div>
+
+                            </div>
 
 
-                            {{-- Consumer --}}
-                            <td class="px-6 py-4">
+                            {{-- STATUS --}}
 
-                                @if ($complaint->consumer)
-                                    <div class="font-medium text-gray-900">
+                            @php
+                                $statusClasses = match ($complaint->status) {
+                                    'Pending' => 'bg-yellow-100 text-yellow-700',
+                                    'Verified' => 'bg-blue-100 text-blue-700',
+                                    'Assigned' => 'bg-purple-100 text-purple-700',
+                                    'In Progress' => 'bg-indigo-100 text-indigo-700',
+                                    'Completed' => 'bg-green-100 text-green-700',
+                                    'Closed' => 'bg-gray-100 text-gray-700',
+                                    'Rejected' => 'bg-red-100 text-red-700',
+                                    default => 'bg-gray-100 text-gray-700',
+                                };
+                            @endphp
+
+                            <span
+                                class="inline-flex items-center
+                                       px-2.5 py-1 rounded-full
+                                       text-xs font-semibold shrink-0
+                                       {{ $statusClasses }}"
+                            >
+                                {{ $complaint->status }}
+                            </span>
+
+                        </div>
+
+
+                        {{-- DETAILS --}}
+
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                            {{-- COMPLAINANT --}}
+
+                            <div>
+
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                                    Complainant
+                                </p>
+
+                                <p class="text-sm font-medium text-gray-900 mt-1">
+
+                                    @if ($complaint->consumer)
+
                                         {{ $complaint->consumer->full_name }}
-                                    </div>
 
-                                    <div class="text-xs text-gray-500">
-                                        {{ $complaint->consumer->consumer_no }}
-                                    </div>
-                                @elseif ($complaint->complainant_name)
-                                    <div class="font-medium text-gray-900">
+                                    @elseif ($complaint->complainant_name)
+
                                         {{ $complaint->complainant_name }}
-                                    </div>
 
-                                    <div class="text-xs text-amber-600">
-                                        <i class="fas fa-person-walking mr-1"></i>
+                                    @else
+
                                         Walk-in / Unregistered
-                                    </div>
 
-                                    @if ($complaint->complainant_phone)
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            <i class="fas fa-phone mr-1"></i>
-                                            {{ $complaint->complainant_phone }}
-                                        </div>
                                     @endif
-                                @else
-                                    <span class="text-gray-400">
-                                        No complainant information
-                                    </span>
-                                @endif
 
-                            </td>
+                                </p>
+
+                            </div>
 
 
-                            {{-- Category --}}
-                            <td class="px-6 py-4">
+                            {{-- DIVISION --}}
 
-                                @if ($complaint->category)
-                                    <div class="font-medium text-gray-900">
+                            <div>
 
-                                        {{ $complaint->category->name }}
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                                    Division
+                                </p>
 
-                                    </div>
+                                <p class="text-sm font-medium text-gray-900 mt-1">
+                                    {{ $complaint->division?->name ?? '—' }}
+                                </p>
 
-                                    <div class="text-xs text-gray-500 mt-1">
+                            </div>
 
+
+                            {{-- TYPE --}}
+
+                            <div>
+
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                                    Complaint Type
+                                </p>
+
+                                <p class="text-sm font-medium text-gray-900 mt-1">
+                                    {{ $complaint->category?->name ?? '—' }}
+                                </p>
+
+                                @if ($complaint->category?->code)
+
+                                    <p class="text-xs text-gray-500 mt-0.5">
                                         {{ $complaint->category->code }}
+                                    </p>
 
-                                    </div>
-                                @else
-                                    <span class="text-gray-400">
-                                        —
-                                    </span>
                                 @endif
 
-                            </td>
+                            </div>
 
 
-                            {{-- Location --}}
-                            <td class="px-6 py-4">
+                            {{-- ADDRESS --}}
 
-                                <div class="flex items-start gap-2 max-w-xs">
+                            <div>
 
-                                    <i class="fas fa-location-dot text-gray-400 mt-1"></i>
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                                    Problem Address
+                                </p>
 
-                                    <div>
+                                <p class="text-sm text-gray-700 mt-1 break-words">
+                                    {{ $complaint->address ?: 'No address recorded.' }}
+                                </p>
 
-                                        <div class="text-sm text-gray-700">
-                                            {{ $complaint->address }}
-                                        </div>
+                            </div>
 
-                                        @if ($complaint->landmark)
-                                            <div class="text-xs text-gray-500 mt-1">
-
-                                                <i class="fas fa-landmark mr-1"></i>
-
-                                                {{ $complaint->landmark }}
-
-                                            </div>
-                                        @endif
-
-                                    </div>
-
-                                </div>
-
-                            </td>
+                        </div>
 
 
-                            {{-- Priority --}}
-                            <td class="px-6 py-4 text-center">
+                        {{-- DESCRIPTION --}}
 
-                                @switch($complaint->priority)
-                                    @case('Low')
-                                        <x-admin.badge color="green">
-                                            <i class="fas fa-arrow-down mr-1"></i>
-                                            Low
-                                        </x-admin.badge>
-                                    @break
+                        <div class="mt-4 p-3 rounded-xl bg-gray-50">
 
-                                    @case('Medium')
-                                        <x-admin.badge color="yellow">
-                                            <i class="fas fa-minus mr-1"></i>
-                                            Medium
-                                        </x-admin.badge>
-                                    @break
+                            <p class="text-xs text-gray-500 mb-1">
+                                Description
+                            </p>
 
-                                    @case('High')
-                                        <x-admin.badge color="orange">
-                                            <i class="fas fa-arrow-up mr-1"></i>
-                                            High
-                                        </x-admin.badge>
-                                    @break
+                            <p class="text-sm text-gray-700 line-clamp-2">
+                                {{ $complaint->description }}
+                            </p>
 
-                                    @case('Critical')
-                                        <x-admin.badge color="red">
-                                            <i class="fas fa-triangle-exclamation mr-1"></i>
-                                            Critical
-                                        </x-admin.badge>
-                                    @break
-
-                                    @default
-                                        <x-admin.badge color="gray">
-                                            {{ $complaint->priority }}
-                                        </x-admin.badge>
-                                @endswitch
-
-                            </td>
+                        </div>
 
 
-                            {{-- Status --}}
-                            <td class="px-6 py-4 text-center">
+                        {{-- ACTIONS --}}
 
-                                @switch($complaint->status)
-                                    @case('Pending')
-                                        <x-admin.badge color="yellow">
-                                            <i class="fas fa-clock mr-1"></i>
-                                            Pending
-                                        </x-admin.badge>
-                                    @break
+                        <div class="mt-4 flex items-center gap-2">
 
-                                    @case('Verified')
-                                        <x-admin.badge color="blue">
-                                            <i class="fas fa-circle-check mr-1"></i>
-                                            Verified
-                                        </x-admin.badge>
-                                    @break
+                            <a
+                                href="{{ route('customer-service.complaints.show', $complaint) }}"
+                                class="flex-1 inline-flex items-center justify-center gap-2
+                                       px-4 py-2.5 rounded-xl
+                                       bg-blue-50 text-blue-700
+                                       font-medium hover:bg-blue-100 transition"
+                            >
 
-                                    @case('Assigned')
-                                        <x-admin.badge color="purple">
-                                            <i class="fas fa-user-check mr-1"></i>
-                                            Assigned
-                                        </x-admin.badge>
-                                    @break
+                                <i class="fas fa-eye"></i>
 
-                                    @case('In Progress')
-                                        <x-admin.badge color="purple">
-                                            <i class="fas fa-spinner mr-1"></i>
-                                            In Progress
-                                        </x-admin.badge>
-                                    @break
+                                View
 
-                                    @case('Completed')
-                                        <x-admin.badge color="green">
-                                            <i class="fas fa-check-circle mr-1"></i>
-                                            Completed
-                                        </x-admin.badge>
-                                    @break
-
-                                    @case('Closed')
-                                        <x-admin.badge color="gray">
-                                            <i class="fas fa-lock mr-1"></i>
-                                            Closed
-                                        </x-admin.badge>
-                                    @break
-
-                                    @case('Rejected')
-                                        <x-admin.badge color="red">
-                                            <i class="fas fa-xmark-circle mr-1"></i>
-                                            Rejected
-                                        </x-admin.badge>
-                                    @break
-
-                                    @default
-                                        <x-admin.badge color="gray">
-                                            {{ $complaint->status }}
-                                        </x-admin.badge>
-                                @endswitch
-
-                            </td>
+                            </a>
 
 
-                            {{-- Actions --}}
-                            <td class="px-6 py-4">
+                            @if (in_array($complaint->status, ['Pending', 'Verified']))
 
-                                <div class="flex items-center justify-center gap-2">
+                                <a
+                                    href="{{ route('customer-service.complaints.edit', $complaint) }}"
+                                    class="inline-flex items-center justify-center
+                                           w-11 h-11 rounded-xl
+                                           bg-yellow-50 text-yellow-600
+                                           hover:bg-yellow-100 transition"
+                                    title="Edit Complaint"
+                                >
 
-                                    {{-- View --}}
-                                    <a href="{{ route('customer-service.complaints.show', $complaint) }}"
-                                        class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600
-                                               flex items-center justify-center
-                                               hover:bg-blue-100 transition"
-                                        title="View Complaint">
+                                    <i class="fas fa-pen-to-square"></i>
 
-                                        <i class="fas fa-eye"></i>
+                                </a>
 
-                                    </a>
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                @empty
+
+                    <div class="px-5 py-16 text-center">
+
+                        <div
+                            class="w-16 h-16 mx-auto rounded-2xl
+                                   bg-gray-100 text-gray-400
+                                   flex items-center justify-center"
+                        >
+
+                            <i class="fas fa-file-circle-exclamation text-2xl"></i>
+
+                        </div>
+
+                        <h3 class="font-semibold text-gray-900 mt-4">
+                            No complaints found
+                        </h3>
+
+                        <p class="text-sm text-gray-500 mt-1">
+                            No complaint records match your current filters.
+                        </p>
+
+                        @if (request()->hasAny(['search', 'status']))
+
+                            <a
+                                href="{{ route('customer-service.complaints.index') }}"
+                                class="inline-flex mt-4 text-sm text-blue-600 font-medium"
+                            >
+                                Clear filters
+                            </a>
+
+                        @endif
+
+                    </div>
+
+                @endforelse
+
+            </div>
 
 
-                                    {{-- Edit --}}
-                                    <a href="{{ route('customer-service.complaints.edit', $complaint) }}"
-                                        class="w-9 h-9 rounded-lg bg-yellow-50 text-yellow-600
-                                               flex items-center justify-center
-                                               hover:bg-yellow-100 transition"
-                                        title="Edit Complaint">
+            {{-- ===================================================== --}}
+            {{-- DESKTOP TABLE --}}
+            {{-- ===================================================== --}}
 
-                                        <i class="fas fa-pen-to-square"></i>
+            <div class="hidden lg:block overflow-x-auto">
 
-                                    </a>
+                <table class="min-w-full divide-y divide-gray-100">
 
+                    <thead class="bg-gray-50">
 
-                                    {{-- Delete --}}
-                                    <form action="{{ route('customer-service.complaints.destroy', $complaint) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this complaint?');">
+                        <tr>
 
-                                        @csrf
-                                        @method('DELETE')
+                            <th
+                                class="px-5 py-4 text-left
+                                       text-xs font-semibold text-gray-500
+                                       uppercase tracking-wider"
+                            >
+                                Complaint
+                            </th>
 
-                                        <button type="submit"
-                                            class="w-9 h-9 rounded-lg bg-red-50 text-red-600
-                                                   flex items-center justify-center
-                                                   hover:bg-red-100 transition"
-                                            title="Delete Complaint">
+                            <th
+                                class="px-5 py-4 text-left
+                                       text-xs font-semibold text-gray-500
+                                       uppercase tracking-wider"
+                            >
+                                Complainant
+                            </th>
 
-                                            <i class="fas fa-trash"></i>
+                            <th
+                                class="px-5 py-4 text-left
+                                       text-xs font-semibold text-gray-500
+                                       uppercase tracking-wider"
+                            >
+                                Classification
+                            </th>
 
-                                        </button>
+                            <th
+                                class="px-5 py-4 text-left
+                                       text-xs font-semibold text-gray-500
+                                       uppercase tracking-wider"
+                            >
+                                Problem Address
+                            </th>
 
-                                    </form>
+                            <th
+                                class="px-5 py-4 text-center
+                                       text-xs font-semibold text-gray-500
+                                       uppercase tracking-wider"
+                            >
+                                Status
+                            </th>
 
-                                </div>
-
-                            </td>
+                            <th
+                                class="px-5 py-4 text-center
+                                       text-xs font-semibold text-gray-500
+                                       uppercase tracking-wider"
+                            >
+                                Actions
+                            </th>
 
                         </tr>
 
-                        @empty
+                    </thead>
 
-                            <tr>
 
-                                <td colspan="7" class="px-6 py-16 text-center">
+                    <tbody class="divide-y divide-gray-100">
 
-                                    <div class="flex flex-col items-center">
+                        @forelse ($complaints as $complaint)
+
+                            <tr class="hover:bg-gray-50/70 transition">
+
+                                {{-- COMPLAINT --}}
+
+                                <td class="px-5 py-4">
+
+                                    <div class="flex items-start gap-3">
 
                                         <div
-                                            class="w-16 h-16 rounded-2xl bg-gray-100
-                                                text-gray-400 flex items-center
-                                                justify-center mb-4">
+                                            class="w-10 h-10 rounded-xl
+                                                   bg-blue-50 text-blue-600
+                                                   flex items-center justify-center shrink-0"
+                                        >
 
-                                            <i class="fas fa-file-circle-exclamation text-2xl"></i>
+                                            <i class="fas fa-file-circle-exclamation"></i>
 
                                         </div>
 
-                                        <h3 class="font-semibold text-gray-900">
-                                            No complaints found
-                                        </h3>
+                                        <div class="min-w-0">
 
-                                        <p class="text-sm text-gray-500 mt-1">
-                                            No complaint records match your current filters.
+                                            <a
+                                                href="{{ route('customer-service.complaints.show', $complaint) }}"
+                                                class="font-semibold text-gray-900 hover:text-blue-600"
+                                            >
+                                                {{ $complaint->complaint_no }}
+                                            </a>
+
+                                            <p class="text-sm text-gray-500 mt-1 max-w-[240px] truncate">
+                                                {{ Str::limit($complaint->description, 65) }}
+                                            </p>
+
+                                            <p class="text-xs text-gray-400 mt-1">
+
+                                                <i class="far fa-clock mr-1"></i>
+
+                                                {{ $complaint->created_at?->format('M d, Y h:i A') }}
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                {{-- COMPLAINANT --}}
+
+                                <td class="px-5 py-4">
+
+                                    @if ($complaint->consumer)
+
+                                        <p class="font-medium text-gray-900">
+                                            {{ $complaint->consumer->full_name }}
                                         </p>
 
-                                        @if (request()->hasAny(['search', 'status', 'priority']))
-                                            <a href="{{ route('customer-service.complaints.index') }}"
-                                                class="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                        <p class="text-xs text-gray-500 mt-1">
 
-                                                Clear filters
+                                            <i class="fas fa-id-card mr-1"></i>
+
+                                            {{ $complaint->consumer->consumer_no ?? 'Registered' }}
+
+                                        </p>
+
+                                    @else
+
+                                        <p class="font-medium text-gray-900">
+                                            {{ $complaint->complainant_name ?: 'Walk-in Complainant' }}
+                                        </p>
+
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Walk-in / Unregistered
+                                        </p>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- CLASSIFICATION --}}
+
+                                <td class="px-5 py-4">
+
+                                    <p class="text-xs text-gray-500">
+                                        {{ $complaint->division?->name ?? 'No division' }}
+                                    </p>
+
+                                    <p class="font-medium text-gray-900 mt-1">
+                                        {{ $complaint->category?->name ?? '—' }}
+                                    </p>
+
+                                    @if ($complaint->category?->code)
+
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            {{ $complaint->category->code }}
+                                        </p>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- ADDRESS --}}
+
+                                <td class="px-5 py-4">
+
+                                    <div class="flex items-start gap-2 max-w-xs">
+
+                                        <i class="fas fa-location-dot text-green-600 mt-1 shrink-0"></i>
+
+                                        <div class="min-w-0">
+
+                                            <p class="text-sm text-gray-700 line-clamp-2">
+                                                {{ $complaint->address ?: 'No address recorded.' }}
+                                            </p>
+
+                                            @if ($complaint->landmark)
+
+                                                <p class="text-xs text-gray-500 mt-1 truncate">
+                                                    Landmark: {{ $complaint->landmark }}
+                                                </p>
+
+                                            @endif
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                {{-- STATUS --}}
+
+                                <td class="px-5 py-4 text-center">
+
+                                    @php
+                                        $statusClasses = match ($complaint->status) {
+                                            'Pending' => 'bg-yellow-100 text-yellow-700',
+                                            'Verified' => 'bg-blue-100 text-blue-700',
+                                            'Assigned' => 'bg-purple-100 text-purple-700',
+                                            'In Progress' => 'bg-indigo-100 text-indigo-700',
+                                            'Completed' => 'bg-green-100 text-green-700',
+                                            'Closed' => 'bg-gray-100 text-gray-700',
+                                            'Rejected' => 'bg-red-100 text-red-700',
+                                            default => 'bg-gray-100 text-gray-700',
+                                        };
+                                    @endphp
+
+                                    <span
+                                        class="inline-flex items-center justify-center
+                                               px-3 py-1.5 rounded-full
+                                               text-xs font-semibold
+                                               whitespace-nowrap
+                                               {{ $statusClasses }}"
+                                    >
+                                        {{ $complaint->status }}
+                                    </span>
+
+                                </td>
+
+
+                                {{-- ACTIONS --}}
+
+                                <td class="px-5 py-4">
+
+                                    <div class="flex items-center justify-center gap-2">
+
+                                        <a
+                                            href="{{ route('customer-service.complaints.show', $complaint) }}"
+                                            class="w-9 h-9 rounded-lg
+                                                   bg-blue-50 text-blue-600
+                                                   flex items-center justify-center
+                                                   hover:bg-blue-100 transition"
+                                            title="View Complaint"
+                                        >
+
+                                            <i class="fas fa-eye"></i>
+
+                                        </a>
+
+
+                                        @if (in_array($complaint->status, ['Pending', 'Verified']))
+
+                                            <a
+                                                href="{{ route('customer-service.complaints.edit', $complaint) }}"
+                                                class="w-9 h-9 rounded-lg
+                                                       bg-yellow-50 text-yellow-600
+                                                       flex items-center justify-center
+                                                       hover:bg-yellow-100 transition"
+                                                title="Edit Complaint"
+                                            >
+
+                                                <i class="fas fa-pen-to-square"></i>
 
                                             </a>
+
                                         @endif
 
                                     </div>
@@ -592,6 +971,46 @@
                                 </td>
 
                             </tr>
+
+                        @empty
+
+                            <tr>
+
+                                <td colspan="6" class="px-6 py-16 text-center">
+
+                                    <div
+                                        class="w-16 h-16 mx-auto rounded-2xl
+                                               bg-gray-100 text-gray-400
+                                               flex items-center justify-center"
+                                    >
+
+                                        <i class="fas fa-file-circle-exclamation text-2xl"></i>
+
+                                    </div>
+
+                                    <h3 class="font-semibold text-gray-900 mt-4">
+                                        No complaints found
+                                    </h3>
+
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        No complaint records match your current filters.
+                                    </p>
+
+                                    @if (request()->hasAny(['search', 'status']))
+
+                                        <a
+                                            href="{{ route('customer-service.complaints.index') }}"
+                                            class="inline-flex mt-4 text-sm text-blue-600 font-medium"
+                                        >
+                                            Clear filters
+                                        </a>
+
+                                    @endif
+
+                                </td>
+
+                            </tr>
+
                         @endforelse
 
                     </tbody>
@@ -601,15 +1020,20 @@
             </div>
 
 
-            {{-- Pagination --}}
+            {{-- PAGINATION --}}
+
             @if ($complaints->hasPages())
-                <div class="px-6 py-4 border-t border-gray-100">
+
+                <div class="px-4 sm:px-6 py-4 border-t border-gray-100">
 
                     {{ $complaints->links() }}
 
                 </div>
+
             @endif
 
         </div>
 
-    @endsection
+    </div>
+
+@endsection

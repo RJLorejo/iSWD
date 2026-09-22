@@ -3,17 +3,109 @@
 @section('title', 'Edit Complaint')
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        #complaint-edit-map {
+            min-height: 420px;
+            width: 100%;
+            z-index: 0;
+        }
+
+        .leaflet-container {
+            font-family: inherit;
+        }
+    </style>
 @endpush
+
 
 @section('content')
 
-    <div class="space-y-6">
+    <div class="max-w-6xl mx-auto space-y-6">
 
-        {{-- PAGE HEADER --}}
-        <x-form.page-header title="Edit Complaint"
-            subtitle="Update the complaint information and reported problem location." />
+        {{-- ========================================================= --}}
+        {{-- HEADER --}}
+        {{-- ========================================================= --}}
 
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+            <div>
+
+                <p class="text-sm text-gray-500">
+                    Complaint Management
+                </p>
+
+                <h1 class="text-2xl font-bold text-gray-900">
+                    Edit Complaint
+                </h1>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Update complaint {{ $complaint->complaint_no }}.
+                </p>
+
+            </div>
+
+
+            <a href="{{ route('customer-service.complaints.show', $complaint) }}"
+                class="inline-flex items-center justify-center gap-2
+                       px-4 py-2.5 rounded-xl
+                       border border-gray-300
+                       text-gray-700
+                       hover:bg-gray-50 transition">
+
+                <i class="fas fa-arrow-left"></i>
+
+                Back to Complaint
+
+            </a>
+
+        </div>
+
+
+        {{-- ========================================================= --}}
+        {{-- VALIDATION ERRORS --}}
+        {{-- ========================================================= --}}
+
+        @if ($errors->any())
+
+            <div class="rounded-2xl border border-red-200 bg-red-50 p-5">
+
+                <div class="flex gap-3">
+
+                    <div class="text-red-600 mt-0.5">
+
+                        <i class="fas fa-circle-exclamation"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h2 class="font-semibold text-red-800">
+                            Please correct the following:
+                        </h2>
+
+                        <ul class="mt-2 list-disc list-inside text-sm text-red-700 space-y-1">
+
+                            @foreach ($errors->all() as $error)
+                                <li>
+                                    {{ $error }}
+                                </li>
+                            @endforeach
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        @endif
+
+
+        {{-- ========================================================= --}}
+        {{-- FORM --}}
+        {{-- ========================================================= --}}
 
         <form action="{{ route('customer-service.complaints.update', $complaint) }}" method="POST"
             enctype="multipart/form-data" class="space-y-6">
@@ -23,49 +115,19 @@
 
 
             {{-- ========================================================= --}}
-            {{-- COMPLAINT NUMBER --}}
-            {{-- ========================================================= --}}
-
-            <x-form.card>
-
-                <div class="p-6">
-
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Complaint Number
-                    </label>
-
-                    <div class="relative">
-
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                            <i class="fas fa-hashtag"></i>
-                        </span>
-
-                        <input type="text" value="{{ $complaint->complaint_no }}" disabled
-                            class="w-full pl-10 rounded-xl border-gray-300
-                               bg-gray-100 text-gray-600">
-
-                    </div>
-
-                    <p class="text-xs text-gray-500 mt-2">
-                        Complaint number cannot be changed.
-                    </p>
-
-                </div>
-
-            </x-form.card>
-            {{-- ========================================================= --}}
             {{-- COMPLAINANT INFORMATION --}}
             {{-- ========================================================= --}}
 
-            <x-form.card>
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
                 <div class="px-6 py-5 border-b border-gray-100">
 
                     <div class="flex items-center gap-3">
 
                         <div
-                            class="w-10 h-10 rounded-xl bg-blue-100
-                    text-blue-600 flex items-center justify-center">
+                            class="w-10 h-10 rounded-xl
+                                   bg-blue-100 text-blue-600
+                                   flex items-center justify-center">
 
                             <i class="fas fa-user"></i>
 
@@ -73,12 +135,12 @@
 
                         <div>
 
-                            <h3 class="font-semibold text-gray-900">
+                            <h2 class="font-semibold text-gray-900">
                                 Complainant Information
-                            </h3>
+                            </h2>
 
                             <p class="text-sm text-gray-500 mt-1">
-                                Update who reported this complaint.
+                                Update the registered consumer or walk-in complainant information.
                             </p>
 
                         </div>
@@ -90,51 +152,42 @@
 
                 <div class="p-6 space-y-6">
 
+                    @php
+
+                        $complainantType = old('complainant_type', $complaint->consumer_id ? 'registered' : 'walk_in');
+
+                    @endphp
+
+
                     {{-- COMPLAINANT TYPE --}}
 
                     <div>
 
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
                             Complainant Type
-
-                            <span class="text-red-500">*</span>
-
                         </label>
 
 
-                        @php
-                            $complainantType = old(
-                                'complainant_type',
-                                $complaint->consumer_id ? 'registered' : 'walk_in',
-                            );
-                        @endphp
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                             {{-- REGISTERED --}}
 
                             <label
-                                class="complainant-type-option
-                           flex items-start gap-3 p-4
-                           border border-gray-200
-                           rounded-xl cursor-pointer
-                           hover:border-blue-400
-                           hover:bg-blue-50
-                           transition">
+                                class="flex items-start gap-3 p-4
+                                       rounded-xl border border-gray-200
+                                       cursor-pointer hover:bg-gray-50">
 
-                                <input type="radio" name="complainant_type" value="registered" class="mt-1"
-                                    {{ $complainantType === 'registered' ? 'checked' : '' }}>
+                                <input type="radio" name="complainant_type" value="registered"
+                                    class="mt-1 text-blue-600 focus:ring-blue-500" @checked($complainantType === 'registered')>
 
                                 <div>
 
-                                    <div class="font-semibold text-gray-900">
+                                    <p class="font-semibold text-gray-900">
                                         Registered Consumer
-                                    </div>
+                                    </p>
 
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Complaint is linked to an existing consumer.
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Complaint belongs to an existing consumer account.
                                     </p>
 
                                 </div>
@@ -145,25 +198,21 @@
                             {{-- WALK-IN --}}
 
                             <label
-                                class="complainant-type-option
-                           flex items-start gap-3 p-4
-                           border border-gray-200
-                           rounded-xl cursor-pointer
-                           hover:border-blue-400
-                           hover:bg-blue-50
-                           transition">
+                                class="flex items-start gap-3 p-4
+                                       rounded-xl border border-gray-200
+                                       cursor-pointer hover:bg-gray-50">
 
-                                <input type="radio" name="complainant_type" value="walk_in" class="mt-1"
-                                    {{ $complainantType === 'walk_in' ? 'checked' : '' }}>
+                                <input type="radio" name="complainant_type" value="walk_in"
+                                    class="mt-1 text-blue-600 focus:ring-blue-500" @checked($complainantType === 'walk_in')>
 
                                 <div>
 
-                                    <div class="font-semibold text-gray-900">
-                                        Walk-in / Unregistered
-                                    </div>
+                                    <p class="font-semibold text-gray-900">
+                                        Walk-in Complainant
+                                    </p>
 
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Complaint is recorded without a consumer account.
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Complaint was submitted without a registered consumer account.
                                     </p>
 
                                 </div>
@@ -174,7 +223,7 @@
 
 
                         @error('complainant_type')
-                            <p class="text-sm text-red-600 mt-1">
+                            <p class="text-sm text-red-600 mt-2">
                                 {{ $message }}
                             </p>
                         @enderror
@@ -184,34 +233,28 @@
 
                     {{-- REGISTERED CONSUMER --}}
 
-                    <div id="registered-consumer-section" class="{{ $complainantType === 'registered' ? '' : 'hidden' }}">
+                    <div id="registered-consumer-section">
 
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-
+                        <label for="consumer_id" class="block text-sm font-medium text-gray-700 mb-2">
                             Consumer
-
-                            <span class="text-red-500">*</span>
-
                         </label>
-
 
                         <select name="consumer_id" id="consumer_id"
                             class="w-full rounded-xl border-gray-300
-                       focus:border-blue-500 focus:ring-blue-500">
+                                   focus:border-blue-500 focus:ring-blue-500">
 
                             <option value="">
-                                Select Registered Consumer
+                                Select Consumer
                             </option>
 
                             @foreach ($consumers as $consumer)
                                 <option value="{{ $consumer->id }}" @selected(old('consumer_id', $complaint->consumer_id) == $consumer->id)>
 
-                                    {{ $consumer->consumer_no }}
-                                    —
-                                    {{ $consumer->full_name }}
+                                    {{ $consumer->last_name }},
+                                    {{ $consumer->first_name }}
 
-                                    @if ($consumer->phone)
-                                        — {{ $consumer->phone }}
+                                    @if ($consumer->consumer_no)
+                                        — {{ $consumer->consumer_no }}
                                     @endif
 
                                 </option>
@@ -231,37 +274,7 @@
 
                     {{-- WALK-IN --}}
 
-                    <div id="walk-in-section" class="{{ $complainantType === 'walk_in' ? '' : 'hidden' }}">
-
-                        <div class="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-5">
-
-                            <div class="flex items-start gap-3">
-
-                                <div
-                                    class="w-9 h-9 rounded-lg bg-amber-100
-                               text-amber-700 flex items-center justify-center">
-
-                                    <i class="fas fa-person-walking"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <p class="font-semibold text-amber-900">
-                                        Walk-in Complainant
-                                    </p>
-
-                                    <p class="text-xs text-amber-700 mt-1">
-                                        Record the complainant directly without linking
-                                        the complaint to a consumer account.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
+                    <div id="walk-in-section" class="hidden">
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
@@ -269,20 +282,15 @@
 
                             <div>
 
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-
-                                    Complainant Full Name
-
-                                    <span class="text-red-500">*</span>
-
+                                <label for="complainant_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Complainant Name
                                 </label>
 
                                 <input type="text" name="complainant_name" id="complainant_name"
                                     value="{{ old('complainant_name', $complaint->complainant_name) }}"
-                                    placeholder="Enter full name"
+                                    placeholder="Enter complainant name"
                                     class="w-full rounded-xl border-gray-300
-                               focus:border-blue-500 focus:ring-blue-500">
-
+                                           focus:border-blue-500 focus:ring-blue-500">
 
                                 @error('complainant_name')
                                     <p class="text-sm text-red-600 mt-1">
@@ -297,22 +305,15 @@
 
                             <div>
 
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-
+                                <label for="complainant_phone" class="block text-sm font-medium text-gray-700 mb-2">
                                     Contact Number
-
-                                    <span class="text-gray-400 text-xs">
-                                        Optional
-                                    </span>
-
                                 </label>
 
                                 <input type="text" name="complainant_phone" id="complainant_phone"
                                     value="{{ old('complainant_phone', $complaint->complainant_phone) }}"
-                                    placeholder="09XXXXXXXXX"
+                                    placeholder="Enter contact number"
                                     class="w-full rounded-xl border-gray-300
-                               focus:border-blue-500 focus:ring-blue-500">
-
+                                           focus:border-blue-500 focus:ring-blue-500">
 
                                 @error('complainant_phone')
                                     <p class="text-sm text-red-600 mt-1">
@@ -326,35 +327,25 @@
 
                     </div>
 
-
-                    <p class="text-xs text-gray-500">
-
-                        <i class="fas fa-circle-info mr-1"></i>
-
-                        Registered complaints are linked to a consumer record.
-                        Walk-in complaints store the complainant's information directly.
-
-                    </p>
-
                 </div>
 
-            </x-form.card>
-
+            </div>
 
 
             {{-- ========================================================= --}}
             {{-- COMPLAINT INFORMATION --}}
             {{-- ========================================================= --}}
 
-            <x-form.card>
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
                 <div class="px-6 py-5 border-b border-gray-100">
 
                     <div class="flex items-center gap-3">
 
                         <div
-                            class="w-10 h-10 rounded-xl bg-orange-100
-                                text-orange-600 flex items-center justify-center">
+                            class="w-10 h-10 rounded-xl
+                                   bg-orange-100 text-orange-600
+                                   flex items-center justify-center">
 
                             <i class="fas fa-triangle-exclamation"></i>
 
@@ -362,12 +353,12 @@
 
                         <div>
 
-                            <h3 class="font-semibold text-gray-900">
+                            <h2 class="font-semibold text-gray-900">
                                 Complaint Information
-                            </h3>
+                            </h2>
 
                             <p class="text-sm text-gray-500 mt-1">
-                                Update the category, priority, status, and complaint details.
+                                Update the classification and complaint details.
                             </p>
 
                         </div>
@@ -379,37 +370,40 @@
 
                 <div class="p-6 space-y-6">
 
-
-                    {{-- CATEGORY / PRIORITY / STATUS --}}
+                    {{-- DIVISION / COMPLAINT TYPE / STATUS --}}
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-
-                        {{-- CATEGORY --}}
+                        {{-- DIVISION --}}
 
                         <div>
 
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Complaint Category
+                            <label for="division_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Division
+
+                                <span class="text-red-500">*</span>
                             </label>
 
-                            <select name="complaint_category_id" required
+                            <select name="division_id" id="division_id" required
                                 class="w-full rounded-xl border-gray-300
-                                   focus:border-blue-500 focus:ring-blue-500">
+                                       focus:border-blue-500 focus:ring-blue-500">
 
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}" @selected(old('complaint_category_id', $complaint->complaint_category_id) == $category->id)>
+                                <option value="">
+                                    Select Division
+                                </option>
 
-                                        {{ $category->code }}
-                                        —
-                                        {{ $category->name }}
+                                @foreach ($divisions as $division)
+                                    <option value="{{ $division->id }}" @selected(old('division_id', $complaint->division_id) == $division->id)>
+
+                                        {{ $division->name }}
 
                                     </option>
                                 @endforeach
 
                             </select>
 
-                            @error('complaint_category_id')
+
+                            @error('division_id')
                                 <p class="text-sm text-red-600 mt-1">
                                     {{ $message }}
                                 </p>
@@ -418,27 +412,32 @@
                         </div>
 
 
-                        {{-- PRIORITY --}}
+                        {{-- COMPLAINT TYPE --}}
 
                         <div>
 
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Priority
+                            <label for="complaint_category_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Complaint Type
+
+                                <span class="text-red-500">*</span>
                             </label>
 
-                            <select name="priority" required
+                            <select name="complaint_category_id" id="complaint_category_id" required
                                 class="w-full rounded-xl border-gray-300
-                                   focus:border-blue-500 focus:ring-blue-500">
+                                       focus:border-blue-500 focus:ring-blue-500">
 
-                                @foreach (['Low', 'Medium', 'High', 'Critical'] as $priority)
-                                    <option value="{{ $priority }}" @selected(old('priority', $complaint->priority) === $priority)>
-
-                                        {{ $priority }}
-
-                                    </option>
-                                @endforeach
+                                <option value="">
+                                    Select Complaint Type
+                                </option>
 
                             </select>
+
+
+                            @error('complaint_category_id')
+                                <p class="text-sm text-red-600 mt-1">
+                                    {{ $message }}
+                                </p>
+                            @enderror
 
                         </div>
 
@@ -452,16 +451,17 @@
                             </label>
 
                             <div
-                                class="w-full rounded-xl border border-gray-200
-                bg-gray-50 px-4 py-2.5
-                text-gray-700">
+                                class="w-full rounded-xl
+                                       border border-gray-200
+                                       bg-gray-50 px-4 py-2.5
+                                       text-gray-700">
 
                                 {{ $complaint->status }}
 
                             </div>
 
                             <p class="text-xs text-gray-500 mt-2">
-                                Complaint status is managed through the appropriate workflow actions.
+                                Status is managed through complaint workflow actions.
                             </p>
 
                         </div>
@@ -469,40 +469,20 @@
                     </div>
 
 
-
-                    {{-- SUBJECT --}}
-
-                    <div>
-
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Complaint Subject
-                        </label>
-
-                        <input type="text" name="subject" value="{{ old('subject', $complaint->subject) }}" required
-                            class="w-full rounded-xl border-gray-300
-                               focus:border-blue-500 focus:ring-blue-500">
-
-                        @error('subject')
-                            <p class="text-sm text-red-600 mt-1">
-                                {{ $message }}
-                            </p>
-                        @enderror
-
-                    </div>
-
-
-
                     {{-- DESCRIPTION --}}
 
                     <div>
 
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
                             Problem Description
+
+                            <span class="text-red-500">*</span>
                         </label>
 
-                        <textarea name="description" rows="5" required
+                        <textarea name="description" id="description" rows="5" required
                             class="w-full rounded-xl border-gray-300
-                               focus:border-blue-500 focus:ring-blue-500">{{ old('description', $complaint->description) }}</textarea>
+                                   focus:border-blue-500 focus:ring-blue-500">{{ old('description', $complaint->description) }}</textarea>
+
 
                         @error('description')
                             <p class="text-sm text-red-600 mt-1">
@@ -514,23 +494,23 @@
 
                 </div>
 
-            </x-form.card>
-
+            </div>
 
 
             {{-- ========================================================= --}}
             {{-- LOCATION --}}
             {{-- ========================================================= --}}
 
-            <x-form.card>
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
                 <div class="px-6 py-5 border-b border-gray-100">
 
                     <div class="flex items-center gap-3">
 
                         <div
-                            class="w-10 h-10 rounded-xl bg-green-100
-                                text-green-600 flex items-center justify-center">
+                            class="w-10 h-10 rounded-xl
+                                   bg-emerald-100 text-emerald-600
+                                   flex items-center justify-center">
 
                             <i class="fas fa-location-dot"></i>
 
@@ -538,12 +518,12 @@
 
                         <div>
 
-                            <h3 class="font-semibold text-gray-900">
-                                Reported Problem Location
-                            </h3>
+                            <h2 class="font-semibold text-gray-900">
+                                Problem Location
+                            </h2>
 
                             <p class="text-sm text-gray-500 mt-1">
-                                Click on the map or drag the marker to update the exact location.
+                                Update the reported address or exact map location.
                             </p>
 
                         </div>
@@ -556,61 +536,20 @@
                 <div class="p-6 space-y-6">
 
 
-                    {{-- ADDRESS --}}
-
-                    <div>
-
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Complete Problem Address
-                        </label>
-
-                        <input type="text" name="address" value="{{ old('address', $complaint->address) }}" required
-                            placeholder="House No., Street, Barangay, Sagay City"
-                            class="w-full rounded-xl border-gray-300
-                               focus:border-blue-500 focus:ring-blue-500">
-
-                        @error('address')
-                            <p class="text-sm text-red-600 mt-1">
-                                {{ $message }}
-                            </p>
-                        @enderror
-
-                    </div>
-
-
-
-                    {{-- LANDMARK --}}
-
-                    <div>
-
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Landmark
-                        </label>
-
-                        <input type="text" name="landmark" value="{{ old('landmark', $complaint->landmark) }}"
-                            placeholder="Example: Near Sagay Public Market"
-                            class="w-full rounded-xl border-gray-300
-                               focus:border-blue-500 focus:ring-blue-500">
-
-                    </div>
-
-
-
                     {{-- MAP --}}
 
                     <div>
 
-                        <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center justify-between gap-4 mb-3">
 
                             <div>
 
                                 <label class="block text-sm font-medium text-gray-700">
-                                    Map Location
+                                    Reported Problem Location
                                 </label>
 
                                 <p class="text-xs text-gray-500 mt-1">
-                                    Click anywhere on the map to move the marker.
-                                    You can also drag the marker.
+                                    Click the map or drag the marker to change the exact location.
                                 </p>
 
                             </div>
@@ -621,96 +560,105 @@
 
 
                         <div id="complaint-edit-map"
-                            class="w-full h-[420px] rounded-2xl
-                               border border-gray-300 overflow-hidden
-                               relative z-0">
+                            class="w-full h-[420px]
+                                   rounded-2xl border border-gray-300
+                                   overflow-hidden relative z-0">
                         </div>
 
-                    </div>
+
+                        {{-- HIDDEN COORDINATES --}}
+
+                        <input type="hidden" name="latitude" id="latitude"
+                            value="{{ old('latitude', $complaint->latitude) }}">
+
+                        <input type="hidden" name="longitude" id="longitude"
+                            value="{{ old('longitude', $complaint->longitude) }}">
 
 
+                        {{-- HUMAN-READABLE LOCATION --}}
 
-                    {{-- COORDINATES --}}
+                        <div id="selected-location"
+                            class="mt-4 rounded-xl
+                                   bg-blue-50 border border-blue-200 p-4">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="flex items-start gap-3">
 
+                                <div
+                                    class="w-9 h-9 rounded-lg
+                                           bg-blue-100 text-blue-600
+                                           flex items-center justify-center shrink-0">
 
-                        {{-- LATITUDE --}}
+                                    <i class="fas fa-location-dot"></i>
+
+                                </div>
+
+                                <div class="min-w-0">
+
+                                    <p class="text-sm font-semibold text-blue-900">
+                                        Reported Location
+                                    </p>
+
+                                    <p id="detected-address" class="text-xs text-blue-700 mt-1 break-words">
+
+                                        {{ old('address', $complaint->address) }}
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                        {{-- ADDRESS --}}
 
                         <div>
 
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Latitude
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                                Problem Address
+
+                                <span class="text-red-500">*</span>
                             </label>
 
-                            <div class="relative">
+                            <input type="text" name="address" id="address"
+                                value="{{ old('address', $complaint->address) }}" required
+                                placeholder="House No., Street, Barangay, Sagay City"
+                                class="w-full rounded-xl border-gray-300
+                                   focus:border-blue-500 focus:ring-blue-500">
 
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <i class="fas fa-location-arrow"></i>
-                                </span>
+                            <p class="text-xs text-gray-500 mt-2">
+                                Move the map marker only when you need to change the complaint location.
+                            </p>
 
-                                <input type="text" name="latitude" id="latitude"
-                                    value="{{ old('latitude', $complaint->latitude) }}" readonly
-                                    class="w-full pl-10 rounded-xl border-gray-300
-                                       bg-gray-50 text-gray-600">
 
-                            </div>
+                            @error('address')
+                                <p class="text-sm text-red-600 mt-1">
+                                    {{ $message }}
+                                </p>
+                            @enderror
 
                         </div>
 
 
-
-                        {{-- LONGITUDE --}}
+                        {{-- LANDMARK --}}
 
                         <div>
 
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Longitude
+                            <label for="landmark" class="block text-sm font-medium text-gray-700 mb-2">
+                                Landmark
                             </label>
 
-                            <div class="relative">
-
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <i class="fas fa-location-arrow"></i>
-                                </span>
-
-                                <input type="text" name="longitude" id="longitude"
-                                    value="{{ old('longitude', $complaint->longitude) }}" readonly
-                                    class="w-full pl-10 rounded-xl border-gray-300
-                                       bg-gray-50 text-gray-600">
-
-                            </div>
-
-                        </div>
-
-                    </div>
+                            <input type="text" name="landmark" id="landmark"
+                                value="{{ old('landmark', $complaint->landmark) }}"
+                                placeholder="Example: Near barangay hall, school, store, etc."
+                                class="w-full rounded-xl border-gray-300
+                                   focus:border-blue-500 focus:ring-blue-500">
 
 
-                    {{-- LOCATION SELECTED --}}
-
-                    <div id="edit-selected-location" class="rounded-xl bg-blue-50 border border-blue-200 p-4">
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-9 h-9 rounded-lg bg-blue-100
-                                   text-blue-600 flex items-center justify-center">
-
-                                <i class="fas fa-location-dot"></i>
-
-                            </div>
-
-                            <div>
-
-                                <p class="text-sm font-semibold text-blue-900">
-                                    Reported Location
+                            @error('landmark')
+                                <p class="text-sm text-red-600 mt-1">
+                                    {{ $message }}
                                 </p>
-
-                                <p class="text-xs text-blue-700 mt-1">
-                                    The marker represents the currently saved complaint location.
-                                </p>
-
-                            </div>
+                            @enderror
 
                         </div>
 
@@ -718,23 +666,23 @@
 
                 </div>
 
-            </x-form.card>
-
+            </div>
 
 
             {{-- ========================================================= --}}
             {{-- PHOTO --}}
             {{-- ========================================================= --}}
 
-            <x-form.card>
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
                 <div class="px-6 py-5 border-b border-gray-100">
 
                     <div class="flex items-center gap-3">
 
                         <div
-                            class="w-10 h-10 rounded-xl bg-purple-100
-                                text-purple-600 flex items-center justify-center">
+                            class="w-10 h-10 rounded-xl
+                                   bg-purple-100 text-purple-600
+                                   flex items-center justify-center">
 
                             <i class="fas fa-camera"></i>
 
@@ -742,12 +690,12 @@
 
                         <div>
 
-                            <h3 class="font-semibold text-gray-900">
+                            <h2 class="font-semibold text-gray-900">
                                 Photo Evidence
-                            </h3>
+                            </h2>
 
                             <p class="text-sm text-gray-500 mt-1">
-                                Replace the existing evidence if necessary.
+                                Keep the current photo or upload a replacement.
                             </p>
 
                         </div>
@@ -757,7 +705,9 @@
                 </div>
 
 
-                <div class="p-6 space-y-4">
+                <div class="p-6 space-y-5">
+
+                    {{-- CURRENT PHOTO --}}
 
                     @if ($complaint->photo)
                         <div>
@@ -766,50 +716,69 @@
                                 Current Photo
                             </p>
 
-                            <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
-                                class="w-72 max-h-72 object-cover
-                                   rounded-2xl border border-gray-200">
+                            <div
+                                class="max-w-md rounded-2xl
+                                       border border-gray-200
+                                       overflow-hidden bg-gray-50">
+
+                                <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
+                                    class="w-full max-h-72 object-cover">
+
+                            </div>
 
                         </div>
-
-                        <p class="text-xs text-gray-500">
-                            Upload a new image below to replace the current photo.
-                        </p>
                     @endif
 
 
-                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp"
-                        class="block w-full text-sm text-gray-600
-                           border border-gray-300 rounded-xl
-                           file:mr-4 file:py-2.5 file:px-4
-                           file:rounded-lg file:border-0
-                           file:bg-blue-50 file:text-blue-700
-                           hover:file:bg-blue-100">
+                    {{-- NEW PHOTO --}}
 
-                    @error('photo')
-                        <p class="text-sm text-red-600 mt-1">
-                            {{ $message }}
+                    <div>
+
+                        <label for="photo" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ $complaint->photo ? 'Replace Photo' : 'Upload Photo' }}
+                        </label>
+
+                        <input type="file" name="photo" id="photo" accept="image/*"
+                            class="block w-full text-sm text-gray-600
+                                   file:mr-4 file:py-2.5 file:px-4
+                                   file:rounded-xl file:border-0
+                                   file:text-sm file:font-semibold
+                                   file:bg-blue-50 file:text-blue-700
+                                   hover:file:bg-blue-100">
+
+                        <p class="text-xs text-gray-500 mt-2">
+                            Leave this empty to keep the current photo.
                         </p>
-                    @enderror
+
+
+                        @error('photo')
+                            <p class="text-sm text-red-600 mt-1">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+                    </div>
 
                 </div>
 
-            </x-form.card>
-
+            </div>
 
 
             {{-- ========================================================= --}}
             {{-- ACTIONS --}}
             {{-- ========================================================= --}}
 
-            <div class="flex justify-end gap-3">
+            <div class="flex flex-col-reverse sm:flex-row
+                       sm:items-center sm:justify-end gap-3">
 
                 <a href="{{ route('customer-service.complaints.show', $complaint) }}"
-                    class="px-5 py-2.5 rounded-xl
-                       border border-gray-300
-                       text-gray-700 hover:bg-gray-50 transition">
+                    class="inline-flex items-center justify-center gap-2
+                           px-5 py-3 rounded-xl
+                           border border-gray-300
+                           text-gray-700
+                           hover:bg-gray-50 transition">
 
-                    <i class="fas fa-xmark mr-2"></i>
+                    <i class="fas fa-xmark"></i>
 
                     Cancel
 
@@ -817,13 +786,12 @@
 
 
                 <button type="submit"
-                    class="px-5 py-2.5 rounded-xl
-                       bg-gradient-to-r from-sky-700
-                       via-blue-700 to-cyan-600
-                       text-white font-medium
-                       hover:shadow-lg transition">
+                    class="inline-flex items-center justify-center gap-2
+                           px-6 py-3 rounded-xl
+                           bg-blue-600 text-white font-semibold
+                           hover:bg-blue-700 transition">
 
-                    <i class="fas fa-floppy-disk mr-2"></i>
+                    <i class="fas fa-floppy-disk"></i>
 
                     Save Changes
 
@@ -835,81 +803,392 @@
 
     </div>
 
+@endsection
 
-    @push('scripts')
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
+@push('scripts')
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-                const mapElement =
-                    document.getElementById('complaint-edit-map');
 
-                if (!mapElement) {
+    {{-- ========================================================= --}}
+    {{-- DIVISION → COMPLAINT TYPE --}}
+    {{-- ========================================================= --}}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const divisions =
+                @json($divisions);
+
+            const divisionSelect =
+                document.getElementById(
+                    'division_id'
+                );
+
+            const complaintTypeSelect =
+                document.getElementById(
+                    'complaint_category_id'
+                );
+
+            const selectedComplaintType =
+                @json(old('complaint_category_id', $complaint->complaint_category_id));
+
+
+            function populateComplaintTypes(
+                divisionId,
+                selectedId = null
+            ) {
+
+                complaintTypeSelect.innerHTML =
+                    '';
+
+
+                if (!divisionId) {
+
+                    complaintTypeSelect.disabled =
+                        true;
+
+                    complaintTypeSelect.innerHTML =
+                        '<option value="">Select a division first</option>';
+
+                    return;
+
+                }
+
+
+                const division =
+                    divisions.find(
+                        function(item) {
+
+                            return String(item.id) ===
+                                String(divisionId);
+
+                        }
+                    );
+
+
+                if (
+                    !division ||
+                    !division.complaint_types ||
+                    division.complaint_types.length === 0
+                ) {
+
+                    complaintTypeSelect.disabled =
+                        true;
+
+                    complaintTypeSelect.innerHTML =
+                        '<option value="">No complaint types available</option>';
+
+                    return;
+
+                }
+
+
+                complaintTypeSelect.disabled =
+                    false;
+
+
+                const placeholder =
+                    document.createElement(
+                        'option'
+                    );
+
+                placeholder.value =
+                    '';
+
+                placeholder.textContent =
+                    'Select Complaint Type';
+
+                complaintTypeSelect
+                    .appendChild(
+                        placeholder
+                    );
+
+
+                division.complaint_types.forEach(
+                    function(type) {
+
+                        const option =
+                            document.createElement(
+                                'option'
+                            );
+
+
+                        option.value =
+                            type.id;
+
+
+                        option.textContent =
+                            type.code ?
+                            `${type.code} — ${type.name}` :
+                            type.name;
+
+
+                        if (
+                            selectedId !== null &&
+                            String(selectedId) ===
+                            String(type.id)
+                        ) {
+
+                            option.selected =
+                                true;
+
+                        }
+
+
+                        complaintTypeSelect
+                            .appendChild(
+                                option
+                            );
+
+                    }
+                );
+
+            }
+
+
+            divisionSelect.addEventListener(
+                'change',
+                function() {
+
+                    populateComplaintTypes(
+                        this.value
+                    );
+
+                }
+            );
+
+
+            if (divisionSelect.value) {
+
+                populateComplaintTypes(
+                    divisionSelect.value,
+                    selectedComplaintType
+                );
+
+            }
+
+        });
+    </script>
+
+
+    {{-- ========================================================= --}}
+    {{-- COMPLAINANT TYPE --}}
+    {{-- ========================================================= --}}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const registeredSection =
+                document.getElementById(
+                    'registered-consumer-section'
+                );
+
+            const walkInSection =
+                document.getElementById(
+                    'walk-in-section'
+                );
+
+            const consumerSelect =
+                document.getElementById(
+                    'consumer_id'
+                );
+
+            const complainantName =
+                document.getElementById(
+                    'complainant_name'
+                );
+
+            const complainantPhone =
+                document.getElementById(
+                    'complainant_phone'
+                );
+
+
+            function updateComplainantSections() {
+
+                const selected =
+                    document.querySelector(
+                        'input[name="complainant_type"]:checked'
+                    );
+
+
+                if (!selected) {
                     return;
                 }
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | INPUTS
-                |--------------------------------------------------------------------------
-                */
+                if (
+                    selected.value ===
+                    'registered'
+                ) {
 
-                const latitudeInput =
-                    document.getElementById('latitude');
+                    registeredSection
+                        .classList
+                        .remove('hidden');
 
-                const longitudeInput =
-                    document.getElementById('longitude');
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | DEFAULT LOCATION - SAGAY CITY
-                |--------------------------------------------------------------------------
-                */
-
-                const defaultLatitude = 10.9447;
-                const defaultLongitude = 123.4200;
+                    walkInSection
+                        .classList
+                        .add('hidden');
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | EXISTING COMPLAINT LOCATION
-                |--------------------------------------------------------------------------
-                */
+                    consumerSelect.disabled =
+                        false;
 
-                const savedLatitude =
-                    parseFloat(latitudeInput.value);
+                    complainantName.disabled =
+                        true;
 
-                const savedLongitude =
-                    parseFloat(longitudeInput.value);
+                    complainantPhone.disabled =
+                        true;
 
-
-                const hasExistingLocation = !isNaN(savedLatitude) &&
-                    !isNaN(savedLongitude);
+                }
 
 
-                const initialLatitude =
-                    hasExistingLocation ?
-                    savedLatitude :
-                    defaultLatitude;
+                if (
+                    selected.value ===
+                    'walk_in'
+                ) {
+
+                    registeredSection
+                        .classList
+                        .add('hidden');
+
+                    walkInSection
+                        .classList
+                        .remove('hidden');
 
 
-                const initialLongitude =
-                    hasExistingLocation ?
-                    savedLongitude :
-                    defaultLongitude;
+                    consumerSelect.disabled =
+                        true;
+
+                    consumerSelect.value =
+                        '';
+
+                    complainantName.disabled =
+                        false;
+
+                    complainantPhone.disabled =
+                        false;
+
+                }
+
+            }
 
 
+            document
+                .querySelectorAll(
+                    'input[name="complainant_type"]'
+                )
+                .forEach(
+                    function(radio) {
 
-                /*
-                |--------------------------------------------------------------------------
-                | MAP
-                |--------------------------------------------------------------------------
-                */
+                        radio.addEventListener(
+                            'change',
+                            updateComplainantSections
+                        );
 
-                const map = L.map(
+                    }
+                );
+
+
+            updateComplainantSections();
+
+        });
+    </script>
+
+
+    {{-- ========================================================= --}}
+    {{-- MAP + REVERSE GEOCODING --}}
+    {{-- ========================================================= --}}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const mapElement =
+                document.getElementById(
+                    'complaint-edit-map'
+                );
+
+
+            if (!mapElement) {
+                return;
+            }
+
+
+            const latitudeInput =
+                document.getElementById(
+                    'latitude'
+                );
+
+            const longitudeInput =
+                document.getElementById(
+                    'longitude'
+                );
+
+            const addressInput =
+                document.getElementById(
+                    'address'
+                );
+
+            const detectedAddress =
+                document.getElementById(
+                    'detected-address'
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Default Sagay City
+            |--------------------------------------------------------------------------
+            */
+
+            const defaultLatitude =
+                10.9447;
+
+            const defaultLongitude =
+                123.4200;
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Existing Location
+            |--------------------------------------------------------------------------
+            */
+
+            const savedLatitude =
+                parseFloat(
+                    latitudeInput.value
+                );
+
+            const savedLongitude =
+                parseFloat(
+                    longitudeInput.value
+                );
+
+
+            const hasExistingLocation = !isNaN(savedLatitude) &&
+                !isNaN(savedLongitude);
+
+
+            const initialLatitude =
+                hasExistingLocation ?
+                savedLatitude :
+                defaultLatitude;
+
+            const initialLongitude =
+                hasExistingLocation ?
+                savedLongitude :
+                defaultLongitude;
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Create Map
+            |--------------------------------------------------------------------------
+            */
+
+            const map =
+                L.map(
                     'complaint-edit-map', {
                         zoomControl: true,
                         attributionControl: true
@@ -917,279 +1196,306 @@
                 );
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | OPENSTREETMAP
-                |--------------------------------------------------------------------------
-                */
-
-                L.tileLayer(
-                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '&copy; OpenStreetMap contributors'
-                    }
-                ).addTo(map);
+            L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }
+            ).addTo(map);
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | INITIAL VIEW
-                |--------------------------------------------------------------------------
-                */
-
-                map.setView(
-                    [
-                        initialLatitude,
-                        initialLongitude
-                    ],
-                    hasExistingLocation ? 17 : 14
-                );
+            map.setView(
+                [
+                    initialLatitude,
+                    initialLongitude
+                ],
+                hasExistingLocation ? 17 : 14
+            );
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | MARKER
-                |--------------------------------------------------------------------------
-                */
+            /*
+            |--------------------------------------------------------------------------
+            | Marker
+            |--------------------------------------------------------------------------
+            */
 
-                let marker = L.marker(
+            const marker =
+                L.marker(
                     [
                         initialLatitude,
                         initialLongitude
                     ], {
                         draggable: true
                     }
-                ).addTo(map);
+                )
+                .addTo(map);
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | POPUP
-                |--------------------------------------------------------------------------
-                */
+            marker.bindPopup(`
+                <div class="text-sm">
 
-                marker.bindPopup(`
-        <div class="text-sm">
+                    <div class="font-semibold text-gray-900">
 
-            <div class="font-semibold text-gray-900">
-                <i class="fas fa-location-dot text-blue-600 mr-1"></i>
-                Reported Problem Location
-            </div>
+                        <i class="fas fa-location-dot text-blue-600 mr-1"></i>
 
-            <div class="text-gray-500 mt-1">
-                Drag the marker or click the map to change the location.
-            </div>
+                        Reported Problem Location
 
-        </div>
-    `);
+                    </div>
 
+                    <div class="text-gray-500 mt-1">
 
-                /*
-                |--------------------------------------------------------------------------
-                | UPDATE COORDINATES
-                |--------------------------------------------------------------------------
-                */
+                        Drag the marker or click the map to change the location.
 
-                function updateCoordinates(lat, lng) {
+                    </div>
 
-                    const formattedLatitude =
-                        Number(lat).toFixed(7);
-
-                    const formattedLongitude =
-                        Number(lng).toFixed(7);
+                </div>
+            `);
 
 
-                    latitudeInput.value =
-                        formattedLatitude;
+            /*
+            |--------------------------------------------------------------------------
+            | Reverse Geocoding
+            |--------------------------------------------------------------------------
+            */
 
-                    longitudeInput.value =
-                        formattedLongitude;
+            async function reverseGeocode(
+                lat,
+                lng
+            ) {
+
+                detectedAddress.textContent =
+                    'Detecting address...';
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                                headers: {
+                                    'Accept': 'application/json'
+                                }
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            'Reverse geocoding failed.'
+                        );
+
+                    }
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (data.display_name) {
+
+                        addressInput.value =
+                            data.display_name;
+
+                        detectedAddress.textContent =
+                            data.display_name;
+
+                    } else {
+
+                        detectedAddress.textContent =
+                            'Address could not be detected. Please enter it manually.';
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        'Reverse geocoding error:',
+                        error
+                    );
+
+
+                    detectedAddress.textContent =
+                        'Unable to detect the address. Please enter it manually.';
 
                 }
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | MAP CLICK
-                |--------------------------------------------------------------------------
-                */
-
-                map.on('click', function(event) {
-
-                    const lat =
-                        event.latlng.lat;
-
-                    const lng =
-                        event.latlng.lng;
+            }
 
 
-                    marker.setLatLng([
-                        lat,
-                        lng
-                    ]);
+            /*
+            |--------------------------------------------------------------------------
+            | Update Location
+            |--------------------------------------------------------------------------
+            */
+
+            function updateLocation(
+                lat,
+                lng,
+                detectAddress = true
+            ) {
+
+                const formattedLatitude =
+                    Number(lat).toFixed(7);
+
+                const formattedLongitude =
+                    Number(lng).toFixed(7);
 
 
-                    updateCoordinates(
-                        lat,
-                        lng
+                latitudeInput.value =
+                    formattedLatitude;
+
+                longitudeInput.value =
+                    formattedLongitude;
+
+
+                marker.setLatLng([
+                    lat,
+                    lng
+                ]);
+
+
+                map.panTo([
+                    lat,
+                    lng
+                ]);
+
+
+                if (detectAddress) {
+
+                    reverseGeocode(
+                        formattedLatitude,
+                        formattedLongitude
                     );
 
-                });
+                }
+
+            }
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | MARKER DRAG
-                |--------------------------------------------------------------------------
-                */
+            /*
+            |--------------------------------------------------------------------------
+            | Map Click
+            |--------------------------------------------------------------------------
+            */
 
-                marker.on('dragend', function(event) {
+            map.on(
+                'click',
+                function(event) {
+
+                    updateLocation(
+                        event.latlng.lat,
+                        event.latlng.lng,
+                        true
+                    );
+
+                }
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Marker Drag
+            |--------------------------------------------------------------------------
+            */
+
+            marker.on(
+                'dragend',
+                function(event) {
 
                     const position =
-                        event.target.getLatLng();
+                        event
+                        .target
+                        .getLatLng();
 
 
-                    updateCoordinates(
+                    updateLocation(
                         position.lat,
-                        position.lng
+                        position.lng,
+                        true
                     );
 
+                }
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Preserve Existing Location
+            |--------------------------------------------------------------------------
+            |
+            | IMPORTANT:
+            | Do not reverse geocode automatically when opening Edit.
+            | This prevents the saved address from being replaced just
+            | because the user opened this page.
+            |
+            */
+
+            if (hasExistingLocation) {
+
+                latitudeInput.value =
+                    Number(
+                        savedLatitude
+                    ).toFixed(7);
+
+                longitudeInput.value =
+                    Number(
+                        savedLongitude
+                    ).toFixed(7);
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Map Size Fix
+            |--------------------------------------------------------------------------
+            */
+
+            function refreshMap() {
+
+                map.invalidateSize({
+                    animate: false,
+                    pan: false
                 });
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | INITIAL COORDINATES
-                |--------------------------------------------------------------------------
-                */
-
-                updateCoordinates(
-                    initialLatitude,
-                    initialLongitude
-                );
+            }
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | MAP SIZE FIX
-                |--------------------------------------------------------------------------
-                */
-
-                function refreshMap() {
-
-                    map.invalidateSize({
-                        animate: false,
-                        pan: false
-                    });
-
-                }
-
-
-                requestAnimationFrame(function() {
+            requestAnimationFrame(
+                function() {
 
                     refreshMap();
 
-                    setTimeout(refreshMap, 100);
-                    setTimeout(refreshMap, 300);
-                    setTimeout(refreshMap, 600);
-                    setTimeout(refreshMap, 1000);
+                    setTimeout(
+                        refreshMap,
+                        100
+                    );
 
-                });
+                    setTimeout(
+                        refreshMap,
+                        300
+                    );
 
+                    setTimeout(
+                        refreshMap,
+                        600
+                    );
 
-                window.addEventListener(
-                    'resize',
-                    refreshMap
-                );
-
-            });
-        </script>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-
-                const registeredSection =
-                    document.getElementById('registered-consumer-section');
-
-                const walkInSection =
-                    document.getElementById('walk-in-section');
-
-                const consumerSelect =
-                    document.getElementById('consumer_id');
-
-                const complainantName =
-                    document.getElementById('complainant_name');
-
-
-                function updateComplainantSections() {
-
-                    const selected =
-                        document.querySelector(
-                            'input[name="complainant_type"]:checked'
-                        );
-
-                    if (!selected) {
-                        return;
-                    }
-
-
-                    if (selected.value === 'registered') {
-
-                        registeredSection.classList.remove('hidden');
-
-                        walkInSection.classList.add('hidden');
-
-
-                        if (consumerSelect) {
-                            consumerSelect.disabled = false;
-                        }
-
-                        if (complainantName) {
-                            complainantName.disabled = true;
-                        }
-
-                    }
-
-
-                    if (selected.value === 'walk_in') {
-
-                        registeredSection.classList.add('hidden');
-
-                        walkInSection.classList.remove('hidden');
-
-
-                        if (consumerSelect) {
-                            consumerSelect.disabled = true;
-                            consumerSelect.value = '';
-                        }
-
-                        if (complainantName) {
-                            complainantName.disabled = false;
-                        }
-
-                    }
+                    setTimeout(
+                        refreshMap,
+                        1000
+                    );
 
                 }
+            );
 
 
-                document
-                    .querySelectorAll(
-                        'input[name="complainant_type"]'
-                    )
-                    .forEach(function(radio) {
+            window.addEventListener(
+                'resize',
+                refreshMap
+            );
 
-                        radio.addEventListener(
-                            'change',
-                            updateComplainantSections
-                        );
-
-                    });
-
-
-                updateComplainantSections();
-
-            });
-        </script>
-    @endpush
-
-@endsection
+        });
+    </script>
+@endpush

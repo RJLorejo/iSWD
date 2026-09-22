@@ -102,6 +102,13 @@
 
         </a>
 
+        <a href="{{ route('customer-service.divisions.index') }}"
+            class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+
+            <i class="fa-solid fa-sitemap w-6"></i>
+
+            <span x-show="!sidebarMini">Divisions</span>
+
         <a href="#"
             class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
 

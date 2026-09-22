@@ -23,7 +23,7 @@
                     </a>
 
                     <h1 class="text-2xl font-bold text-slate-800">
-                        Maintenance Report Review
+                        Service Accomplishment Review
                     </h1>
 
                 </div>
@@ -39,18 +39,18 @@
                     Not Yet Submitted
                 </span>
             @elseif($maintenanceReport->review_status === 'Pending Review')
-                    <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-700 font-semibold text-sm">
-                        Pending Review
-                    </span>
-                @elseif($maintenanceReport->review_status === 'Returned')
-                    <span class="px-4 py-2 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
-                        Returned
-                    </span>
-                @elseif($maintenanceReport->review_status === 'Approved')
-                    <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
-                        Approved
-                    </span>
-                @endif
+                <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-700 font-semibold text-sm">
+                    Pending Review
+                </span>
+            @elseif($maintenanceReport->review_status === 'Returned')
+                <span class="px-4 py-2 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
+                    Returned
+                </span>
+            @elseif($maintenanceReport->review_status === 'Approved')
+                <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
+                    Approved
+                </span>
+            @endif
 
         </div>
 
@@ -75,24 +75,11 @@
                     </p>
                 </div>
 
-                <div>
-                    <p class="text-sm text-slate-500">Subject</p>
-                    <p class="font-semibold">
-                        {{ $complaint?->subject }}
-                    </p>
-                </div>
 
                 <div>
-                    <p class="text-sm text-slate-500">Priority</p>
+                    <p class="text-sm text-slate-500">Complaint Type</p>
                     <p class="font-semibold">
-                        {{ $complaint?->priority }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-sm text-slate-500">Category</p>
-                    <p class="font-semibold">
-                        {{ $complaint?->category?->name ?? '—' }}
+                        {{ $complaint?->complaint_type?->name ?? '—' }}
                     </p>
                 </div>
 
@@ -133,7 +120,7 @@
             <div class="p-6 border-b">
 
                 <h2 class="text-lg font-bold">
-                    Technician
+                    Plumber
                 </h2>
 
             </div>
@@ -164,7 +151,7 @@
             <div class="p-6 border-b">
 
                 <h2 class="text-lg font-bold">
-                    Maintenance Details
+                    Accomplishment Details
                 </h2>
 
             </div>
@@ -197,52 +184,14 @@
 
                 </div>
 
-
-                <div>
-
-                    <h3 class="font-semibold text-slate-800">
-                        Work Performed
-                    </h3>
-
-                    <p class="mt-2 text-slate-600 whitespace-pre-line">
-                        {{ $maintenanceReport->work_performed }}
-                    </p>
-
-                </div>
-
-
-                <div>
-
-                    <h3 class="font-semibold text-slate-800">
-                        Repair Procedure
-                    </h3>
-
-                    <p class="mt-2 text-slate-600 whitespace-pre-line">
-                        {{ $maintenanceReport->repair_procedure }}
-                    </p>
-
-                </div>
-
-
                 <div class="grid md:grid-cols-3 gap-6">
 
-                    <div>
-
-                        <h3 class="font-semibold">
-                            Materials Used
-                        </h3>
-
-                        <p class="mt-2 text-slate-600 whitespace-pre-line">
-                            {{ $maintenanceReport->materials_used ?: 'None recorded.' }}
-                        </p>
-
-                    </div>
 
 
                     <div>
 
                         <h3 class="font-semibold">
-                            Parts Replaced
+                            Parts Removed
                         </h3>
 
                         <p class="mt-2 text-slate-600 whitespace-pre-line">
@@ -250,33 +199,6 @@
                         </p>
 
                     </div>
-
-
-                    <div>
-
-                        <h3 class="font-semibold">
-                            Tools Used
-                        </h3>
-
-                        <p class="mt-2 text-slate-600 whitespace-pre-line">
-                            {{ $maintenanceReport->tools_used ?: 'None recorded.' }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <h3 class="font-semibold">
-                        Technician Notes
-                    </h3>
-
-                    <p class="mt-2 text-slate-600 whitespace-pre-line">
-                        {{ $maintenanceReport->technician_notes ?: 'None recorded.' }}
-                    </p>
-
                 </div>
 
 
@@ -303,7 +225,7 @@
             <div class="p-6 border-b">
 
                 <h2 class="text-lg font-bold">
-                    Maintenance Evidence
+                    Service Accomplishment Evidence
                 </h2>
 
             </div>
@@ -443,11 +365,11 @@
                 <div class="bg-white border rounded-2xl shadow-sm p-6">
 
                     <h2 class="text-lg font-bold text-green-700">
-                        Approve Maintenance Report
+                        Approve Accomplishment Report
                     </h2>
 
                     <p class="text-sm text-slate-500 mt-1">
-                        Confirm that the maintenance work and documentation are valid.
+                        Confirm that the service work and accomplishment documentation are valid.
                     </p>
 
                     <form method="POST"
@@ -468,7 +390,7 @@
 
                             <i class="fas fa-check-circle mr-2"></i>
 
-                            Approve Report
+                            Approve Accomplishment
 
                         </button>
 
@@ -485,7 +407,8 @@
                     </h2>
 
                     <p class="text-sm text-slate-500 mt-1">
-                        Specify exactly what the technician needs to correct.
+
+                        Specify what information in the accomplishment report needs correction.
                     </p>
 
                     <form method="POST"
@@ -526,12 +449,12 @@
                     <div>
 
                         <h2 class="font-bold text-green-800">
-                            Maintenance Report Approved
+                            Accomplishment Approved
                         </h2>
 
                         <p class="text-sm text-green-700 mt-1">
-                            This case is now eligible for the Knowledge Repository
-                            and AI Repair Case Recommendation.
+                            The service accomplishment has been validated by management.
+                            The complaint is now marked as Completed.
                         </p>
 
                     </div>

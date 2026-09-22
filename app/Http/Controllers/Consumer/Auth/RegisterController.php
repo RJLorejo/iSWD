@@ -3,18 +3,16 @@
 namespace App\Http\Controllers\Consumer\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\Consumer\RegisterConsumerRequest;
 use App\Models\Consumer;
 use App\Models\ConsumerAddress;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class RegisterController extends Controller
 {
     /**
-     * Show consumer registration form.
+     * Show consumer registration page.
      */
     public function create()
     {
@@ -23,170 +21,92 @@ class RegisterController extends Controller
 
 
     /**
-     * Register consumer.
+     * Store consumer self-registration.
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
+    public function store(
+        RegisterConsumerRequest $request
+    ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Validated Registration Data
+        |--------------------------------------------------------------------------
+        */
 
-            /*
-            |--------------------------------------------------------------------------
-            | Account Information
-            |--------------------------------------------------------------------------
-            */
+        $validated = $request->validated();
 
-            'account_number' => [
-                'required',
-                'string',
-                'max:50',
-                'unique:consumers,account_number',
-            ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Personal Information
-            |--------------------------------------------------------------------------
-            */
-
-            'first_name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'middle_name' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'last_name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'suffix' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
-
-            'sex' => [
-                'required',
-                'in:Male,Female',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Contact
-            |--------------------------------------------------------------------------
-            */
-
-            'phone' => [
-                'required',
-                'string',
-                'max:20',
-            ],
-
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                'unique:users,email',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Address
-            |--------------------------------------------------------------------------
-            */
-
-            'house_no' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'street' => [
-                'nullable',
-                'string',
-                'max:150',
-            ],
-
-            'purok' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'barangay' => [
-                'required',
-                'string',
-                'max:150',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Password
-            |--------------------------------------------------------------------------
-            */
-
-            'password' => [
-                'required',
-                'confirmed',
-                'min:8',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Agreement
-            |--------------------------------------------------------------------------
-            */
-
-            'terms' => [
-                'accepted',
-            ],
-        ]);
-
+        /*
+        |--------------------------------------------------------------------------
+        | Create Registration
+        |--------------------------------------------------------------------------
+        |
+        | Everything is wrapped inside one database transaction.
+        |
+        | If User, Consumer, Role, or Address creation fails,
+        | Laravel rolls everything back.
+        |
+        */
 
         DB::transaction(function () use ($validated) {
 
             /*
             |--------------------------------------------------------------------------
-            | Create User
+            | Create User Account
             |--------------------------------------------------------------------------
+            |
+            | Self-registered consumers are created as INACTIVE.
+            |
+            | They cannot access the Consumer Portal until their registration
+            | has been verified and approved by Sagay Water District.
+            |
             */
 
             $user = User::create([
 
-                'first_name' => $validated['first_name'],
+                'employee_id' => null,
+
+                'first_name' =>
+                    $validated['first_name'],
 
                 'middle_name' =>
-                $validated['middle_name'] ?? null,
+                    $validated['middle_name']
+                    ?? null,
 
                 'last_name' =>
-                $validated['last_name'],
+                    $validated['last_name'],
 
                 'suffix' =>
-                $validated['suffix'] ?? null,
+                    $validated['suffix']
+                    ?? null,
 
                 'email' =>
-                $validated['email'],
+                    $validated['email'],
 
                 'phone' =>
-                $validated['phone'],
+                    $validated['phone'],
+
+                /*
+                 * User model has:
+                 *
+                 * 'password' => 'hashed'
+                 *
+                 * Laravel automatically hashes this value.
+                 */
 
                 'password' =>
-                Hash::make($validated['password']),
+                    $validated['password'],
 
-                'is_active' => true,
+                /*
+                 * Pending registrations must remain inactive.
+                 */
+
+                'is_active' => false,
             ]);
 
 
             /*
             |--------------------------------------------------------------------------
-            | Consumer Role
+            | Assign Consumer Role
             |--------------------------------------------------------------------------
             */
 
@@ -201,74 +121,174 @@ class RegisterController extends Controller
 
             $consumer = Consumer::create([
 
+                /*
+                |--------------------------------------------------------------------------
+                | Water Account
+                |--------------------------------------------------------------------------
+                */
+
                 'account_number' =>
-                $validated['account_number'],
+                    $validated['account_number'],
 
                 'user_id' =>
-                $user->id,
+                    $user->id,
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Personal Information
+                |--------------------------------------------------------------------------
+                */
 
                 'first_name' =>
-                $validated['first_name'],
+                    $validated['first_name'],
 
                 'middle_name' =>
-                $validated['middle_name'] ?? null,
+                    $validated['middle_name']
+                    ?? null,
 
                 'last_name' =>
-                $validated['last_name'],
+                    $validated['last_name'],
 
                 'suffix' =>
-                $validated['suffix'] ?? null,
+                    $validated['suffix']
+                    ?? null,
 
                 'sex' =>
-                $validated['sex'],
+                    $validated['sex'],
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Contact Information
+                |--------------------------------------------------------------------------
+                */
 
                 'phone' =>
-                $validated['phone'],
+                    $validated['phone'],
 
                 'email' =>
-                $validated['email'],
+                    $validated['email'],
 
-                'is_active' => true,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Verification Status
+                |--------------------------------------------------------------------------
+                |
+                | IMPORTANT:
+                |
+                | These values match your EXISTING database.
+                |
+                | Your database uses:
+                |
+                | verification_status
+                | verified_at
+                | verified_by
+                | verification_reason
+                |
+                */
+
+                'verification_status' =>
+                    'Pending Verification',
+
+                'verified_at' =>
+                    null,
+
+                'verified_by' =>
+                    null,
+
+                'verification_reason' =>
+                    null,
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Email / Phone Verification
+                |--------------------------------------------------------------------------
+                */
+
+                'email_verified_at' =>
+                    null,
+
+                'phone_verified_at' =>
+                    null,
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Registration Source
+                |--------------------------------------------------------------------------
+                */
+
+                'registration_source' =>
+                    'Self Registration',
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Account Status
+                |--------------------------------------------------------------------------
+                |
+                | Remains inactive until Admin approval.
+                |
+                */
+
+                'is_active' =>
+                    false,
             ]);
 
 
             /*
             |--------------------------------------------------------------------------
-            | Create Address
+            | Create Service Address
             |--------------------------------------------------------------------------
             */
 
             ConsumerAddress::create([
 
                 'consumer_id' =>
-                $consumer->id,
+                    $consumer->id,
 
                 'house_no' =>
-                $validated['house_no'] ?? null,
+                    $validated['house_no']
+                    ?? null,
 
                 'street' =>
-                $validated['street'] ?? null,
+                    $validated['street']
+                    ?? null,
 
                 'purok' =>
-                $validated['purok'] ?? null,
+                    $validated['purok']
+                    ?? null,
 
                 'barangay' =>
-                $validated['barangay'],
+                    $validated['barangay'],
 
                 'municipality' =>
-                'Sagay',
+                    'Sagay',
 
                 'province' =>
-                'Negros Occidental',
+                    'Negros Occidental',
             ]);
         });
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Registration Complete
+        |--------------------------------------------------------------------------
+        |
+        | The registration was successfully submitted, but the consumer
+        | account is NOT active yet.
+        |
+        */
 
         return redirect()
             ->route('consumer.login')
             ->with(
                 'success',
-                'Consumer account created successfully. You may now sign in.'
+                'Registration submitted successfully. Your account is pending verification by Sagay Water District. You will receive an update after your registration has been reviewed.'
             );
     }
 }

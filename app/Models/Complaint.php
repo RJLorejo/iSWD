@@ -4,71 +4,43 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Complaint extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-
         'complaint_no',
-
-        // Consumer / complainant
         'consumer_id',
         'complainant_name',
         'complainant_phone',
-
-        // Complaint classification
         'complaint_category_id',
-
-        // Assignment
+        'division_id',
         'assigned_to',
         'customer_service_id',
-
-        // Workflow
         'priority',
         'status',
-
-        // Complaint information
-        'subject',
         'description',
-
-        // Location
         'address',
         'landmark',
         'latitude',
         'longitude',
-
-        // Evidence
         'photo',
-
-        // Verification
         'verified_by',
         'verified_at',
         'verification_reason',
-
-        // Completion
         'completed_at',
     ];
 
     protected $casts = [
-
         'verified_at' => 'datetime',
         'completed_at' => 'datetime',
-
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-
         'latitude' => 'float',
         'longitude' => 'float',
     ];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
 
     public function consumer()
     {
@@ -86,6 +58,11 @@ class Complaint extends Model
         );
     }
 
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class);
+    }
+
     public function technicians()
     {
         return $this->belongsToMany(
@@ -97,10 +74,9 @@ class Complaint extends Model
             'status',
             'assigned_at',
             'started_at',
-            'completed_at'
+            'completed_at',
         ])->withTimestamps();
     }
-
 
     public function customerService()
     {
@@ -132,12 +108,6 @@ class Complaint extends Model
         )->latest('event_at');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Complaint Number
-    |--------------------------------------------------------------------------
-    */
-
     public static function generateComplaintNo(): string
     {
         $next = self::withTrashed()->max('id') + 1;
@@ -150,32 +120,16 @@ class Complaint extends Model
         );
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Complainant Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Determine whether this complaint was submitted by a walk-in complainant.
-     */
     public function isWalkIn(): bool
     {
         return is_null($this->consumer_id);
     }
 
-    /**
-     * Determine whether this complaint belongs to a registered consumer.
-     */
     public function isRegisteredConsumer(): bool
     {
         return !is_null($this->consumer_id);
     }
 
-    /**
-     * Get the complainant's display name.
-     */
     public function getComplainantNameAttribute(): ?string
     {
         if ($this->attributes['complainant_name'] ?? null) {
@@ -189,9 +143,6 @@ class Complaint extends Model
         return 'Walk-in / Unregistered Complainant';
     }
 
-    /**
-     * Get the complainant's display phone number.
-     */
     public function getComplainantPhoneAttribute(): ?string
     {
         if ($this->attributes['complainant_phone'] ?? null) {
@@ -200,13 +151,6 @@ class Complaint extends Model
 
         return $this->consumer?->phone;
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Status Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function isPending(): bool
     {
@@ -226,6 +170,11 @@ class Complaint extends Model
     public function isInProgress(): bool
     {
         return $this->status === 'In Progress';
+    }
+
+    public function isAccomplished(): bool
+    {
+        return $this->status === 'Accomplished';
     }
 
     public function isCompleted(): bool

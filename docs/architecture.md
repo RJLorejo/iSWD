@@ -117,3 +117,15 @@ Customer Service
        ↓
 Human decision
 
+✅ FastAPI foundation
+🔵 Knowledge-based assistant ← we are here
+AI confidence/threshold handling
+Connect assistant to Laravel
+Consumer AI Assistant interface
+Use existing complaint_categories for AI complaint classification
+AI priority recommendation
+Customer Service AI recommendation panel
+Evaluation/testing of the AI model
+
+
+python -m uvicorn ai.main:app --reload --port 8001

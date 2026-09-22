@@ -14,7 +14,17 @@ class UpdateComplaintCategoryRequest extends FormRequest
 
     public function rules(): array
     {
+        $complaintCategory = $this->route('complaint_category');
+
         return [
+            'division_id' => [
+                'required',
+                'integer',
+                Rule::exists('divisions', 'id')
+                    ->where(function ($query) {
+                        $query->where('is_active', true);
+                    }),
+            ],
 
             'name' => [
                 'required',
@@ -22,7 +32,7 @@ class UpdateComplaintCategoryRequest extends FormRequest
                 'max:255',
 
                 Rule::unique('complaint_categories', 'name')
-                    ->ignore($this->complaint_category),
+                    ->ignore($complaintCategory->id),
             ],
 
             'description' => [
@@ -31,7 +41,7 @@ class UpdateComplaintCategoryRequest extends FormRequest
             ],
 
             'is_active' => [
-                'nullable',
+                'required',
                 'boolean',
             ],
         ];

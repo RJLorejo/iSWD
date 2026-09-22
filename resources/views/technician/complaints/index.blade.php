@@ -310,46 +310,6 @@
 
 
         {{-- ========================================================= --}}
-        {{-- URGENT NOTICE --}}
-        {{-- ========================================================= --}}
-
-        @if ($urgentCount > 0)
-
-            <div class="rounded-2xl border border-red-200 bg-red-50 p-5">
-
-                <div class="flex items-start gap-4">
-
-                    <div class="w-11 h-11 shrink-0 rounded-xl
-                                bg-red-100 text-red-600
-                                flex items-center justify-center">
-
-                        <i class="fas fa-triangle-exclamation"></i>
-
-                    </div>
-
-                    <div>
-
-                        <h3 class="font-semibold text-red-900">
-                            Urgent maintenance cases require attention
-                        </h3>
-
-                        <p class="text-sm text-red-700 mt-1">
-                            You have {{ $urgentCount }}
-                            high or critical priority active
-                            complaint{{ $urgentCount !== 1 ? 's' : '' }}.
-                            Review these cases before lower-priority work.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        @endif
-
-
-        {{-- ========================================================= --}}
         {{-- WORKFLOW INFORMATION --}}
         {{-- ========================================================= --}}
 
@@ -474,40 +434,6 @@
                     </select>
 
 
-                    {{-- Priority --}}
-                    <select
-                        name="priority"
-                        class="rounded-xl border-gray-300
-                               focus:border-indigo-500
-                               focus:ring-indigo-500">
-
-                        <option value="">
-                            All Priorities
-                        </option>
-
-                        <option value="Critical"
-                            @selected(request('priority') === 'Critical')>
-                            Critical
-                        </option>
-
-                        <option value="High"
-                            @selected(request('priority') === 'High')>
-                            High
-                        </option>
-
-                        <option value="Medium"
-                            @selected(request('priority') === 'Medium')>
-                            Medium
-                        </option>
-
-                        <option value="Low"
-                            @selected(request('priority') === 'Low')>
-                            Low
-                        </option>
-
-                    </select>
-
-
                     {{-- Buttons --}}
                     <div class="flex gap-2">
 
@@ -527,8 +453,7 @@
 
                         @if (
                             request()->filled('search') ||
-                            request()->filled('status') ||
-                            request()->filled('priority')
+                            request()->filled('status')
                         )
 
                             <a
@@ -626,10 +551,6 @@
                             </th>
 
                             <th class="px-5 sm:px-6 py-4 text-left">
-                                Priority
-                            </th>
-
-                            <th class="px-5 sm:px-6 py-4 text-left">
                                 Status
                             </th>
 
@@ -647,13 +568,6 @@
                         @forelse ($complaints as $complaint)
 
                             @php
-
-                                $priorityClasses = match ($complaint->priority) {
-                                    'Critical' => 'bg-red-100 text-red-700',
-                                    'High' => 'bg-orange-100 text-orange-700',
-                                    'Medium' => 'bg-yellow-100 text-yellow-700',
-                                    default => 'bg-green-100 text-green-700',
-                                };
 
                                 $statusClasses = match ($complaint->status) {
                                     'Assigned' => 'bg-blue-100 text-blue-700',
@@ -810,27 +724,6 @@
                                 </td>
 
 
-                                {{-- Priority --}}
-                                <td class="px-5 sm:px-6 py-4">
-
-                                    <span class="inline-flex items-center gap-1.5
-                                                 px-2.5 py-1 rounded-full
-                                                 text-xs font-medium
-                                                 {{ $priorityClasses }}">
-
-                                        @if ($complaint->priority === 'Critical')
-
-                                            <i class="fas fa-triangle-exclamation"></i>
-
-                                        @endif
-
-                                        {{ $complaint->priority ?? 'Normal' }}
-
-                                    </span>
-
-                                </td>
-
-
                                 {{-- Status --}}
                                 <td class="px-5 sm:px-6 py-4">
 
@@ -913,13 +806,6 @@
 
                     @php
 
-                        $priorityClasses = match ($complaint->priority) {
-                            'Critical' => 'bg-red-100 text-red-700',
-                            'High' => 'bg-orange-100 text-orange-700',
-                            'Medium' => 'bg-yellow-100 text-yellow-700',
-                            default => 'bg-green-100 text-green-700',
-                        };
-
                         $statusClasses = match ($complaint->status) {
                             'Assigned' => 'bg-blue-100 text-blue-700',
                             'In Progress' => 'bg-yellow-100 text-yellow-700',
@@ -946,14 +832,6 @@
                                 </p>
 
                             </div>
-
-                            <span class="shrink-0 px-2.5 py-1 rounded-full
-                                         text-xs font-medium
-                                         {{ $priorityClasses }}">
-
-                                {{ $complaint->priority ?? 'Normal' }}
-
-                            </span>
 
                         </div>
 

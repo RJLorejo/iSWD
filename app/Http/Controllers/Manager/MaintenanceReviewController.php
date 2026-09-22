@@ -10,22 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class MaintenanceReviewController extends Controller
 {
-    /**
-     * Maintenance reports awaiting review.
-     */
     public function index(Request $request)
     {
         $query = MaintenanceReport::with([
             'complaint.consumer',
             'complaint.category',
+            'complaint.division',
             'technician',
         ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Review Status
-        |--------------------------------------------------------------------------
-        */
 
         $status = $request->get(
             'status',
@@ -39,27 +31,24 @@ class MaintenanceReviewController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('search')) {
-
             $search = trim($request->search);
 
             $query->whereHas(
                 'complaint',
                 function ($q) use ($search) {
-
                     $q->where(
                         'complaint_no',
                         'like',
                         "%{$search}%"
                     )
                         ->orWhere(
-                            'subject',
+                            'description',
+                            'like',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'address',
                             'like',
                             "%{$search}%"
                         );
@@ -67,14 +56,7 @@ class MaintenanceReviewController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Date Filter
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('from')) {
-
             $query->whereDate(
                 'submitted_at',
                 '>=',
@@ -83,7 +65,6 @@ class MaintenanceReviewController extends Controller
         }
 
         if ($request->filled('to')) {
-
             $query->whereDate(
                 'submitted_at',
                 '<=',
@@ -95,12 +76,6 @@ class MaintenanceReviewController extends Controller
             ->latest('submitted_at')
             ->paginate(15)
             ->withQueryString();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Counts
-        |--------------------------------------------------------------------------
-        */
 
         $pendingCount = MaintenanceReport::where(
             'review_status',
@@ -128,14 +103,13 @@ class MaintenanceReviewController extends Controller
         );
     }
 
-    /**
-     * Show maintenance report for review.
-     */
     public function show(MaintenanceReport $maintenanceReport)
     {
         $maintenanceReport->load([
             'complaint.consumer',
             'complaint.category',
+            'complaint.division',
+            'complaint.technicians',
             'technician',
             'reviewer',
         ]);
@@ -146,9 +120,6 @@ class MaintenanceReviewController extends Controller
         );
     }
 
-    /**
-     * Approve report.
-     */
     public function approve(
         Request $request,
         MaintenanceReport $maintenanceReport
@@ -161,31 +132,40 @@ class MaintenanceReviewController extends Controller
             ],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent approval before technician submission
-        |--------------------------------------------------------------------------
-        */
+        $maintenanceReport->load('complaint');
 
         if (!$maintenanceReport->submitted_at) {
-
             return back()->with(
                 'error',
-                'This maintenance report cannot be approved because the technician has not submitted it yet.'
+                'This accomplishment report cannot be approved because it has not been submitted yet.'
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent approving an already approved report
-        |--------------------------------------------------------------------------
-        */
-
         if ($maintenanceReport->review_status === 'Approved') {
-
             return back()->with(
                 'error',
-                'This maintenance report has already been approved.'
+                'This accomplishment report has already been approved.'
+            );
+        }
+
+        if ($maintenanceReport->review_status !== 'Pending Review') {
+            return back()->with(
+                'error',
+                'Only accomplishment reports pending review can be approved.'
+            );
+        }
+
+        if (!$maintenanceReport->complaint) {
+            return back()->with(
+                'error',
+                'The complaint associated with this accomplishment report could not be found.'
+            );
+        }
+
+        if ($maintenanceReport->complaint->status !== 'Accomplished') {
+            return back()->with(
+                'error',
+                'Only accomplished service work can be approved.'
             );
         }
 
@@ -193,17 +173,16 @@ class MaintenanceReviewController extends Controller
             $maintenanceReport,
             $request
         ) {
-
             $maintenanceReport->update([
-
                 'review_status' => 'Approved',
-
                 'reviewed_by' => Auth::id(),
-
                 'reviewed_at' => now(),
+                'review_remarks' => $request->review_remarks,
+            ]);
 
-                'review_remarks' =>
-                    $request->review_remarks,
+            $maintenanceReport->complaint->update([
+                'status' => 'Completed',
+                'completed_at' => now(),
             ]);
         });
 
@@ -214,13 +193,10 @@ class MaintenanceReviewController extends Controller
             )
             ->with(
                 'success',
-                'Maintenance report approved successfully.'
+                'Service accomplishment approved successfully. The complaint is now completed.'
             );
     }
 
-    /**
-     * Return report for correction.
-     */
     public function returnForCorrection(
         Request $request,
         MaintenanceReport $maintenanceReport
@@ -233,34 +209,29 @@ class MaintenanceReviewController extends Controller
             ],
         ], [
             'review_remarks.required' =>
-                'Please provide the reason or corrections required.',
+            'Please provide the corrections required.',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent returning before technician submission
-        |--------------------------------------------------------------------------
-        */
+        $maintenanceReport->load('complaint');
 
         if (!$maintenanceReport->submitted_at) {
-
             return back()->with(
                 'error',
-                'This maintenance report cannot be returned because the technician has not submitted it yet.'
+                'This accomplishment report cannot be returned because it has not been submitted yet.'
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent returning an approved report
-        |--------------------------------------------------------------------------
-        */
-
         if ($maintenanceReport->review_status === 'Approved') {
-
             return back()->with(
                 'error',
-                'An approved maintenance report cannot be returned.'
+                'An approved accomplishment report cannot be returned.'
+            );
+        }
+
+        if ($maintenanceReport->review_status !== 'Pending Review') {
+            return back()->with(
+                'error',
+                'Only accomplishment reports pending review can be returned for correction.'
             );
         }
 
@@ -268,18 +239,22 @@ class MaintenanceReviewController extends Controller
             $maintenanceReport,
             $validated
         ) {
-
             $maintenanceReport->update([
-
                 'review_status' => 'Returned',
-
                 'reviewed_by' => Auth::id(),
-
                 'reviewed_at' => now(),
-
-                'review_remarks' =>
-                    $validated['review_remarks'],
+                'review_remarks' => $validated['review_remarks'],
             ]);
+
+            if (
+                $maintenanceReport->complaint &&
+                $maintenanceReport->complaint->status !== 'Accomplished'
+            ) {
+                $maintenanceReport->complaint->update([
+                    'status' => 'Accomplished',
+                    'completed_at' => null,
+                ]);
+            }
         });
 
         return redirect()
@@ -288,7 +263,7 @@ class MaintenanceReviewController extends Controller
             )
             ->with(
                 'success',
-                'Maintenance report returned to the technician for correction.'
+                'Accomplishment report returned to the technician for correction.'
             );
     }
 }

@@ -45,8 +45,7 @@
 
                 <p class="text-sm text-slate-500 mt-3">
 
-                    Submitted
-                    {{ optional($complaint->created_at)->format('F d, Y h:i A') }}
+                    Submitted {{ $complaint->created_at->timezone('Asia/Manila')->format('F j, Y g:i A') }}
 
                 </p>
 
@@ -161,7 +160,7 @@
                     <div class="space-y-6">
 
 
-                        {{-- CATEGORY --}}
+                        {{-- COMPLAINT --}}
 
                         <div>
 
@@ -171,7 +170,7 @@
                                     uppercase tracking-wide
                                     text-slate-400
                                 ">
-                                Category
+                                Complaint
                             </p>
 
                             <p class="text-sm font-semibold text-slate-800 mt-1">
@@ -181,29 +180,6 @@
                             </p>
 
                         </div>
-
-
-                        {{-- SUBJECT --}}
-
-                        <div>
-
-                            <p
-                                class="
-                                    text-xs font-semibold
-                                    uppercase tracking-wide
-                                    text-slate-400
-                                ">
-                                Short Description
-                            </p>
-
-                            <p class="text-base font-semibold text-slate-800 mt-1">
-
-                                {{ $complaint->subject }}
-
-                            </p>
-
-                        </div>
-
 
                         {{-- DESCRIPTION --}}
 
@@ -215,13 +191,13 @@
                                     uppercase tracking-wide
                                     text-slate-400
                                 ">
-                                What Happened
+                                Description
                             </p>
 
                             <p
                                 class="
                                     text-sm text-slate-600
-                                    mt-2 leading-7
+                                    mt-1 leading-7
                                     whitespace-pre-line
                                 ">
 

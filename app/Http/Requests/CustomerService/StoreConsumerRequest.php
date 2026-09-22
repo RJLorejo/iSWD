@@ -3,6 +3,7 @@
 namespace App\Http\Requests\CustomerService;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreConsumerRequest extends FormRequest
 {
@@ -11,32 +12,44 @@ class StoreConsumerRequest extends FormRequest
         return true;
     }
 
+
     public function rules(): array
     {
         return [
 
             /*
             |--------------------------------------------------------------------------
-            | Consumer
+            | Consumer Information
             |--------------------------------------------------------------------------
             */
+
+            'account_number' => [
+                'required',
+                'string',
+                'max:100',
+
+                Rule::unique(
+                    'consumers',
+                    'account_number'
+                ),
+            ],
 
             'first_name' => [
                 'required',
                 'string',
-                'max:255',
+                'max:100',
             ],
 
             'middle_name' => [
                 'nullable',
                 'string',
-                'max:255',
+                'max:100',
             ],
 
             'last_name' => [
                 'required',
                 'string',
-                'max:255',
+                'max:100',
             ],
 
             'suffix' => [
@@ -47,12 +60,11 @@ class StoreConsumerRequest extends FormRequest
 
             'sex' => [
                 'required',
-                'in:Male,Female',
-            ],
 
-            'birth_date' => [
-                'nullable',
-                'date',
+                Rule::in([
+                    'Male',
+                    'Female',
+                ]),
             ],
 
             'phone' => [
@@ -61,10 +73,31 @@ class StoreConsumerRequest extends FormRequest
                 'max:20',
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | Portal Login Email
+            |--------------------------------------------------------------------------
+            |
+            | Every consumer created by Customer Service now receives
+            | an online portal account.
+            |
+            */
+
             'email' => [
-                'nullable',
+                'required',
                 'email',
                 'max:255',
+
+                /*
+                 * Do NOT exclude soft-deleted users here.
+                 *
+                 * The database unique constraint still sees those rows,
+                 * so validation must also see them.
+                 */
+                Rule::unique(
+                    'users',
+                    'email'
+                ),
             ],
 
 
@@ -110,129 +143,52 @@ class StoreConsumerRequest extends FormRequest
                 'max:255',
             ],
 
-            'zip_code' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
+        ];
+    }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Portal Account
-            |--------------------------------------------------------------------------
-            */
+    public function messages(): array
+    {
+        return [
 
-            'create_account' => [
-                'nullable',
-                'boolean',
-            ],
+            'account_number.required' =>
+                'Please enter the consumer account number.',
 
+            'account_number.unique' =>
+                'This consumer account number is already registered.',
 
-            /*
-            |--------------------------------------------------------------------------
-            | Service Connection
-            |--------------------------------------------------------------------------
-            */
+            'first_name.required' =>
+                'Please enter the consumer first name.',
 
-            'account_number' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+            'last_name.required' =>
+                'Please enter the consumer last name.',
 
-            'service_connection_number' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
+            'sex.required' =>
+                'Please select the consumer sex.',
 
-            'meter_number' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+            'sex.in' =>
+                'Please select a valid sex.',
 
-            'connection_type' => [
-                'required',
-                'in:Residential,Commercial,Government,Institutional',
-            ],
+            'phone.required' =>
+                'Please enter the consumer phone number.',
 
-            'meter_size' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
+            'email.required' =>
+                'Please enter an email address for the consumer portal account.',
 
-            'status' => [
-                'required',
-                'in:Active,Inactive,Disconnected,Temporary,Pending',
-            ],
+            'email.email' =>
+                'Please enter a valid email address.',
 
-            'installation_date' => [
-                'nullable',
-                'date',
-            ],
+            'email.unique' =>
+                'This email address is already registered to another account.',
 
-            'remarks' => [
-                'nullable',
-                'string',
-            ],
+            'barangay.required' =>
+                'Please enter the barangay.',
 
+            'municipality.required' =>
+                'Please enter the municipality.',
 
-            /*
-            |--------------------------------------------------------------------------
-            | Service Address
-            |--------------------------------------------------------------------------
-            */
-
-            'service_house_no' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'service_street' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'service_purok' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'service_barangay' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'service_city' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'service_province' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'service_zip_code' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
-
-            'landmark' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
+            'province.required' =>
+                'Please enter the province.',
         ];
     }
 }

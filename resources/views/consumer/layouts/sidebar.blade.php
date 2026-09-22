@@ -82,11 +82,19 @@
         </a>
 
 
-        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+        <a href="{{ route('consumer.ai.index') }}" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
 
             <i class="fa-solid fa-robot w-6"></i>
 
             <span x-show="!sidebarMini">Ai Assistant</span>
+
+        </a>
+
+        <a href="{{ route('consumer.announcements.index') }}" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/20">
+
+            <i class="fa-solid fa-bullhorn w-6"></i>
+
+            <span x-show="!sidebarMini">Announcements</span>
 
         </a>
 

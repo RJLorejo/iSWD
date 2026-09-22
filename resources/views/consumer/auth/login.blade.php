@@ -89,12 +89,6 @@
                                px-4 py-3"
                             placeholder="you@example.com">
 
-                        @error('email')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-
                     </div>
 
 

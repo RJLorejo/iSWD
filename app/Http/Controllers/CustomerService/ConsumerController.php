@@ -7,489 +7,698 @@ use App\Http\Requests\CustomerService\StoreConsumerRequest;
 use App\Http\Requests\CustomerService\UpdateConsumerRequest;
 use App\Models\Consumer;
 use App\Models\ConsumerAddress;
-use App\Models\ServiceConnection;
-use App\Models\ServiceAddress;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Str;
 
 class ConsumerController extends Controller
 {
+    /**
+     * Display consumers.
+     */
     public function index(Request $request)
     {
-        $query = Consumer::with([
-            'address',
-            'serviceConnections.address',
-            'user'
-        ]);
+        $query = Consumer::query()
+            ->with([
+                'address',
+                'user',
+            ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
 
         if ($request->filled('search')) {
 
-            $search = $request->search;
+            $search = trim($request->search);
 
             $query->where(function ($q) use ($search) {
 
-                $q->where('consumer_no', 'like', "%{$search}%")
-                    ->orWhere('first_name', 'like', "%{$search}%")
-                    ->orWhere('middle_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
+                $q->where(
+                    'account_number',
+                    'like',
+                    "%{$search}%"
+                )
+                    ->orWhere(
+                        'first_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'middle_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'last_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'phone',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'email',
+                        'like',
+                        "%{$search}%"
+                    )
 
-                    ->orWhereHas('serviceConnections', function ($connection) use ($search) {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Residential Address Search
+                    |--------------------------------------------------------------------------
+                    */
 
-                        $connection
-                            ->where('account_number', 'like', "%{$search}%")
-                            ->orWhere('meter_number', 'like', "%{$search}%")
-                            ->orWhere(
-                                'service_connection_number',
-                                'like',
-                                "%{$search}%"
-                            );
-                    });
+                    ->orWhereHas(
+                        'address',
+                        function ($address) use ($search) {
+
+                            $address
+                                ->where(
+                                    'house_no',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'street',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'purok',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'barangay',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'municipality',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'province',
+                                    'like',
+                                    "%{$search}%"
+                                );
+                        }
+                    );
             });
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status Filter
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->filled('status')) {
 
-            $query->where('is_active', $request->status);
+            $query->where(
+                'is_active',
+                $request->status
+            );
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
 
         $consumers = $query
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        return view('customer-service.consumers.index', [
 
-            'consumers' => $consumers,
+        /*
+        |--------------------------------------------------------------------------
+        | Statistics
+        |--------------------------------------------------------------------------
+        */
 
-            'totalConsumers' => Consumer::count(),
+        return view(
+            'customer-service.consumers.index',
+            [
+                'consumers' => $consumers,
 
-            'activeConsumers' => Consumer::where('is_active', true)->count(),
+                'totalConsumers' =>
+                Consumer::count(),
 
-            'inactiveConsumers' => Consumer::where('is_active', false)->count(),
+                'activeConsumers' =>
+                Consumer::where(
+                    'is_active',
+                    true
+                )->count(),
 
-            'todayConsumers' => Consumer::whereDate('created_at', today())->count(),
+                'inactiveConsumers' =>
+                Consumer::where(
+                    'is_active',
+                    false
+                )->count(),
 
-        ]);
+                'todayConsumers' =>
+                Consumer::whereDate(
+                    'created_at',
+                    today()
+                )->count(),
+            ]
+        );
     }
+
 
     /**
      * Show create form.
      */
     public function create()
     {
-        return view('customer-service.consumers.create');
+        return view(
+            'customer-service.consumers.create'
+        );
     }
 
-    /**
-     * Store Consumer.
-     */
-    public function store(StoreConsumerRequest $request)
-    {
-        DB::transaction(function () use ($request) {
 
-            /*
+    /**
+     * Store consumer.
+     */
+    public function store(
+        StoreConsumerRequest $request
+    ) {
+        $validated =
+            $request->validated();
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Generate Temporary Password
+    |--------------------------------------------------------------------------
+    |
+    | This plain password exists only during this request.
+    | Only the hashed version is stored in the users table.
+    |
+    */
+
+        $temporaryPassword =
+            'SWD@' . Str::upper(
+                Str::random(8)
+            );
+
+
+        $consumer = DB::transaction(
+            function () use (
+                $validated,
+                $temporaryPassword
+            ) {
+
+                /*
             |--------------------------------------------------------------------------
-            | Create Portal Account (Optional)
+            | Create Portal User
             |--------------------------------------------------------------------------
             */
-
-            $user = null;
-
-            if ($request->boolean('create_account')) {
 
                 $user = User::create([
 
                     'employee_id' => null,
 
-                    'first_name' => $request->first_name,
+                    'first_name' =>
+                    $validated['first_name'],
 
-                    'middle_name' => $request->middle_name,
+                    'middle_name' =>
+                    $validated['middle_name']
+                        ?? null,
 
-                    'last_name' => $request->last_name,
+                    'last_name' =>
+                    $validated['last_name'],
 
-                    'suffix' => $request->suffix,
+                    'suffix' =>
+                    $validated['suffix']
+                        ?? null,
 
-                    'phone' => $request->phone,
+                    'phone' =>
+                    $validated['phone'],
 
-                    'email' => $request->email,
+                    'email' =>
+                    $validated['email'],
 
-                    'password' => Hash::make('Temp@12345'),
+                    'password' =>
+                    Hash::make(
+                        $temporaryPassword
+                    ),
+
+                    /*
+                |--------------------------------------------------------------------------
+                | CS-Created Account Is Immediately Active
+                |--------------------------------------------------------------------------
+                */
 
                     'is_active' => true,
-
                 ]);
 
-                $user->assignRole('Consumer');
-            }
 
-            /*
+                /*
+            |--------------------------------------------------------------------------
+            | Consumer Role
+            |--------------------------------------------------------------------------
+            */
+
+                $user->assignRole(
+                    'Consumer'
+                );
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | Create Consumer
+            |--------------------------------------------------------------------------
+            */
+
+                $consumer = Consumer::create([
+
+                    'account_number' =>
+                    $validated['account_number'],
+
+                    'user_id' =>
+                    $user->id,
+
+                    'first_name' =>
+                    $validated['first_name'],
+
+                    'middle_name' =>
+                    $validated['middle_name']
+                        ?? null,
+
+                    'last_name' =>
+                    $validated['last_name'],
+
+                    'suffix' =>
+                    $validated['suffix']
+                        ?? null,
+
+                    'sex' =>
+                    $validated['sex'],
+
+                    'phone' =>
+                    $validated['phone'],
+
+                    'email' =>
+                    $validated['email'],
+
+                    'is_active' =>
+                    true,
+                ]);
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | Residential Address
+            |--------------------------------------------------------------------------
+            */
+
+                ConsumerAddress::create([
+
+                    'consumer_id' =>
+                    $consumer->id,
+
+                    'house_no' =>
+                    $validated['house_no']
+                        ?? null,
+
+                    'street' =>
+                    $validated['street']
+                        ?? null,
+
+                    'purok' =>
+                    $validated['purok']
+                        ?? null,
+
+                    'barangay' =>
+                    $validated['barangay'],
+
+                    'municipality' =>
+                    $validated['municipality'],
+
+                    'province' =>
+                    $validated['province'],
+                ]);
+
+
+                return $consumer;
+            }
+        );
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Redirect With One-Time Credentials
+    |--------------------------------------------------------------------------
+    |
+    | Do NOT save the plain password to the database.
+    |
+    */
+
+        return redirect()
+            ->route(
+                'customer-service.consumers.show',
+                $consumer
+            )
+            ->with(
+                'account_created',
+                true
+            )
+            ->with(
+                'temporary_password',
+                $temporaryPassword
+            )
+            ->with(
+                'success',
+                'Consumer account created successfully.'
+            );
+    }
+
+
+    /**
+     * Display consumer details.
+     */
+    public function show(
+        Consumer $consumer
+    ) {
+        $consumer->load([
+            'address',
+            'user',
+            'complaints.division',
+            'complaints.category',
+        ]);
+
+
+        return view(
+            'customer-service.consumers.show',
+            compact('consumer')
+        );
+    }
+
+
+    /**
+     * Show edit form.
+     */
+    public function edit(
+        Consumer $consumer
+    ) {
+        $consumer->load([
+            'address',
+            'user',
+        ]);
+
+
+        return view(
+            'customer-service.consumers.edit',
+            compact('consumer')
+        );
+    }
+
+
+    /**
+     * Update consumer.
+     */
+    public function update(
+        UpdateConsumerRequest $request,
+        Consumer $consumer
+    ) {
+        $validated =
+            $request->validated();
+
+
+        DB::transaction(
+            function () use (
+                $validated,
+                $consumer
+            ) {
+
+                /*
             |--------------------------------------------------------------------------
             | Consumer
             |--------------------------------------------------------------------------
             */
 
-            $consumer = Consumer::create([
+                $consumer->update([
 
-                'consumer_no' => Consumer::generateConsumerNo(),
+                    'account_number' =>
+                    $validated['account_number'],
 
-                'user_id' => $user?->id,
+                    'first_name' =>
+                    $validated['first_name'],
 
-                'first_name' => $request->first_name,
+                    'middle_name' =>
+                    $validated['middle_name']
+                        ?? null,
 
-                'middle_name' => $request->middle_name,
+                    'last_name' =>
+                    $validated['last_name'],
 
-                'last_name' => $request->last_name,
+                    'suffix' =>
+                    $validated['suffix']
+                        ?? null,
 
-                'suffix' => $request->suffix,
+                    'sex' =>
+                    $validated['sex'],
 
-                'sex' => $request->sex,
+                    'phone' =>
+                    $validated['phone'],
 
-                'birth_date' => $request->birth_date,
+                    'email' =>
+                    $validated['email'],
 
-                'phone' => $request->phone,
-
-                'email' => $request->email,
-
-                'is_active' => true,
-
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Residential Address
-            |--------------------------------------------------------------------------
-            */
-            ConsumerAddress::create([
-
-                'consumer_id' => $consumer->id,
-
-                'house_no' => $request->house_no,
-
-                'street' => $request->street,
-
-                'purok' => $request->purok,
-
-                'barangay' => $request->barangay,
-
-                'municipality' => $request->municipality ?? 'Sagay',
-
-                'province' => $request->province ?? 'Negros Occidental',
-
-                'zip_code' => $request->zip_code,
-
-            ]);
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Service Connection
-            |--------------------------------------------------------------------------
-            */
-
-            $connection = ServiceConnection::create([
-
-                'consumer_id' => $consumer->id,
-
-                'account_number' => $request->account_number,
-
-                'service_connection_number' =>
-                $request->service_connection_number
-                    ?: ServiceConnection::generateConnectionNumber(),
-
-                'meter_number' => $request->meter_number,
-
-                'status' => $request->status ?? 'Pending',
-
-                'installation_date' => $request->installation_date,
-
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Service Address
-            |--------------------------------------------------------------------------
-            */
-            ServiceAddress::create([
-
-                'service_connection_id' => $connection->id,
-
-                'house_no' => $request->service_house_no,
-
-                'street' => $request->service_street,
-
-                'purok' => $request->service_purok,
-
-                'barangay' => $request->service_barangay,
-
-                'city' => $request->service_city,
-
-                'province' => $request->service_province,
-
-                'zip_code' => $request->service_zip_code,
-
-                'landmark' => $request->landmark,
-
-            ]);
-        });
-
-        return redirect()
-
-            ->route('customer-service.consumers.index')
-
-            ->with('success', 'Consumer registered successfully.');
-    }
-
-    public function show(Consumer $consumer)
-    {
-        $consumer->load([
-            'address',
-            'serviceConnections.address',
-            'user',
-        ]);
-
-        return view('customer-service.consumers.show', compact('consumer'));
-    }
-
-    public function edit(Consumer $consumer)
-    {
-        $consumer->load([
-            'address',
-            'serviceConnections.address',
-        ]);
-
-        // For now, edit the first service connection.
-        // Later, we can support multiple connections from the UI.
-        $connection = $consumer->serviceConnections->first();
-
-        return view('customer-service.consumers.edit', compact(
-            'consumer',
-            'connection'
-        ));
-    }
-
-    public function update(
-        UpdateConsumerRequest $request,
-        Consumer $consumer
-    ) {
-        DB::transaction(function () use ($request, $consumer) {
-
-            /*
-        |--------------------------------------------------------------------------
-        | Consumer
-        |--------------------------------------------------------------------------
-        */
-
-            $consumer->update([
-
-                'first_name' => $request->first_name,
-
-                'middle_name' => $request->middle_name,
-
-                'last_name' => $request->last_name,
-
-                'suffix' => $request->suffix,
-
-                'sex' => $request->sex,
-
-                'birth_date' => $request->birth_date,
-
-                'phone' => $request->phone,
-
-                'email' => $request->email,
-
-                'is_active' => $request->boolean('is_active'),
-
-            ]);
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Residential Address
-        |--------------------------------------------------------------------------
-        */
-
-            $consumer->address()->updateOrCreate(
-
-                [
-                    'consumer_id' => $consumer->id,
-                ],
-
-                [
-
-                    'house_no' => $request->house_no,
-
-                    'street' => $request->street,
-
-                    'purok' => $request->purok,
-
-                    'barangay' => $request->barangay,
-
-                    'municipality' => $request->municipality ?? 'Sagay',
-
-                    'province' => $request->province ?? 'Negros Occidental',
-
-                    'zip_code' => $request->zip_code,
-
-                ]
-
-            );
-
-
-            /*
-        |--------------------------------------------------------------------------
-        | Service Connection
-        |--------------------------------------------------------------------------
-        */
-
-            $connection = $consumer->serviceConnections()->first();
-
-            if ($connection) {
-
-                $connection->update([
-
-                    'account_number' => $request->account_number,
-
-                    'meter_number' => $request->meter_number,
-
-                    'connection_type' => $request->connection_type,
-
-                    'meter_size' => $request->meter_size,
-
-                    'status' => $request->connection_status,
-
-                    'installation_date' => $request->installation_date,
-
-
-
-                    'remarks' => $request->remarks,
-
+                    'is_active' =>
+                    (bool) $validated['is_active'],
                 ]);
 
 
                 /*
             |--------------------------------------------------------------------------
-            | Service Address
+            | Residential Address
             |--------------------------------------------------------------------------
             */
 
-                $connection->address()->updateOrCreate(
+                $consumer->address()->updateOrCreate(
 
                     [
-                        'service_connection_id' => $connection->id,
+                        'consumer_id' =>
+                        $consumer->id,
                     ],
 
                     [
+                        'house_no' =>
+                        $validated['house_no']
+                            ?? null,
 
-                        'house_no' => $request->service_house_no,
+                        'street' =>
+                        $validated['street']
+                            ?? null,
 
-                        'street' => $request->service_street,
+                        'purok' =>
+                        $validated['purok']
+                            ?? null,
 
-                        'purok' => $request->service_purok,
+                        'barangay' =>
+                        $validated['barangay'],
 
-                        'barangay' => $request->service_barangay,
+                        'municipality' =>
+                        $validated['municipality'],
 
-                        'city' => $request->service_city ?? 'Sagay City',
-
-                        'province' => $request->service_province ?? 'Negros Occidental',
-
-                        'zip_code' => $request->service_zip_code,
-
-                        'landmark' => $request->landmark,
+                        'province' =>
+                        $validated['province'],
 
                     ]
-
                 );
 
+
                 /*
-|--------------------------------------------------------------------------
-| Consumer Portal Account
-|--------------------------------------------------------------------------
-*/
+            |--------------------------------------------------------------------------
+            | Portal Account
+            |--------------------------------------------------------------------------
+            */
 
-                if ($request->boolean('create_account') && !$consumer->user) {
+                if ($consumer->user) {
 
-                    $user = User::create([
+                    $user =
+                        $consumer->user;
 
-                        'employee_id' => null,
 
-                        'first_name' => $consumer->first_name,
+                    $user->update([
 
-                        'middle_name' => $consumer->middle_name,
+                        'first_name' =>
+                        $consumer->first_name,
 
-                        'last_name' => $consumer->last_name,
+                        'middle_name' =>
+                        $consumer->middle_name,
 
-                        'suffix' => $consumer->suffix,
+                        'last_name' =>
+                        $consumer->last_name,
 
-                        'phone' => $consumer->phone,
+                        'suffix' =>
+                        $consumer->suffix,
 
-                        'email' => $consumer->email,
+                        'phone' =>
+                        $consumer->phone,
 
-                        'password' => Hash::make('Temp@12345'),
+                        'email' =>
+                        $consumer->email,
 
-                        'is_active' => true,
+                        /*
+                    |--------------------------------------------------------------------------
+                    | Synchronize Active / Inactive
+                    |--------------------------------------------------------------------------
+                    */
 
+                        'is_active' =>
+                        $consumer->is_active,
                     ]);
 
-                    $user->assignRole('Consumer');
 
-                    $consumer->update([
-                        'user_id' => $user->id,
-                    ]);
+                    /*
+                |--------------------------------------------------------------------------
+                | Reset Password
+                |--------------------------------------------------------------------------
+                */
+
+                    if (
+                        !empty($validated['new_password'])
+                    ) {
+
+                        $user->update([
+
+                            'password' =>
+                            Hash::make(
+                                $validated['new_password']
+                            ),
+
+                        ]);
+                    }
                 }
             }
-        });
-
+        );
 
 
         return redirect()
-
             ->route(
                 'customer-service.consumers.show',
                 $consumer
             )
-
             ->with(
                 'success',
                 'Consumer information updated successfully.'
             );
     }
 
-    public function destroy(Consumer $consumer)
-    {
-        DB::transaction(function () use ($consumer) {
 
-            // Delete portal account if connected
-            if ($consumer->user) {
-                $consumer->user->delete();
-            }
+    /**
+     * Delete consumer.
+     */
+    public function destroy(
+        Consumer $consumer
+    ) {
+        DB::transaction(
+            function () use ($consumer) {
 
-            // Delete residential address
-            if ($consumer->address) {
-                $consumer->address->delete();
-            }
+                /*
+            |--------------------------------------------------------------------------
+            | Load Related Records
+            |--------------------------------------------------------------------------
+            */
 
-            // Delete service connections and their addresses
-            foreach ($consumer->serviceConnections as $connection) {
+                $consumer->load([
+                    'user',
+                    'address',
+                ]);
 
-                if ($connection->address) {
-                    $connection->address->delete();
+
+                /*
+            |--------------------------------------------------------------------------
+            | Keep User Reference
+            |--------------------------------------------------------------------------
+            |
+            | Save it before deleting the consumer.
+            |
+            */
+
+                $user = $consumer->user;
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | Consumer Address
+            |--------------------------------------------------------------------------
+            |
+            | ConsumerAddress does not use SoftDeletes,
+            | so delete() permanently removes it.
+            |
+            */
+
+                if ($consumer->address) {
+
+                    $consumer->address->delete();
                 }
 
-                $connection->delete();
-            }
 
-            // Soft delete consumer
-            $consumer->delete();
-        });
+                /*
+            |--------------------------------------------------------------------------
+            | Consumer
+            |--------------------------------------------------------------------------
+            |
+            | Consumer uses SoftDeletes.
+            | forceDelete() permanently removes it.
+            |
+            */
+
+                $consumer->forceDelete();
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | Portal User
+            |--------------------------------------------------------------------------
+            |
+            | User also uses SoftDeletes.
+            | forceDelete() permanently removes it.
+            |
+            */
+
+                if ($user) {
+
+                    /*
+                 * Remove Spatie role relationships first.
+                 */
+                    $user->syncRoles([]);
+
+
+                    /*
+                 * Permanently delete the User.
+                 */
+                    $user->forceDelete();
+                }
+            }
+        );
+
 
         return redirect()
-            ->route('customer-service.consumers.index')
-            ->with('success', 'Consumer deleted successfully.');
+            ->route(
+                'customer-service.consumers.index'
+            )
+            ->with(
+                'success',
+                'Consumer and portal account permanently deleted successfully.'
+            );
     }
 }
-

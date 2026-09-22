@@ -3,22 +3,18 @@
 namespace App\Http\Controllers\Consumer\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
-    /**
-     * Show consumer login page.
-     */
     public function create()
     {
         return view('consumer.auth.login');
     }
 
-    /**
-     * Authenticate consumer.
-     */
     public function store(Request $request)
     {
         $credentials = $request->validate([
@@ -33,20 +29,16 @@ class LoginController extends Controller
             ],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Attempt authentication
-        |--------------------------------------------------------------------------
-        */
+        $user = User::query()
+            ->with('consumer')
+            ->where('email', $credentials['email'])
+            ->first();
 
         if (
-            !Auth::attempt(
-                [
-                    'email' => $credentials['email'],
-                    'password' => $credentials['password'],
-                    'is_active' => true,
-                ],
-                $request->boolean('remember')
+            !$user ||
+            !Hash::check(
+                $credentials['password'],
+                $user->password
             )
         ) {
             return back()
@@ -56,18 +48,7 @@ class LoginController extends Controller
                 ->onlyInput('email');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Verify Consumer Role
-        |--------------------------------------------------------------------------
-        */
-
-        $user = Auth::user();
-
         if (!$user->hasRole('Consumer')) {
-
-            Auth::logout();
-
             return back()
                 ->withErrors([
                     'email' => 'This login is for consumer accounts only.',
@@ -75,33 +56,66 @@ class LoginController extends Controller
                 ->onlyInput('email');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Regenerate Session
-        |--------------------------------------------------------------------------
-        */
+        $consumer = $user->consumer;
+
+        if (!$consumer) {
+            return back()
+                ->withErrors([
+                    'email' => 'No consumer record is associated with this account. Please contact Sagay Water District.',
+                ])
+                ->onlyInput('email');
+        }
+
+        if (
+            $consumer->verification_status === 'Pending Verification' ||
+            $consumer->verification_status === 'Rejected'
+        ) {
+            Auth::login(
+                $user,
+                $request->boolean('remember')
+            );
+
+            $request->session()->regenerate();
+
+            return redirect()
+                ->route('consumer.registration.status');
+        }
+
+        if ($consumer->verification_status !== 'Verified') {
+            return back()
+                ->withErrors([
+                    'email' => 'Your consumer account has not yet been verified by Sagay Water District.',
+                ])
+                ->onlyInput('email');
+        }
+
+        if (
+            !$consumer->is_active ||
+            !$user->is_active
+        ) {
+            return back()
+                ->withErrors([
+                    'email' => 'Your consumer account is currently inactive. Please contact Sagay Water District for assistance.',
+                ])
+                ->onlyInput('email');
+        }
+
+        Auth::login(
+            $user,
+            $request->boolean('remember')
+        );
 
         $request->session()->regenerate();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Update Login Information
-        |--------------------------------------------------------------------------
-        */
 
         $user->update([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip(),
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Redirect
-        |--------------------------------------------------------------------------
-        */
-
         return redirect()
-            ->intended(route('consumer.dashboard'))
+            ->intended(
+                route('consumer.dashboard')
+            )
             ->with(
                 'success',
                 'Welcome back to the iSWD Consumer Portal.'

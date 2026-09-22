@@ -4,6 +4,7 @@ namespace App\Http\Requests\CustomerService;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UpdateConsumerRequest extends FormRequest
 {
@@ -12,8 +13,14 @@ class UpdateConsumerRequest extends FormRequest
         return true;
     }
 
+
     public function rules(): array
     {
+        $consumer = $this->route('consumer');
+
+        $userId = $consumer?->user_id;
+
+
         return [
 
             /*
@@ -21,6 +28,17 @@ class UpdateConsumerRequest extends FormRequest
             | Consumer Information
             |--------------------------------------------------------------------------
             */
+
+            'account_number' => [
+                'required',
+                'string',
+                'max:100',
+
+                Rule::unique(
+                    'consumers',
+                    'account_number'
+                )->ignore($consumer?->id),
+            ],
 
             'first_name' => [
                 'required',
@@ -48,12 +66,11 @@ class UpdateConsumerRequest extends FormRequest
 
             'sex' => [
                 'required',
-                Rule::in(['Male', 'Female']),
-            ],
 
-            'birth_date' => [
-                'nullable',
-                'date',
+                Rule::in([
+                    'Male',
+                    'Female',
+                ]),
             ],
 
             'phone' => [
@@ -62,11 +79,51 @@ class UpdateConsumerRequest extends FormRequest
                 'max:20',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Portal Login Email
+            |--------------------------------------------------------------------------
+            */
+
             'email' => [
-                'nullable',
+                'required',
                 'email',
                 'max:255',
-                'required_if:create_account,1',
+
+                Rule::unique(
+                    'users',
+                    'email'
+                )->ignore($userId),
+            ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Account Status
+            |--------------------------------------------------------------------------
+            */
+
+            'is_active' => [
+                'required',
+                'boolean',
+            ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Password Reset
+            |--------------------------------------------------------------------------
+            */
+
+            'new_password' => [
+                'nullable',
+                'confirmed',
+
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers(),
             ],
 
 
@@ -101,180 +158,69 @@ class UpdateConsumerRequest extends FormRequest
             ],
 
             'municipality' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'province' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'zip_code' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Service Connection
-            |--------------------------------------------------------------------------
-            */
-
-            'account_number' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'meter_number' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'connection_type' => [
-                'required',
-                Rule::in([
-                    'Residential',
-                    'Commercial',
-                    'Government',
-                    'Institutional',
-                ]),
-            ],
-
-            'meter_size' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            /*
-             * IMPORTANT:
-             *
-             * The form uses connection_status.
-             * The database column is status.
-             */
-            'connection_status' => [
-                'required',
-                Rule::in([
-                    'Active',
-                    'Inactive',
-                    'Disconnected',
-                    'Temporary',
-                    'Pending',
-                ]),
-            ],
-
-            'installation_date' => [
-                'nullable',
-                'date',
-            ],
-
-            'remarks' => [
-                'nullable',
-                'string',
-            ],
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Service Address
-            |--------------------------------------------------------------------------
-            */
-
-            'service_house_no' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'service_street' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'service_purok' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'service_barangay' => [
                 'required',
                 'string',
                 'max:255',
-            ],
-
-            /*
-             * IMPORTANT:
-             *
-             * The form uses service_city.
-             * The database column is city.
-             */
-            'service_city' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'service_province' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'service_postal_code' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
-
-            'landmark' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Portal Account
-            |--------------------------------------------------------------------------
-            */
-
-            'create_account' => [
-                'nullable',
-                'boolean',
             ],
 
         ];
     }
 
+
     public function messages(): array
     {
         return [
 
-            'connection_status.required' =>
-            'Please select the service connection status.',
+            'account_number.required' =>
+                'Please enter the consumer account number.',
 
-            'service_city.required' =>
-            'Please enter the service city.',
+            'account_number.unique' =>
+                'This consumer account number is already registered.',
 
-            'service_barangay.required' =>
-            'Please enter the service barangay.',
+            'first_name.required' =>
+                'Please enter the consumer first name.',
 
-            'service_province.required' =>
-            'Please enter the service province.',
+            'last_name.required' =>
+                'Please enter the consumer last name.',
 
-            'email.required_if' =>
-            'An email address is required when creating a consumer portal account.',
+            'sex.required' =>
+                'Please select the consumer sex.',
 
+            'sex.in' =>
+                'Please select a valid sex.',
+
+            'phone.required' =>
+                'Please enter the consumer phone number.',
+
+            'email.required' =>
+                'Please enter an email address for the consumer portal account.',
+
+            'email.email' =>
+                'Please enter a valid email address.',
+
+            'email.unique' =>
+                'This email address is already registered to another account.',
+
+            'is_active.required' =>
+                'Please select whether the consumer account is active or inactive.',
+
+            'new_password.confirmed' =>
+                'The new password confirmation does not match.',
+
+            'barangay.required' =>
+                'Please enter the barangay.',
+
+            'municipality.required' =>
+                'Please enter the municipality.',
+
+            'province.required' =>
+                'Please enter the province.',
         ];
     }
 }

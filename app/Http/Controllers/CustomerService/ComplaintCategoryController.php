@@ -7,6 +7,7 @@ use App\Http\Requests\CustomerService\StoreComplaintCategoryRequest;
 use App\Http\Requests\CustomerService\UpdateComplaintCategoryRequest;
 use App\Models\ComplaintCategory;
 use Illuminate\Http\Request;
+use App\Models\Division;
 
 class ComplaintCategoryController extends Controller
 {
@@ -70,8 +71,14 @@ class ComplaintCategoryController extends Controller
      */
     public function create()
     {
+        $divisions = Division::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return view(
-            'customer-service.complaint-categories.create'
+            'customer-service.complaint-categories.create',
+            compact('divisions')
         );
     }
 
@@ -79,20 +86,9 @@ class ComplaintCategoryController extends Controller
     /**
      * Store complaint category.
      */
-    public function store(Request $request)
+    public function store(StoreComplaintCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'description' => [
-                'nullable',
-                'string',
-            ],
-        ]);
+        $validated = $request->validated();
 
         $deletedCategory = ComplaintCategory::onlyTrashed()
             ->where('name', $validated['name'])
@@ -103,6 +99,7 @@ class ComplaintCategoryController extends Controller
             $deletedCategory->restore();
 
             $deletedCategory->update([
+                'division_id' => $validated['division_id'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => true,
             ]);
@@ -111,7 +108,7 @@ class ComplaintCategoryController extends Controller
                 ->route('customer-service.complaint-categories.index')
                 ->with(
                     'success',
-                    'The previously deleted complaint category has been restored.'
+                    'The previously deleted complaint type has been restored.'
                 );
         }
 
@@ -120,6 +117,7 @@ class ComplaintCategoryController extends Controller
         );
 
         ComplaintCategory::create([
+            'division_id' => $validated['division_id'],
             'code' => $code,
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
@@ -130,7 +128,7 @@ class ComplaintCategoryController extends Controller
             ->route('customer-service.complaint-categories.index')
             ->with(
                 'success',
-                'Complaint category created successfully.'
+                'Complaint type created successfully.'
             );
     }
 
@@ -141,9 +139,17 @@ class ComplaintCategoryController extends Controller
     public function edit(
         ComplaintCategory $complaintCategory
     ) {
+        $divisions = Division::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return view(
             'customer-service.complaint-categories.edit',
-            compact('complaintCategory')
+            compact(
+                'complaintCategory',
+                'divisions'
+            )
         );
     }
 
@@ -157,22 +163,34 @@ class ComplaintCategoryController extends Controller
     ) {
         $validated = $request->validated();
 
-        $complaintCategory->update([
+        /*
+    |--------------------------------------------------------------------------
+    | Regenerate code if complaint type name changed
+    |--------------------------------------------------------------------------
+    */
 
+        $nameChanged = $complaintCategory->name !== $validated['name'];
+
+        $data = [
+            'division_id' => $validated['division_id'],
             'name' => $validated['name'],
-
             'description' => $validated['description'] ?? null,
-
             'is_active' => $validated['is_active'],
-        ]);
+        ];
+
+        if ($nameChanged) {
+            $data['code'] = ComplaintCategory::generateCode(
+                $validated['name']
+            );
+        }
+
+        $complaintCategory->update($data);
 
         return redirect()
-            ->route(
-                'customer-service.complaint-categories.index'
-            )
+            ->route('customer-service.complaint-categories.index')
             ->with(
                 'success',
-                'Complaint category updated successfully.'
+                'Complaint type updated successfully.'
             );
     }
 

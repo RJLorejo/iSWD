@@ -1,0 +1,779 @@
+[
+    {
+        "text": "The water coming from our faucet is dirty.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Our water has mud and particles in it.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water supply looks brown and dirty.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "There are visible particles in our drinking water.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water from the tap is cloudy.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water coming from our tap is brown.",
+        "category": "Dirty Water"
+    },
+{
+    "text": "Our household has water, but it contains visible particles.",
+    "category": "Dirty Water"
+},
+    {
+        "text": "The water has dirt floating in it.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water from our faucet is not clear.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "We noticed brown-colored water coming from the tap.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Our water looks contaminated with dirt.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "There are sediments in the water from our faucet.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water is cloudy when it comes out of the tap.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Dirty water is being supplied to our house.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water has a brownish appearance.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "We are receiving water with visible dirt.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The tap water contains small particles.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Our drinking water suddenly became cloudy.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water is discolored and has particles.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water coming into our house is muddy and unclear.",
+        "category": "Dirty Water"
+    },
+
+{
+    "text": "There is water coming from the faucet, but it is brown.",
+    "category": "Dirty Water"
+},
+{"text":"Our faucet has water, but the water is cloudy.","category":"Dirty Water"},
+{"text":"The water supply is available, but the water contains dirt.","category":"Dirty Water"},
+{"text":"We have water, but it has a brown color.","category":"Dirty Water"},
+{"text":"Water is flowing normally, but it looks dirty.","category":"Dirty Water"},
+{"text":"Our tap is producing water with visible sediment.","category":"Dirty Water"},
+{"text":"The water is available but has a muddy appearance.","category":"Dirty Water"},
+{"text":"We can get water from the faucet, but it is discolored.","category":"Dirty Water"},
+{"text":"The water flow is normal, but the water quality looks dirty.","category":"Dirty Water"},
+
+    {
+        "text": "Our water bill is unusually high.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "The bill shows much higher consumption than usual.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Why is our water consumption so high?",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our monthly water usage suddenly increased.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "The meter reading resulted in a very high bill.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our water bill increased even though our usage did not change.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "We were charged for unusually high water consumption.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our recorded water usage is much higher this month.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "The consumption shown on our bill is too high.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Why did our water consumption suddenly increase?",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our monthly water bill is higher than normal.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "The water usage on our account appears excessive.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "We noticed a sudden increase in our water consumption.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our bill indicates more water usage than expected.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "The household consumption recorded by the meter is unusually high.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "We want to know why our water usage is so high.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our water consumption doubled compared with the previous month.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "The amount of water consumption on our bill seems incorrect.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "We received a bill showing unexpectedly high consumption.",
+        "category": "High Consumption"
+    },
+    {
+        "text": "Our recorded water usage is much greater than usual.",
+        "category": "High Consumption"
+    },
+
+    {
+        "text": "The water pressure is too strong.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Water is coming out with very high pressure.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The pressure from our faucet is unusually strong.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Our water pressure is higher than normal.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The water comes out of the faucet with excessive force.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The pressure from the water supply is too strong.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Our faucet has extremely strong water pressure.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The water flow is coming out too forcefully.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "There is excessive pressure in our water line.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Our water pressure suddenly became very strong.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The faucet pressure is stronger than it should be.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Water is spraying strongly from the faucet.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The water supply pressure is unusually high.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Our household is experiencing excessive water pressure.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The water comes out too forcefully from our tap.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The pressure in our service line seems too high.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Our faucet is receiving water at very high pressure.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The water pressure is causing problems with our faucet.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "Water is flowing from the tap with excessive pressure.",
+        "category": "High Pressure"
+    },
+    {
+        "text": "The pressure of the water supply is unusually strong.",
+        "category": "High Pressure"
+    },
+{"text":"Water comes out of our faucet with too much force.","category":"High Pressure"},
+{"text":"The water stream from our tap is extremely strong.","category":"High Pressure"},
+{"text":"Our faucet is producing an unusually powerful water stream.","category":"High Pressure"},
+{"text":"The water pressure is causing the faucet to spray strongly.","category":"High Pressure"},
+{"text":"Water comes out forcefully whenever we open the tap.","category":"High Pressure"},
+{"text":"The pressure in our water line is excessive.","category":"High Pressure"},
+{"text":"Our tap has a very strong water flow.","category":"High Pressure"},
+{"text":"The water shoots out of the faucet with excessive force.","category":"High Pressure"},
+{"text":"Our water pressure is much stronger than usual.","category":"High Pressure"},
+{"text":"The faucet is receiving an unusually strong water flow.","category":"High Pressure"},
+
+
+
+    {
+        "text": "There is water leaking from the pipe.",
+        "category": "Leakages"
+    },
+    {
+        "text": "A pipe outside our house is leaking.",
+        "category": "Leakages"
+    },
+    {
+        "text": "There is a water leak near our property.",
+        "category": "Leakages"
+    },
+    {
+        "text": "Water is continuously leaking from the service line.",
+        "category": "Leakages"
+    },
+    {
+        "text": "I found a leaking pipe in our area.",
+        "category": "Leakages"
+    },
+    {
+        "text": "There is water leaking on the road near our house.",
+        "category": "Leakages"
+    },
+    {
+        "text": "A water pipe is leaking outside our property.",
+        "category": "Leakages"
+    },
+    {
+        "text": "We noticed a continuous water leak in our area.",
+        "category": "Leakages"
+    },
+    {
+        "text": "Water is coming out from a broken pipe.",
+        "category": "Leakages"
+    },
+    {
+        "text": "There is a leak along the water service line.",
+        "category": "Leakages"
+    },
+    {
+        "text": "A pipe near our house has started leaking.",
+        "category": "Leakages"
+    },
+    {
+        "text": "We found water leaking from a pipeline.",
+        "category": "Leakages"
+    },
+    {
+        "text": "There is a large water leak in our neighborhood.",
+        "category": "Leakages"
+    },
+    {
+        "text": "Water is continuously coming out of a damaged pipe.",
+        "category": "Leakages"
+    },
+    {
+        "text": "A water line near our property is leaking.",
+        "category": "Leakages"
+    },
+    {
+        "text": "There is a pipe leakage beside our house.",
+        "category": "Leakages"
+    },
+    {
+        "text": "We reported a leaking water pipe in the street.",
+        "category": "Leakages"
+    },
+    {
+        "text": "A water pipe has broken and is leaking.",
+        "category": "Leakages"
+    },
+    {
+        "text": "There is water escaping from the service pipe.",
+        "category": "Leakages"
+    },
+    {
+        "text": "We noticed a water leak near the road.",
+        "category": "Leakages"
+    },
+
+    {
+        "text": "The water pressure is very weak.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "Only a small amount of water comes out of the faucet.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "Our water pressure suddenly became low.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water flow is weak.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "There is barely any pressure in our water supply.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water comes out slowly from our faucet.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "Our faucet has very weak water pressure.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water flow from the tap is too weak.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "We are experiencing low water pressure at home.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "There is very little water pressure in our house.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water barely flows from the faucet.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "Our water supply has very weak pressure.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The faucet only produces a weak stream of water.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water pressure dropped significantly.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "We have insufficient water pressure in our home.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water flow has become weaker than normal.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "Our tap has very little water pressure.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The water supply is flowing very slowly.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "The pressure from our water line is too low.",
+        "category": "Low Pressure"
+    },
+    {
+        "text": "We can barely get water from the faucet because of low pressure.",
+        "category": "Low Pressure"
+    },
+{"text":"Water comes out of our faucet very slowly.","category":"Low Pressure"},
+{"text":"The water stream from our tap is extremely weak.","category":"Low Pressure"},
+{"text":"Our faucet produces only a small stream of water.","category":"Low Pressure"},
+{"text":"The water flow is too weak for normal use.","category":"Low Pressure"},
+{"text":"Only a little water comes out when we open the tap.","category":"Low Pressure"},
+{"text":"Our water line has insufficient pressure.","category":"Low Pressure"},
+{"text":"The faucet barely produces any water flow.","category":"Low Pressure"},
+{"text":"The water comes out weakly from our tap.","category":"Low Pressure"},
+{"text":"Our household has a very weak water stream.","category":"Low Pressure"},
+{"text":"The water pressure is not strong enough for normal use.","category":"Low Pressure"},
+
+    {
+        "text": "The water meter is leaking.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "There is a leak around our water meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Water is leaking from the meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Our meter has a water leak.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "There is water leaking around the meter box.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "The pipe connected to our meter is leaking.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "We noticed water coming from the water meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Our meter area is wet because of a leak.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "There is a leak at our household water meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Water is dripping from the meter connection.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "The water meter appears to be leaking.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "We found water leaking near the meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Our meter connection has a water leak.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "There is continuous water leakage around the meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "The meter box has water coming out of it.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Water is leaking from the area around our meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "Our water meter connection is leaking.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "There is a leak directly from the meter.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "We noticed a water leak at the meter assembly.",
+        "category": "Meter Leak"
+    },
+    {
+        "text": "The meter has started leaking water.",
+        "category": "Meter Leak"
+    },
+
+    {
+        "text": "There is no water coming from our faucet.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "We have no water supply.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "Our house has no water.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "There has been no water since this morning.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "The water supply stopped completely.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "There is no water supply in our house.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "Our water supply has been interrupted.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "We have completely lost our water service.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "No water is coming out of any faucet in our house.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "Our household has been without water since yesterday.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "The water stopped flowing in our area.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "There is currently no water available at our property.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "Our water service is completely unavailable.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "We cannot get any water from the tap.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "The water supply suddenly stopped.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "There has been no water in our home for several hours.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "Our faucets are completely dry.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "We are currently without water service.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "No water is reaching our house.",
+        "category": "No Water Supply"
+    },
+    {
+        "text": "Our water service stopped unexpectedly.",
+        "category": "No Water Supply"
+    },
+{"text":"There is absolutely no water coming from our faucet.","category":"No Water Supply"},
+{"text":"None of our faucets have water.","category":"No Water Supply"},
+{"text":"Our entire house has lost its water supply.","category":"No Water Supply"},
+{"text":"There is no water available from any tap in our home.","category":"No Water Supply"},
+{"text":"Our water service is completely interrupted.","category":"No Water Supply"},
+{"text":"We cannot get water from any faucet in the house.","category":"No Water Supply"},
+{"text":"The water supply to our home has stopped completely.","category":"No Water Supply"},
+{"text":"There is zero water coming into our property.","category":"No Water Supply"},
+{"text":"All of our faucets are without water.","category":"No Water Supply"},
+{"text":"Our house currently has no water service at all.","category":"No Water Supply"},
+
+    {
+        "text": "Please check our water meter reading.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "I want to request a re-read of the meter.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Can someone verify our meter reading?",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Our meter reading needs to be checked again.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Please have our meter reading checked again.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "We would like another reading of our water meter.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Can you verify the reading on our meter?",
+        "category": "Re-Read"
+    },
+    {
+        "text": "We want to request another meter reading.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Please recheck our water meter reading.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Our meter should be read again.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "I believe our meter reading needs verification.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Can someone inspect and verify our meter reading?",
+        "category": "Re-Read"
+    },
+    {
+        "text": "We are requesting a second meter reading.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Please check if our water meter was read correctly.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "We want the meter reading reviewed.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Can our water meter reading be checked again?",
+        "category": "Re-Read"
+    },
+    {
+        "text": "We request a rechecking of our meter reading.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Please verify our latest meter reading.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "Our water meter reading appears to need a re-read.",
+        "category": "Re-Read"
+    },
+    {
+        "text": "We would like the meter reading verified by the water district.",
+        "category": "Re-Read"
+    },
+
+    {
+        "text": "The water smells bad.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "Our water has an unusual smell.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The water tastes strange.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "There is a bad taste in our drinking water.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The water has an unusual odor.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "Our tap water smells unpleasant.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The water has a strange smell.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "Our drinking water tastes unusual.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "There is an unpleasant odor coming from the water.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The water from our faucet has a strange taste.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "Our water smells different from normal.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The tap water has a bad odor.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "We noticed an unusual taste in our water.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The drinking water has an unpleasant taste.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "There is a strange odor in our tap water.",
+        "category": "Taste/Odor"
+    },{
+    "text": "Our household has water, but it contains visible particles.",
+    "category": "Dirty Water"
+},
+    {
+        "text": "The water smells and tastes unusual.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "There is a foul smell coming from the water.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "Our faucet water has an unpleasant smell.",
+        "category": "Taste/Odor"
+    },
+    {
+        "text": "The water odor is different from usual.",
+        "category": "Taste/Odor"
+    },
+{
+    "text": "The water odor is different from usual.",
+    "category": "Taste/Odor"
+}
+
+]

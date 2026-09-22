@@ -7,6 +7,7 @@ use App\Http\Requests\Consumer\StoreConsumerComplaintRequest;
 use App\Http\Requests\Consumer\UpdateConsumerComplaintRequest;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
+use App\Models\Division;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,7 +29,6 @@ class ComplaintController extends Controller
         return $consumer;
     }
 
-
     /**
      * Display consumer complaints.
      */
@@ -37,6 +37,7 @@ class ComplaintController extends Controller
         $consumer = $this->consumer();
 
         $complaints = Complaint::with([
+            'division',
             'category',
             'technicians',
         ])
@@ -50,23 +51,28 @@ class ComplaintController extends Controller
         );
     }
 
-
     /**
      * Show complaint form.
      */
     public function create()
     {
-        $categories = ComplaintCategory::query()
+        $divisions = Division::query()
             ->where('is_active', true)
+            ->with([
+                'complaintTypes' => function ($query) {
+                    $query
+                        ->where('is_active', true)
+                        ->orderBy('name');
+                },
+            ])
             ->orderBy('name')
             ->get();
 
         return view(
             'consumer.complaints.create',
-            compact('categories')
+            compact('divisions')
         );
     }
-
 
     /**
      * Store consumer complaint.
@@ -79,15 +85,26 @@ class ComplaintController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Verify Category
+        | Verify Division
+        |--------------------------------------------------------------------------
+        */
+
+        $division = Division::query()
+            ->where('id', $validated['division_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Complaint Type Belongs To Division
         |--------------------------------------------------------------------------
         */
 
         ComplaintCategory::query()
             ->where('id', $validated['complaint_category_id'])
+            ->where('division_id', $division->id)
             ->where('is_active', true)
             ->firstOrFail();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -101,7 +118,6 @@ class ComplaintController extends Controller
 
         $validated['complainant_phone'] = $consumer->phone;
 
-
         /*
         |--------------------------------------------------------------------------
         | Complaint Number
@@ -111,7 +127,6 @@ class ComplaintController extends Controller
         $validated['complaint_no'] =
             Complaint::generateComplaintNo();
 
-
         /*
         |--------------------------------------------------------------------------
         | Initial Status
@@ -119,7 +134,6 @@ class ComplaintController extends Controller
         */
 
         $validated['status'] = 'Pending';
-
 
         /*
         |--------------------------------------------------------------------------
@@ -133,7 +147,6 @@ class ComplaintController extends Controller
                 ->store('complaints', 'public');
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Create Complaint
@@ -141,7 +154,6 @@ class ComplaintController extends Controller
         */
 
         $complaint = Complaint::create($validated);
-
 
         /*
         |--------------------------------------------------------------------------
@@ -159,7 +171,6 @@ class ComplaintController extends Controller
                 'Your concern has been submitted successfully. Customer Service will review it shortly.'
             );
     }
-
 
     /**
      * Show complaint edit form.
@@ -181,7 +192,6 @@ class ComplaintController extends Controller
             403
         );
 
-
         /*
         |--------------------------------------------------------------------------
         | Only Pending Complaints Can Be Edited
@@ -200,28 +210,43 @@ class ComplaintController extends Controller
                 );
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | Categories
+        | Divisions + Complaint Types
         |--------------------------------------------------------------------------
         */
 
-        $categories = ComplaintCategory::query()
+        $divisions = Division::query()
             ->where('is_active', true)
+            ->with([
+                'complaintTypes' => function ($query) {
+                    $query
+                        ->where('is_active', true)
+                        ->orderBy('name');
+                },
+            ])
             ->orderBy('name')
             ->get();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Load Existing Division
+        |--------------------------------------------------------------------------
+        */
+
+        $complaint->load([
+            'division',
+            'category',
+        ]);
 
         return view(
             'consumer.complaints.edit',
             compact(
                 'complaint',
-                'categories'
+                'divisions'
             )
         );
     }
-
 
     /**
      * Update a pending consumer complaint.
@@ -243,7 +268,6 @@ class ComplaintController extends Controller
             403
         );
 
-
         /*
         |--------------------------------------------------------------------------
         | Only Pending Complaints Can Be Updated
@@ -262,21 +286,30 @@ class ComplaintController extends Controller
                 );
         }
 
-
         $validated = $request->validated();
-
 
         /*
         |--------------------------------------------------------------------------
-        | Verify Active Category
+        | Verify Division
+        |--------------------------------------------------------------------------
+        */
+
+        $division = Division::query()
+            ->where('id', $validated['division_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Complaint Type Belongs To Division
         |--------------------------------------------------------------------------
         */
 
         ComplaintCategory::query()
             ->where('id', $validated['complaint_category_id'])
+            ->where('division_id', $division->id)
             ->where('is_active', true)
             ->firstOrFail();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -296,7 +329,6 @@ class ComplaintController extends Controller
                 ->store('complaints', 'public');
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Update Complaint
@@ -304,7 +336,6 @@ class ComplaintController extends Controller
         */
 
         $complaint->update($validated);
-
 
         return redirect()
             ->route(
@@ -316,7 +347,6 @@ class ComplaintController extends Controller
                 'Your complaint has been updated successfully.'
             );
     }
-
 
     /**
      * Display complaint details.
@@ -336,23 +366,19 @@ class ComplaintController extends Controller
             403
         );
 
-
         /*
         |--------------------------------------------------------------------------
         | Load Complaint Information
         |--------------------------------------------------------------------------
-        |
-        | technicians = canonical multi-technician assignment
-        |
         */
 
         $complaint->load([
+            'division',
             'category',
             'technicians',
             'verifier',
             'maintenanceReport',
         ]);
-
 
         return view(
             'consumer.complaints.show',

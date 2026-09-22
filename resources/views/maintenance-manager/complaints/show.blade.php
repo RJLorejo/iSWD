@@ -138,20 +138,6 @@
 
                 <div class="p-5 space-y-6">
 
-                    {{-- SUBJECT --}}
-                    <div>
-
-                        <p class="text-xs uppercase tracking-wide
-                                  font-semibold text-gray-400">
-                            Subject
-                        </p>
-
-                        <p class="mt-1 text-base font-semibold text-gray-900">
-                            {{ $complaint->subject }}
-                        </p>
-
-                    </div>
-
 
                     {{-- DESCRIPTION --}}
                     <div>
@@ -179,25 +165,11 @@
 
                             <p class="text-xs uppercase tracking-wide
                                       font-semibold text-gray-400">
-                                Complaint Category
+                                Complaint Type
                             </p>
 
                             <p class="mt-1 text-sm font-semibold text-gray-800">
                                 {{ $complaint->category?->name ?? 'Uncategorized' }}
-                            </p>
-
-                        </div>
-
-
-                        <div>
-
-                            <p class="text-xs uppercase tracking-wide
-                                      font-semibold text-gray-400">
-                                Priority
-                            </p>
-
-                            <p class="mt-1 text-sm font-semibold text-gray-800">
-                                {{ $complaint->priority ?? 'Not specified' }}
                             </p>
 
                         </div>
@@ -444,7 +416,7 @@
                             </h2>
 
                             <p class="text-xs text-gray-500 mt-1">
-                                Technician-submitted maintenance documentation
+                                Plumber-submitted maintenance documentation
                             </p>
 
                         </div>

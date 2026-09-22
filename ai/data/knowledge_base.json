@@ -1,0 +1,27 @@
+[
+    {
+        "id": 1,
+        "title": "Reporting a Water Service Complaint",
+        "content": "Consumers may report water service concerns through the Sagay Water District consumer portal. The complaint should include the concern, service location, and other relevant details so Customer Service can review and process the request."
+    },
+    {
+        "id": 2,
+        "title": "No Water Service",
+        "content": "If there is no water service, consumers should first check whether the concern may be related to a scheduled water interruption or maintenance advisory. If the concern continues and no applicable advisory is available, the consumer may submit a water service complaint for Customer Service review."
+    },
+    {
+        "id": 3,
+        "title": "Low Water Pressure",
+        "content": "Consumers experiencing low water pressure may check whether other nearby consumers are experiencing the same concern and whether a service interruption or maintenance advisory has been published. If the concern continues, a complaint may be submitted through the consumer portal."
+    },
+    {
+        "id": 4,
+        "title": "Water Service Announcements",
+        "content": "Service announcements may provide information about water interruptions, emergency advisories, maintenance activities, and other water service information. Consumers should review active service announcements when experiencing a water service concern."
+    },
+    {
+        "id": 5,
+        "title": "Complaint Review",
+        "content": "Submitted complaints are reviewed by Customer Service. Customer Service may verify the complaint information, determine the appropriate handling, and route concerns that require maintenance action to the Maintenance Department."
+    }
+]

@@ -20,17 +20,11 @@ class StoreComplaintRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Normalize complainant type
-        |--------------------------------------------------------------------------
-        */
-
         $complainantType = $this->input('complainant_type');
 
         /*
         |--------------------------------------------------------------------------
-        | If registered consumer, clear walk-in information.
+        | Registered Consumer
         |--------------------------------------------------------------------------
         */
 
@@ -43,7 +37,7 @@ class StoreComplaintRequest extends FormRequest
 
         /*
         |--------------------------------------------------------------------------
-        | If walk-in, consumer_id must be null.
+        | Walk-in Complainant
         |--------------------------------------------------------------------------
         */
 
@@ -60,12 +54,6 @@ class StoreComplaintRequest extends FormRequest
     public function rules(): array
     {
         return [
-
-            /*
-            |--------------------------------------------------------------------------
-            | Complainant
-            |--------------------------------------------------------------------------
-            */
 
             'complainant_type' => [
                 'required',
@@ -101,10 +89,28 @@ class StoreComplaintRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
+            'division_id' => [
+                'required',
+                'integer',
+                Rule::exists('divisions', 'id')
+                    ->where(function ($query) {
+                        $query->where('is_active', true);
+                    }),
+            ],
+
             'complaint_category_id' => [
                 'required',
                 'integer',
-                'exists:complaint_categories,id',
+
+                Rule::exists('complaint_categories', 'id')
+                    ->where(function ($query) {
+                        $query
+                            ->where('is_active', true)
+                            ->where(
+                                'division_id',
+                                $this->input('division_id')
+                            );
+                    }),
             ],
 
             /*
@@ -112,12 +118,6 @@ class StoreComplaintRequest extends FormRequest
             | Complaint Information
             |--------------------------------------------------------------------------
             */
-
-            'subject' => [
-                'required',
-                'string',
-                'max:255',
-            ],
 
             'description' => [
                 'required',
@@ -198,7 +198,7 @@ class StoreComplaintRequest extends FormRequest
             'Please enter the full name of the walk-in complainant.',
 
             'complainant_name.string' =>
-            'The complainant name must be a valid text.',
+            'The complainant name must be valid text.',
 
             'complainant_name.max' =>
             'The complainant name must not exceed 255 characters.',
@@ -211,39 +211,29 @@ class StoreComplaintRequest extends FormRequest
 
             /*
             |--------------------------------------------------------------------------
-            | Complaint Category
+            | Complaint Classification
             |--------------------------------------------------------------------------
             */
+
+            'division_id.required' =>
+            'Please select a division.',
+
+            'division_id.exists' =>
+            'The selected division does not exist or is inactive.',
 
             'complaint_category_id.required' =>
-            'Please select a complaint category.',
+            'Please select a complaint type.',
 
             'complaint_category_id.exists' =>
-            'The selected complaint category does not exist.',
+            'The selected complaint type does not exist, is inactive, or does not belong to the selected division.',
 
-            /*
-            |--------------------------------------------------------------------------
-            | Priority
-            |--------------------------------------------------------------------------
-            */
 
-            'priority.required' =>
-            'Please select the complaint priority.',
-
-            'priority.in' =>
-            'The selected complaint priority is invalid.',
 
             /*
             |--------------------------------------------------------------------------
             | Complaint Information
             |--------------------------------------------------------------------------
             */
-
-            'subject.required' =>
-            'Please enter a complaint subject.',
-
-            'subject.max' =>
-            'The complaint subject must not exceed 255 characters.',
 
             'description.required' =>
             'Please describe the reported problem.',

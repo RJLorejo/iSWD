@@ -6,37 +6,82 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
     /**
-     * Determine the correct layout based on authenticated user's role.
+     * Determine the correct layout based on the authenticated user's role.
      */
     private function profileLayout(): string
     {
         $user = Auth::user();
 
-        if ($user->hasRole('Admin')) {
+        /*
+        |--------------------------------------------------------------------------
+        | Administrator
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        | Your actual Spatie role is "Administrator", not "Admin".
+        |
+        */
+
+        if ($user->hasRole('Administrator')) {
             return 'admin.layouts.app';
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Maintenance Manager
+        |--------------------------------------------------------------------------
+        */
 
         if ($user->hasRole('Maintenance Manager')) {
             return 'maintenance-manager.layouts.app';
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Maintenance Technician
+        |--------------------------------------------------------------------------
+        */
+
         if ($user->hasRole('Maintenance Technician')) {
             return 'technician.layouts.app';
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customer Service
+        |--------------------------------------------------------------------------
+        */
 
         if ($user->hasRole('Customer Service')) {
             return 'customer-service.layouts.app';
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Consumer
+        |--------------------------------------------------------------------------
+        */
+
         if ($user->hasRole('Consumer')) {
             return 'consumer.layouts.app';
         }
 
-        // Fallback
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fallback
+        |--------------------------------------------------------------------------
+        */
+
         return 'layouts.app';
     }
 
@@ -54,10 +99,13 @@ class ProfileController extends Controller
 
         $layout = $this->profileLayout();
 
-        return view('profile.show', compact(
-            'user',
-            'layout'
-        ));
+        return view(
+            'profile.show',
+            compact(
+                'user',
+                'layout'
+            )
+        );
     }
 
 
@@ -74,10 +122,13 @@ class ProfileController extends Controller
 
         $layout = $this->profileLayout();
 
-        return view('profile.edit', compact(
-            'user',
-            'layout'
-        ));
+        return view(
+            'profile.edit',
+            compact(
+                'user',
+                'layout'
+            )
+        );
     }
 
 
@@ -118,7 +169,11 @@ class ProfileController extends Controller
                 'required',
                 'email',
                 'max:255',
-                'unique:users,email,' . $user->id,
+
+                Rule::unique(
+                    'users',
+                    'email'
+                )->ignore($user->id),
             ],
 
             'phone' => [
@@ -144,16 +199,29 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
 
-            // Delete old avatar
+            /*
+             * Delete old avatar.
+             */
+
             if ($user->avatar) {
-                Storage::disk('public')->delete(
-                    $user->avatar
-                );
+
+                Storage::disk('public')
+                    ->delete(
+                        $user->avatar
+                    );
             }
+
+
+            /*
+             * Store new avatar.
+             */
 
             $validated['avatar'] = $request
                 ->file('avatar')
-                ->store('avatars', 'public');
+                ->store(
+                    'avatars',
+                    'public'
+                );
         }
 
 
@@ -163,7 +231,9 @@ class ProfileController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $user->update($validated);
+        $user->update(
+            $validated
+        );
 
 
         return redirect()
@@ -184,10 +254,12 @@ class ProfileController extends Controller
 
             'current_password' => [
                 'required',
+                'string',
             ],
 
             'password' => [
                 'required',
+                'string',
                 'confirmed',
                 'min:8',
             ],
@@ -203,17 +275,18 @@ class ProfileController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!Hash::check(
-            $validated['current_password'],
-            $user->password
-        )) {
+        if (
+            !Hash::check(
+                $validated['current_password'],
+                $user->password
+            )
+        ) {
 
             return back()
                 ->withErrors([
                     'current_password' =>
                     'Current password is incorrect.',
-                ])
-                ->withInput();
+                ]);
         }
 
 
@@ -230,9 +303,10 @@ class ProfileController extends Controller
         ]);
 
 
-        return back()->with(
-            'success',
-            'Password updated successfully.'
-        );
+        return back()
+            ->with(
+                'success',
+                'Password updated successfully.'
+            );
     }
 }

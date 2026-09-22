@@ -189,14 +189,7 @@
                 </div>
 
                 <div>
-                    <p class="text-gray-500">Priority</p>
-                    <p class="font-semibold text-gray-900">
-                        {{ $complaint->priority }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-gray-500">Category</p>
+                    <p class="text-gray-500">Complaint Type</p>
                     <p class="font-semibold text-gray-900">
                         {{ $complaint->category?->name ?? 'N/A' }}
                     </p>
@@ -343,43 +336,15 @@
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
 
                 <h2 class="text-lg font-bold text-gray-900 mb-5">
-                    Materials, Parts & Tools
+                    Parts Removed
                 </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
                     <div>
 
-                        <p class="text-sm font-semibold text-gray-500 mb-2">
-                            Materials
-                        </p>
-
-                        <div class="bg-gray-50 rounded-xl p-4 whitespace-pre-line text-gray-700">
-                            {{ $report->materials_used ?: 'None recorded' }}
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-sm font-semibold text-gray-500 mb-2">
-                            Parts
-                        </p>
-
                         <div class="bg-gray-50 rounded-xl p-4 whitespace-pre-line text-gray-700">
                             {{ $report->parts_replaced ?: 'None recorded' }}
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-sm font-semibold text-gray-500 mb-2">
-                            Tools
-                        </p>
-
-                        <div class="bg-gray-50 rounded-xl p-4 whitespace-pre-line text-gray-700">
-                            {{ $report->tools_used ?: 'None recorded' }}
                         </div>
 
                     </div>
@@ -394,22 +359,10 @@
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
 
                 <h2 class="text-lg font-bold text-gray-900 mb-5">
-                    Technician Notes & Completion
+                    Plumber Notes & Completion
                 </h2>
 
                 <div class="space-y-5">
-
-                    <div>
-
-                        <p class="text-sm font-semibold text-gray-500 mb-2">
-                            Technician Notes
-                        </p>
-
-                        <div class="bg-gray-50 rounded-xl p-4 whitespace-pre-line text-gray-700">
-                            {{ $report->technician_notes ?: 'None recorded' }}
-                        </div>
-
-                    </div>
 
                     <div>
 

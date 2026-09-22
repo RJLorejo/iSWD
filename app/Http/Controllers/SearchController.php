@@ -160,7 +160,7 @@ class SearchController extends Controller
                 $complaintQuery = Complaint::with([
                     'consumer',
                     'category',
-                    'technician',
+                    'technicians',
                 ]);
 
                 $complaintQuery->where(function ($query) use ($keyword) {

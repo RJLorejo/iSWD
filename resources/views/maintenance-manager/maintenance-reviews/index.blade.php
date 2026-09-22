@@ -168,11 +168,11 @@
                             </th>
 
                             <th class="text-left px-6 py-4 text-sm font-semibold">
-                                Technician
+                                Plumber
                             </th>
 
                             <th class="text-left px-6 py-4 text-sm font-semibold">
-                                Category
+                                Complaint Type
                             </th>
 
                             <th class="text-left px-6 py-4 text-sm font-semibold">
@@ -203,10 +203,6 @@
                                         {{ $report->complaint?->complaint_no }}
                                     </div>
 
-                                    <div class="text-sm text-slate-500">
-                                        {{ $report->complaint?->subject }}
-                                    </div>
-
                                 </td>
 
 
@@ -220,7 +216,7 @@
 
                                 <td class="px-6 py-4 text-sm">
 
-                                    {{ $report->complaint?->category?->name ?? '—' }}
+                                    {{ $report->complaint?->complaint_type?->name ?? '—' }}
 
                                 </td>
 

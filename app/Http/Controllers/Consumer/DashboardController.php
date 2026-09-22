@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Consumer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
+use App\Models\ServiceAnnouncement;
 use Illuminate\Support\Facades\Auth;
+
 
 class DashboardController extends Controller
 {
@@ -54,6 +56,11 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $announcements = ServiceAnnouncement::active()
+            ->latest('published_at')
+            ->take(5)
+            ->get();
+
         return view(
             'consumer.dashboard',
 
@@ -62,7 +69,8 @@ class DashboardController extends Controller
                 'activeComplaints',
                 'completedComplaints',
                 'pendingComplaints',
-                'recentComplaints'
+                'recentComplaints',
+                'announcements'
             )
         );
     }

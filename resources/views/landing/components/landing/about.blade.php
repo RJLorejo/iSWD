@@ -1,107 +1,42 @@
-<section id="about" class="py-24 bg-white">
 
-    <div class="max-w-7xl mx-auto px-8">
-
-        <div class="grid lg:grid-cols-2 gap-16 items-center">
-
+<!-- About Section -->
+<section id="about" class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-6 sm:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
-
-                <h2 class="text-4xl font-bold text-slate-800 mb-8">
-
-                    About iSWD
-
+                <span class="text-sky-600 font-semibold tracking-wider uppercase text-sm">About the Platform</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-800 mt-2 mb-6">
+                    Streamlining Water Service Complaints with AI
                 </h2>
-
-                <p class="text-slate-600 leading-8 text-lg">
-
-                    iSWD is an intelligent maintenance knowledge management
-                    system developed for the Maintenance Department of Sagay Water District.
-                    It centralizes maintenance records, repair histories, standard operating
-                    procedures (SOPs), technical manuals, and organizational knowledge into
-                    one secure platform.
-
+                <p class="text-slate-600 leading-relaxed text-base sm:text-lg">
+                    iSWD is an AI-assisted consumer complaint management and service support system developed for Sagay Water District. It bridges the gap between consumer reports, customer service triage, and field response operations.
                 </p>
-
-                <p class="mt-6 text-slate-600 leading-8 text-lg">
-
-                    The system integrates Artificial Intelligence through semantic text
-                    similarity to recommend historical repair cases that assist technicians
-                    in troubleshooting equipment failures faster and more accurately.
-
+                <p class="mt-4 text-slate-600 leading-relaxed text-base sm:text-lg">
+                    By leveraging Natural Language Processing and operational analytics, iSWD converts natural consumer feedback into actionable service requests while recommending division routing, urgency levels, and field assignments—always keeping human personnel in full control.
                 </p>
-
             </div>
-
-            <div class="grid grid-cols-2 gap-6">
-
-                <div class="bg-sky-50 rounded-3xl p-8 shadow">
-
-                    <h3 class="font-bold text-xl">
-
-                        Knowledge Repository
-
-                    </h3>
-
-                    <p class="mt-4 text-slate-600">
-
-                        Preserve institutional maintenance knowledge.
-
-                    </p>
-
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="bg-sky-50/80 rounded-2xl p-6 shadow-sm border border-sky-100">
+                    <div class="text-3xl mb-3">💬</div>
+                    <h3 class="font-bold text-lg text-slate-800">Natural Intake</h3>
+                    <p class="mt-2 text-sm text-slate-600">Submit issues naturally in local language (Hiligaynon/English).</p>
                 </div>
-
-                <div class="bg-blue-50 rounded-3xl p-8 shadow">
-
-                    <h3 class="font-bold text-xl">
-
-                        AI Recommendation
-
-                    </h3>
-
-                    <p class="mt-4 text-slate-600">
-
-                        Recommend similar repair cases using Machine Learning.
-
-                    </p>
-
+                <div class="bg-blue-50/80 rounded-2xl p-6 shadow-sm border border-blue-100">
+                    <div class="text-3xl mb-3">🧠</div>
+                    <h3 class="font-bold text-lg text-slate-800">AI Triage</h3>
+                    <p class="mt-2 text-sm text-slate-600">Automated classification, urgency assessment, and prioritization.</p>
                 </div>
-
-                <div class="bg-cyan-50 rounded-3xl p-8 shadow">
-
-                    <h3 class="font-bold text-xl">
-
-                        Maintenance
-
-                    </h3>
-
-                    <p class="mt-4 text-slate-600">
-
-                        Manage preventive and corrective maintenance.
-
-                    </p>
-
+                <div class="bg-cyan-50/80 rounded-2xl p-6 shadow-sm border border-cyan-100">
+                    <div class="text-3xl mb-3">🔧</div>
+                    <h3 class="font-bold text-lg text-slate-800">Smart Routing</h3>
+                    <p class="mt-2 text-sm text-slate-600">Plumber recommendations based on location, workload, and availability.</p>
                 </div>
-
-                <div class="bg-slate-100 rounded-3xl p-8 shadow">
-
-                    <h3 class="font-bold text-xl">
-
-                        Analytics
-
-                    </h3>
-
-                    <p class="mt-4 text-slate-600">
-
-                        Visual reports and maintenance trends.
-
-                    </p>
-
+                <div class="bg-slate-100/80 rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="font-bold text-lg text-slate-800">Field Analytics</h3>
+                    <p class="mt-2 text-sm text-slate-600">Real-time status tracking, work orders, and resolution reports.</p>
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 </section>

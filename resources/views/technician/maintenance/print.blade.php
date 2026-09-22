@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
 
     <title>
-        Maintenance Report - {{ $complaint->complaint_no }}
+        Service Accomplished Report - {{ $complaint->complaint_no }}
     </title>
 
     <style>
@@ -115,7 +115,7 @@
     <div class="header">
 
         <h1>
-            MAINTENANCE REPORT
+            SERVICE ACCOMPLISHED REPORT
         </h1>
 
         <p>
@@ -141,31 +141,16 @@
 
         </div>
 
-
         <div class="field">
-
             <div class="label">
-                Priority
+                Division
             </div>
 
             <div class="value">
-                {{ $complaint->priority }}
+                {{ $complaint->division?->name ?? 'N/A' }}
             </div>
-
         </div>
 
-
-        <div class="field">
-
-            <div class="label">
-                Subject
-            </div>
-
-            <div class="value">
-                {{ $complaint->subject }}
-            </div>
-
-        </div>
 
 
         <div class="field">
@@ -224,55 +209,15 @@
     </div>
 
 
-    <h2>Work & Repair</h2>
-
-    <div class="field">
-
-        <div class="label">
-            Work Performed
-        </div>
-
-        <div class="value">
-            {{ $complaint->maintenanceReport->work_performed }}
-        </div>
-
-    </div>
-
-
-    <div class="field">
-
-        <div class="label">
-            Repair Procedure
-        </div>
-
-        <div class="value">
-            {{ $complaint->maintenanceReport->repair_procedure }}
-        </div>
-
-    </div>
-
-
-    <h2>Materials, Parts & Tools</h2>
+    <h2>Parts Removed</h2>
 
     <div class="grid">
 
-        <div class="field">
-
-            <div class="label">
-                Materials Used
-            </div>
-
-            <div class="value">
-                {{ $complaint->maintenanceReport->materials_used ?: 'None recorded' }}
-            </div>
-
-        </div>
-
 
         <div class="field">
 
             <div class="label">
-                Parts Replaced
+                Parts Removred
             </div>
 
             <div class="value">
@@ -284,33 +229,8 @@
     </div>
 
 
-    <div class="field">
 
-        <div class="label">
-            Tools Used
-        </div>
-
-        <div class="value">
-            {{ $complaint->maintenanceReport->tools_used ?: 'None recorded' }}
-        </div>
-
-    </div>
-
-
-    <h2>Technician Notes & Completion</h2>
-
-    <div class="field">
-
-        <div class="label">
-            Technician Notes
-        </div>
-
-        <div class="value">
-            {{ $complaint->maintenanceReport->technician_notes ?: 'None recorded' }}
-        </div>
-
-    </div>
-
+    <h2>Plumber Notes & Completion</h2>
 
     <div class="field">
 
@@ -332,7 +252,7 @@
         <div>
 
             <div class="label">
-                Before Maintenance
+                Before Service Work
             </div>
 
             @if ($complaint->maintenanceReport->before_photo)
@@ -347,7 +267,7 @@
         <div>
 
             <div class="label">
-                After Maintenance
+                After Service Work
             </div>
 
             @if ($complaint->maintenanceReport->after_photo)
@@ -369,7 +289,7 @@
         </p>
 
         <p>
-            Report Prepared / Submitted By:
+            Accomplishment Prepared / Submitted By:
             {{ $complaint->maintenanceReport->technician?->full_name ?? 'N/A' }}
         </p>
 

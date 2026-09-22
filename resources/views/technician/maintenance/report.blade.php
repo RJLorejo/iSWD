@@ -14,13 +14,13 @@
                 </a>
 
                 <h1 class="text-2xl font-bold text-gray-900">
-                    Maintenance Reporthsfsdifidsfhisdihi
+                    Service Accomplishment Report
                 </h1>
 
             </div>
 
             <p class="text-gray-500">
-                Complete the maintenance details for
+                Document the service work performed for
                 <span class="font-semibold text-gray-700">
                     {{ $complaint->complaint_no }}
                 </span>
@@ -99,17 +99,9 @@
 
                 <div class="text-sm text-gray-500">
 
-                    <div>
-                        Priority:
-                        <span class="font-semibold text-gray-700">
-                            {{ $complaint->priority }}
-                        </span>
-                    </div>
-
                     <div class="mt-1">
-                        Category:
-                        <span class="font-semibold text-gray-700">
-                            {{ $complaint->category?->name ?? 'N/A' }}
+                        Complaint Type: <span class="font-semibold text-gray-700">
+                            {{ $complaint->type?->name ?? 'N/A' }}
                         </span>
                     </div>
 
@@ -131,7 +123,7 @@
                     </h2>
 
                     <p class="text-sm text-gray-500 mt-1">
-                        Technicians assigned to this complaint.
+                        Plumber assigned to this complaint.
                     </p>
                 </div>
 
@@ -164,7 +156,7 @@
                                 </p>
 
                                 <p class="text-xs text-gray-500">
-                                    Maintenance Technician
+                                    Plumber
                                 </p>
 
                             </div>
@@ -175,7 +167,7 @@
                 </div>
             @else
                 <p class="text-sm text-gray-500">
-                    No maintenance technicians are currently assigned.
+                    No maintenance plumbers are currently assigned.
                 </p>
             @endif
 
@@ -235,57 +227,13 @@
             </div>
 
 
-            {{-- SECTION 2 --}}
-
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
-
-                <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    2. Maintenance Work Performed
-                </h2>
-
-                <p class="text-sm text-gray-500 mb-6">
-                    Record the actual maintenance work and repair procedure performed on site.
-                </p>
-
-
-                <div class="space-y-6">
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Work Performed <span class="text-red-500">*</span>
-                        </label>
-
-                        <textarea name="work_performed" rows="6" required
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Describe the actual maintenance work performed...">{{ old('work_performed', $complaint->maintenanceReport?->work_performed) }}</textarea>
-
-                    </div>
-
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Repair Procedure <span class="text-red-500">*</span>
-                        </label>
-
-                        <textarea name="repair_procedure" rows="6" required
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Describe the repair steps or procedure followed...">{{ old('repair_procedure', $complaint->maintenanceReport?->repair_procedure) }}</textarea>
-
-                    </div>
-
-                </div>
-
-            </div>
-
 
             {{-- SECTION 3 --}}
 
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
 
                 <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    3. Materials, Parts & Tools
+                    2. Parts Removed
                 </h2>
 
                 <p class="text-sm text-gray-500 mb-6">
@@ -298,38 +246,12 @@
                     <div>
 
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Materials Used
-                        </label>
-
-                        <textarea name="materials_used" rows="5"
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="e.g. PVC cement, sealant...">{{ old('materials_used', $complaint->maintenanceReport?->materials_used) }}</textarea>
-
-                    </div>
-
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Parts Replaced
+                            Parts Removed
                         </label>
 
                         <textarea name="parts_replaced" rows="5"
                             class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             placeholder="e.g. 2-inch valve, pipe section...">{{ old('parts_replaced', $complaint->maintenanceReport?->parts_replaced) }}</textarea>
-
-                    </div>
-
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Tools Used
-                        </label>
-
-                        <textarea name="tools_used" rows="5"
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="e.g. pipe wrench, cutter...">{{ old('tools_used', $complaint->maintenanceReport?->tools_used) }}</textarea>
 
                     </div>
 
@@ -343,7 +265,7 @@
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
 
                 <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    4. Technician Notes & Completion
+                    4. Plumber Notes & Completion
                 </h2>
 
                 <p class="text-sm text-gray-500 mb-6">
@@ -352,19 +274,6 @@
 
 
                 <div class="space-y-6">
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Technician Notes
-                        </label>
-
-                        <textarea name="technician_notes" rows="5"
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Additional observations or technical notes...">{{ old('technician_notes', $complaint->maintenanceReport?->technician_notes) }}</textarea>
-
-                    </div>
-
 
                     <div>
 
@@ -446,9 +355,14 @@
                 </a>
 
                 <button type="submit"
-                    class="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">
-                    <i class="fas fa-paper-plane mr-2"></i>
-                    Submit Maintenance Report
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition">
+
+                    <i class="fas fa-circle-check"></i>
+
+                    {{ $complaint->maintenanceReport?->review_status === 'Returned'
+                        ? 'Resubmit Accomplishment'
+                        : 'Submit Accomplishment' }}
+
                 </button>
 
             </div>

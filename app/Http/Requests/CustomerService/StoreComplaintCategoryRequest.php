@@ -15,6 +15,12 @@ class StoreComplaintCategoryRequest extends FormRequest
     {
         return [
 
+            'division_id' => [
+                'required',
+                'integer',
+                'exists:divisions,id',
+            ],
+
             'name' => [
                 'required',
                 'string',
@@ -26,6 +32,7 @@ class StoreComplaintCategoryRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+
         ];
     }
 }

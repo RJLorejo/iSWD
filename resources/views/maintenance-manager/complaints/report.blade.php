@@ -203,27 +203,13 @@
 
                 <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
 
-                    <div class="sm:col-span-2">
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Subject
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                            {{ $complaint->subject }}
-                        </p>
-
-                    </div>
-
 
                     <div>
 
                         <p
                             class="text-xs uppercase tracking-wide
                               font-semibold text-gray-400">
-                            Category
+                            Complaint Type
                         </p>
 
                         <p class="mt-1 text-sm text-gray-800">
@@ -231,22 +217,6 @@
                         </p>
 
                     </div>
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Priority
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->priority ?? 'Not specified' }}
-                        </p>
-
-                    </div>
-
 
                     <div>
 

@@ -20,6 +20,8 @@ use App\Http\Controllers\CustomerService\ConsumerController;
 use App\Http\Controllers\CustomerService\ComplaintCategoryController;
 use App\Http\Controllers\CustomerService\ComplaintVerificationController;
 use App\Http\Controllers\CustomerService\DivisionController;
+use App\Http\Controllers\CustomerService\ConsumerFeedbackController;
+use App\Http\Controllers\CustomerService\ServiceAnnouncementController as CustomerServiceAnnouncementController;
 
 
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
@@ -40,6 +42,7 @@ use App\Http\Controllers\Consumer\Auth\RegisterController as ConsumerRegisterCon
 use App\Http\Controllers\Consumer\ServiceAnnouncementController;
 use App\Http\Controllers\Consumer\AIController;
 use App\Http\Controllers\Consumer\RegistrationStatusController;
+use App\Http\Controllers\Consumer\ComplaintFeedbackController;
 /*
 |--------------------------------------------------------------------------
 | Landing Page
@@ -202,47 +205,33 @@ Route::middleware(['auth', 'role:Customer Service'])
     ->name('customer-service.')
     ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Dashboard
-        |--------------------------------------------------------------------------
-        */
 
         Route::get(
             '/dashboard',
             [CustomerServiceDashboard::class, 'index']
         )->name('dashboard');
 
+        Route::get(
+            '/consumers/print-report',
+            [ConsumerController::class, 'printReport']
+        )->name('consumers.print-report');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Consumers
-        |--------------------------------------------------------------------------
-        */
 
         Route::resource(
             'consumers',
             ConsumerController::class
         );
 
+        Route::get(
+            '/complaints/print-report',
+            [CustomerServiceComplaintController::class, 'printReport']
+        )->name('complaints.print-report');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Complaints
-        |--------------------------------------------------------------------------
-        */
 
         Route::resource(
             'complaints',
             CustomerServiceComplaintController::class
         );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Complaint Categories
-        |--------------------------------------------------------------------------
-        */
 
         Route::resource(
             'complaint-categories',
@@ -257,11 +246,6 @@ Route::middleware(['auth', 'role:Customer Service'])
             'show',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Complaint Verification
-        |--------------------------------------------------------------------------
-        */
 
         Route::get(
             '/complaint-verification',
@@ -279,6 +263,132 @@ Route::middleware(['auth', 'role:Customer Service'])
             '/complaints/{complaint}/reject',
             [CustomerServiceComplaintController::class, 'reject']
         )->name('complaints.reject');
+
+        Route::post(
+            '/complaints/{complaint}/commercial/start',
+            [
+                CustomerServiceComplaintController::class,
+                'startCommercialProcessing',
+            ]
+        )->name(
+            'complaints.commercial.start'
+        );
+
+        Route::put(
+            '/complaints/{complaint}/commercial/resolution',
+            [
+                CustomerServiceComplaintController::class,
+                'saveCommercialResolution',
+            ]
+        )->name(
+            'complaints.commercial.resolution'
+        );
+
+        Route::post(
+            '/complaints/{complaint}/commercial/complete',
+            [
+                CustomerServiceComplaintController::class,
+                'completeCommercialComplaint',
+            ]
+        )->name(
+            'complaints.commercial.complete'
+        );
+
+        Route::post(
+            '/complaints/{complaint}/commercial/close',
+            [
+                CustomerServiceComplaintController::class,
+                'closeCommercialComplaint',
+            ]
+        )->name(
+            'complaints.commercial.close'
+        );
+
+
+
+        Route::get(
+            '/feedback',
+            [ConsumerFeedbackController::class, 'index']
+        )->name('feedback.index');
+
+        Route::get(
+            '/feedback/{feedback}',
+            [ConsumerFeedbackController::class, 'show']
+        )->name('feedback.show');
+
+        Route::patch(
+            '/feedback/{feedback}/review',
+            [ConsumerFeedbackController::class, 'markReviewed']
+        )->name('feedback.review');
+
+        Route::patch(
+            '/feedback/{feedback}/require-follow-up',
+            [ConsumerFeedbackController::class, 'requireFollowUp']
+        )->name('feedback.require-follow-up');
+
+        Route::patch(
+            '/feedback/{feedback}/start-follow-up',
+            [ConsumerFeedbackController::class, 'startFollowUp']
+        )->name('feedback.start-follow-up');
+
+        Route::patch(
+            '/feedback/{feedback}/resolve',
+            [ConsumerFeedbackController::class, 'resolve']
+        )->name('feedback.resolve');
+
+
+        Route::get(
+            '/announcements',
+            [CustomerServiceAnnouncementController::class, 'index']
+        )->name('announcements.index');
+
+
+        Route::get(
+            '/announcements/create',
+            [CustomerServiceAnnouncementController::class, 'create']
+        )->name('announcements.create');
+
+
+        Route::post(
+            '/announcements',
+            [CustomerServiceAnnouncementController::class, 'store']
+        )->name('announcements.store');
+
+        Route::get(
+            '/announcements/{serviceAnnouncement}',
+            [CustomerServiceAnnouncementController::class, 'show']
+        )->name('announcements.show');
+
+
+        Route::get(
+            '/announcements/{serviceAnnouncement}/edit',
+            [CustomerServiceAnnouncementController::class, 'edit']
+        )->name('announcements.edit');
+
+        Route::put(
+            '/announcements/{serviceAnnouncement}',
+            [CustomerServiceAnnouncementController::class, 'update']
+        )->name('announcements.update');
+
+        Route::patch(
+            '/announcements/{serviceAnnouncement}/publish',
+            [CustomerServiceAnnouncementController::class, 'publish']
+        )->name('announcements.publish');
+
+        Route::patch(
+            '/announcements/{serviceAnnouncement}/archive',
+            [CustomerServiceAnnouncementController::class, 'archive']
+        )->name('announcements.archive');
+
+        Route::patch(
+            '/announcements/{serviceAnnouncement}/draft',
+            [CustomerServiceAnnouncementController::class, 'moveToDraft']
+        )->name('announcements.draft');
+
+        Route::delete(
+            '/announcements/{serviceAnnouncement}',
+            [CustomerServiceAnnouncementController::class, 'destroy']
+        )->name('announcements.destroy');
     });
 
 
@@ -315,6 +425,17 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
             '/complaints',
             [ManagerComplaintController::class, 'index']
         )->name('complaints.index');
+
+        Route::get(
+            '/complaints/for-assignment',
+            [ManagerComplaintController::class, 'forAssignment']
+        )->name('complaints.for-assignment');
+
+        Route::get(
+            '/complaints-report',
+            [ManagerComplaintController::class, 'printReport']
+        )->name('complaints.print-report');
+
 
 
         Route::get(
@@ -373,23 +494,11 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
     ->name('technician.')
     ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Dashboard
-        |--------------------------------------------------------------------------
-        */
 
         Route::get(
             '/dashboard',
             [TechnicianDashboard::class, 'index']
         )->name('dashboard');
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Assigned Complaints
-        |--------------------------------------------------------------------------
-        */
 
         Route::get(
             '/complaints',
@@ -397,16 +506,17 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
         )->name('complaints.index');
 
         Route::get(
+            '/complaints/print-report',
+            [TechnicianComplaintController::class, 'printReport']
+        )->name('complaints.print-report');
+
+
+        Route::get(
             '/complaints/{complaint}',
             [TechnicianComplaintController::class, 'show']
         )->name('complaints.show');
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Maintenance Reports
-        |--------------------------------------------------------------------------
-        */
 
         Route::get(
             '/maintenance-reports',
@@ -438,13 +548,6 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             [MaintenanceReportController::class, 'printReport']
         )->name('maintenance-reports.print');
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Maintenance Report Summary
-        |--------------------------------------------------------------------------
-        */
-
         Route::get(
             '/reports/maintenance',
             [MaintenanceReportController::class, 'index']
@@ -455,12 +558,6 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             [MaintenanceReportController::class, 'print']
         )->name('reports.maintenance.print');
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Maintenance History
-        |--------------------------------------------------------------------------
-        */
 
         Route::get(
             '/maintenance-history',
@@ -486,12 +583,6 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
 
 Route::middleware('guest')->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Consumer Login
-    |--------------------------------------------------------------------------
-    */
-
     Route::get(
         '/consumer/login',
         [ConsumerLoginController::class, 'create']
@@ -502,12 +593,6 @@ Route::middleware('guest')->group(function () {
         [ConsumerLoginController::class, 'store']
     )->name('consumer.login.store');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Consumer Registration
-    |--------------------------------------------------------------------------
-    */
 
     Route::get(
         '/consumer/register',
@@ -607,6 +692,11 @@ Route::middleware([
             [ConsumerComplaintController::class, 'update']
         )->name('complaints.update');
 
+        Route::post(
+            '/complaints/analyze',
+            [ConsumerComplaintController::class, 'analyze']
+        )->name('complaints.analyze');
+
 
         Route::get(
             '/complaints/{complaint}',
@@ -618,6 +708,11 @@ Route::middleware([
             '/announcements',
             [ServiceAnnouncementController::class, 'index']
         )->name('announcements.index');
+
+        Route::post(
+            '/announcements/mark-all-read',
+            [ServiceAnnouncementController::class, 'markAllAsRead']
+        )->name('announcements.mark-all-read');
 
 
         Route::get(
@@ -636,6 +731,16 @@ Route::middleware([
             '/ai-assistant/ask',
             [AIController::class, 'ask']
         )->name('ai.ask');
+
+        Route::get(
+            '/complaints/{complaint}/feedback',
+            [ComplaintFeedbackController::class, 'create']
+        )->name('complaints.feedback.create');
+
+        Route::post(
+            '/complaints/{complaint}/feedback',
+            [ComplaintFeedbackController::class, 'store']
+        )->name('complaints.feedback.store');
     });
 
 

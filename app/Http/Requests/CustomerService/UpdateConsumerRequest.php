@@ -16,9 +16,11 @@ class UpdateConsumerRequest extends FormRequest
 
     public function rules(): array
     {
-        $consumer = $this->route('consumer');
+        $consumer =
+            $this->route('consumer');
 
-        $userId = $consumer?->user_id;
+        $userId =
+            $consumer?->user_id;
 
 
         return [
@@ -37,7 +39,9 @@ class UpdateConsumerRequest extends FormRequest
                 Rule::unique(
                     'consumers',
                     'account_number'
-                )->ignore($consumer?->id),
+                )->ignore(
+                    $consumer?->id
+                ),
             ],
 
             'first_name' => [
@@ -94,7 +98,9 @@ class UpdateConsumerRequest extends FormRequest
                 Rule::unique(
                     'users',
                     'email'
-                )->ignore($userId),
+                )->ignore(
+                    $userId
+                ),
             ],
 
 
@@ -129,7 +135,7 @@ class UpdateConsumerRequest extends FormRequest
 
             /*
             |--------------------------------------------------------------------------
-            | Residential Address
+            | Registered Service Address
             |--------------------------------------------------------------------------
             */
 
@@ -169,6 +175,24 @@ class UpdateConsumerRequest extends FormRequest
                 'max:255',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Registered Service Coordinates
+            |--------------------------------------------------------------------------
+            */
+
+            'latitude' => [
+                'required',
+                'numeric',
+                'between:-90,90',
+            ],
+
+            'longitude' => [
+                'required',
+                'numeric',
+                'between:-180,180',
+            ],
         ];
     }
 
@@ -178,49 +202,74 @@ class UpdateConsumerRequest extends FormRequest
         return [
 
             'account_number.required' =>
-                'Please enter the consumer account number.',
+            'Please enter the consumer account number.',
 
             'account_number.unique' =>
-                'This consumer account number is already registered.',
+            'This consumer account number is already registered.',
 
             'first_name.required' =>
-                'Please enter the consumer first name.',
+            'Please enter the consumer first name.',
 
             'last_name.required' =>
-                'Please enter the consumer last name.',
+            'Please enter the consumer last name.',
 
             'sex.required' =>
-                'Please select the consumer sex.',
+            'Please select the consumer sex.',
 
             'sex.in' =>
-                'Please select a valid sex.',
+            'Please select a valid sex.',
 
             'phone.required' =>
-                'Please enter the consumer phone number.',
+            'Please enter the consumer phone number.',
 
             'email.required' =>
-                'Please enter an email address for the consumer portal account.',
+            'Please enter an email address for the consumer portal account.',
 
             'email.email' =>
-                'Please enter a valid email address.',
+            'Please enter a valid email address.',
 
             'email.unique' =>
-                'This email address is already registered to another account.',
+            'This email address is already registered to another account.',
 
             'is_active.required' =>
-                'Please select whether the consumer account is active or inactive.',
+            'Please select whether the consumer account is active or inactive.',
 
             'new_password.confirmed' =>
-                'The new password confirmation does not match.',
+            'The new password confirmation does not match.',
 
             'barangay.required' =>
-                'Please enter the barangay.',
+            'Please enter the barangay.',
 
             'municipality.required' =>
-                'Please enter the municipality.',
+            'Please enter the municipality.',
 
             'province.required' =>
-                'Please enter the province.',
+            'Please enter the province.',
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Map Location
+            |--------------------------------------------------------------------------
+            */
+
+            'latitude.required' =>
+            'Please select the registered water service location on the map.',
+
+            'latitude.numeric' =>
+            'The selected service location is invalid.',
+
+            'latitude.between' =>
+            'The selected latitude is invalid.',
+
+            'longitude.required' =>
+            'Please select the registered water service location on the map.',
+
+            'longitude.numeric' =>
+            'The selected service location is invalid.',
+
+            'longitude.between' =>
+            'The selected longitude is invalid.',
         ];
     }
 }

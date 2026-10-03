@@ -2,73 +2,58 @@
 
 namespace App\Http\Requests\CustomerService;
 
+use App\Models\Division;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateComplaintRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Prepare request data before validation.
-     */
     protected function prepareForValidation(): void
     {
-        $complainantType = $this->input('complainant_type');
+        $this->merge([
+            'complainant_name' => $this->filled('complainant_name')
+                ? trim((string) $this->complainant_name)
+                : null,
 
-        if ($complainantType === 'registered') {
-            $this->merge([
-                'complainant_name' => null,
-                'complainant_phone' => null,
-            ]);
-        }
+            'complainant_phone' => $this->filled('complainant_phone')
+                ? trim((string) $this->complainant_phone)
+                : null,
 
-        if ($complainantType === 'walk_in') {
-            $this->merge([
-                'consumer_id' => null,
-            ]);
-        }
+            'description' => $this->filled('description')
+                ? trim((string) $this->description)
+                : null,
+
+            'address' => $this->filled('address')
+                ? trim((string) $this->address)
+                : null,
+
+            'landmark' => $this->filled('landmark')
+                ? trim((string) $this->landmark)
+                : null,
+        ]);
     }
 
-    /**
-     * Validation rules.
-     */
     public function rules(): array
     {
         return [
-
-            /*
-            |--------------------------------------------------------------------------
-            | Complainant
-            |--------------------------------------------------------------------------
-            */
-
-            'complainant_type' => [
-                'required',
-                Rule::in([
-                    'registered',
-                    'walk_in',
-                ]),
-            ],
-
             'consumer_id' => [
                 'nullable',
                 'integer',
-                'exists:consumers,id',
-                'required_if:complainant_type,registered',
+                Rule::exists('consumers', 'id')
+                    ->where(function ($query) {
+                        $query->where('is_active', true);
+                    }),
             ],
 
             'complainant_name' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
-                'required_if:complainant_type,walk_in',
             ],
 
             'complainant_phone' => [
@@ -76,12 +61,6 @@ class UpdateComplaintRequest extends FormRequest
                 'string',
                 'max:30',
             ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Complaint Classification
-            |--------------------------------------------------------------------------
-            */
 
             'division_id' => [
                 'required',
@@ -95,7 +74,6 @@ class UpdateComplaintRequest extends FormRequest
             'complaint_category_id' => [
                 'required',
                 'integer',
-
                 Rule::exists('complaint_categories', 'id')
                     ->where(function ($query) {
                         $query
@@ -107,27 +85,52 @@ class UpdateComplaintRequest extends FormRequest
                     }),
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Complaint Information
-            |--------------------------------------------------------------------------
-            */
-
             'description' => [
                 'required',
                 'string',
+                'min:10',
+                'max:5000',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Location
-            |--------------------------------------------------------------------------
-            */
-
             'address' => [
-                'required',
+                Rule::requiredIf(function () {
+                    $division = Division::query()
+                        ->find($this->input('division_id'));
+
+                    if (!$division) {
+                        return false;
+                    }
+
+                    $divisionName = strtolower(
+                        trim((string) $division->name)
+                    );
+
+                    $isEngineering = str_contains(
+                        $divisionName,
+                        'engineering'
+                    );
+
+                    $isCommercial = str_contains(
+                        $divisionName,
+                        'commercial'
+                    );
+
+                    if ($isEngineering) {
+                        return true;
+                    }
+
+                    if (
+                        $isCommercial &&
+                        !$this->filled('consumer_id')
+                    ) {
+                        return true;
+                    }
+
+                    return false;
+                }),
+                'nullable',
                 'string',
-                'max:500',
+                'max:1000',
             ],
 
             'landmark' => [
@@ -148,12 +151,6 @@ class UpdateComplaintRequest extends FormRequest
                 'between:-180,180',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Photo
-            |--------------------------------------------------------------------------
-            */
-
             'photo' => [
                 'nullable',
                 'image',
@@ -163,78 +160,44 @@ class UpdateComplaintRequest extends FormRequest
         ];
     }
 
-    /**
-     * Custom validation messages.
-     */
     public function messages(): array
     {
         return [
-
-            'complainant_type.required' =>
-            'Please select the type of complainant.',
-
-            'complainant_type.in' =>
-            'The selected complainant type is invalid.',
-
-            'consumer_id.required_if' =>
-            'Please select a registered consumer.',
-
             'consumer_id.exists' =>
-            'The selected consumer does not exist.',
+                'The selected SWD account is invalid or inactive.',
 
-            'complainant_name.required_if' =>
-            'Please enter the full name of the walk-in complainant.',
-
-            'complainant_name.max' =>
-            'The complainant name must not exceed 255 characters.',
-
-            'complainant_phone.max' =>
-            'The complainant contact number must not exceed 30 characters.',
+            'complainant_name.required' =>
+                'Please enter the name of the person reporting the complaint.',
 
             'division_id.required' =>
-            'Please select a division.',
+                'Please select a division.',
 
             'division_id.exists' =>
-            'The selected division does not exist or is inactive.',
+                'The selected division is invalid or inactive.',
 
             'complaint_category_id.required' =>
-            'Please select a complaint type.',
+                'Please select a complaint type.',
 
             'complaint_category_id.exists' =>
-            'The selected complaint type does not exist, is inactive, or is invalid.',
+                'The selected complaint type does not belong to the selected division or is inactive.',
 
             'description.required' =>
-            'Please describe the reported problem.',
+                'Please provide a description of the complaint.',
+
+            'description.min' =>
+                'The complaint description must contain at least 10 characters.',
 
             'address.required' =>
-            'Please provide the location of the reported problem.',
-
-            'address.max' =>
-            'The problem address must not exceed 500 characters.',
-
-            'landmark.max' =>
-            'The landmark must not exceed 255 characters.',
-
-            'latitude.numeric' =>
-            'The latitude must be a valid number.',
-
-            'latitude.between' =>
-            'The latitude must be between -90 and 90.',
-
-            'longitude.numeric' =>
-            'The longitude must be a valid number.',
-
-            'longitude.between' =>
-            'The longitude must be between -180 and 180.',
+                'Please provide the service address for an Engineering complaint or the complainant address for a Commercial complaint without a linked SWD account.',
 
             'photo.image' =>
-            'The uploaded file must be an image.',
+                'The supporting file must be an image.',
 
             'photo.mimes' =>
-            'The complaint photo must be JPG, JPEG, PNG, or WEBP.',
+                'The supporting image must be a JPG, JPEG, PNG, or WEBP file.',
 
             'photo.max' =>
-            'The complaint photo must not exceed 5 MB.',
+                'The supporting image must not exceed 5 MB.',
         ];
     }
 }

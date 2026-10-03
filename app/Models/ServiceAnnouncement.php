@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ServiceAnnouncement extends Model
 {
@@ -27,17 +29,40 @@ class ServiceAnnouncement extends Model
         'published_at' => 'datetime',
     ];
 
-    /**
-     * User who published the announcement.
-     */
-    public function publisher()
+    public function publisher(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'published_by');
+        return $this->belongsTo(
+            User::class,
+            'published_by'
+        );
     }
 
-    /**
-     * Determine whether the announcement is currently active.
-     */
+    public function reads(): HasMany
+    {
+        return $this->hasMany(
+            AnnouncementRead::class,
+            'service_announcement_id'
+        );
+    }
+
+    public function isReadBy(?Consumer $consumer): bool
+    {
+        if (!$consumer) {
+            return false;
+        }
+
+        if ($this->relationLoaded('reads')) {
+            return $this->reads->contains(
+                'consumer_id',
+                $consumer->id
+            );
+        }
+
+        return $this->reads()
+            ->where('consumer_id', $consumer->id)
+            ->exists();
+    }
+
     public function isActive(): bool
     {
         if ($this->status !== 'Published') {
@@ -46,41 +71,52 @@ class ServiceAnnouncement extends Model
 
         $now = now();
 
-        if ($this->start_at && $now->lt($this->start_at)) {
+        if (
+            $this->start_at &&
+            $now->lt($this->start_at)
+        ) {
             return false;
         }
 
-        if ($this->end_at && $now->gt($this->end_at)) {
+        if (
+            $this->end_at &&
+            $now->gt($this->end_at)
+        ) {
             return false;
         }
 
         return true;
     }
 
-    /**
-     * Scope to published announcements.
-     */
     public function scopePublished($query)
     {
-        return $query->where('status', 'Published');
+        return $query
+            ->where('status', 'Published')
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
-    /**
-     * Scope to currently active announcements.
-     */
     public function scopeActive($query)
     {
         $now = now();
 
         return $query
-            ->where('status', 'Published')
+            ->published()
             ->where(function ($q) use ($now) {
                 $q->whereNull('start_at')
-                    ->orWhere('start_at', '<=', $now);
+                    ->orWhere(
+                        'start_at',
+                        '<=',
+                        $now
+                    );
             })
             ->where(function ($q) use ($now) {
                 $q->whereNull('end_at')
-                    ->orWhere('end_at', '>=', $now);
+                    ->orWhere(
+                        'end_at',
+                        '>=',
+                        $now
+                    );
             });
     }
 }

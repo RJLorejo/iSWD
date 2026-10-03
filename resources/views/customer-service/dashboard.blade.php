@@ -1,333 +1,503 @@
 @extends('customer-service.layouts.app')
 
-@section('title', 'Customer Service Dashboard')
-
-@php
-    use Illuminate\Support\Str;
-@endphp
+@section('title', 'Dashboard')
 
 @section('content')
 
+    @php
+        $statusStyles = [
+            'Pending' => 'bg-amber-50 text-amber-700 border-amber-200',
+            'Verified' => 'bg-sky-50 text-sky-700 border-sky-200',
+            'Assigned' => 'bg-blue-50 text-blue-700 border-blue-200',
+            'In Progress' => 'bg-violet-50 text-violet-700 border-violet-200',
+            'Accomplished' => 'bg-cyan-50 text-cyan-700 border-cyan-200',
+            'Completed' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            'Closed' => 'bg-slate-100 text-slate-600 border-slate-200',
+            'Rejected' => 'bg-red-50 text-red-700 border-red-200',
+        ];
+    @endphp
+
     <div class="space-y-6">
 
-        {{-- PAGE HEADER --}}
-        <x-form.page-header title=""
-            subtitle="Manage consumers and customer complaints." />
+        <section
+            class="overflow-hidden rounded-3xl bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 shadow-sm">
 
-        {{-- STATISTICS --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div class="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
 
-            {{-- TOTAL CONSUMERS --}}
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div
+                    class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10">
+                </div>
 
-                <div class="flex items-center justify-between">
+                <div
+                    class="absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-white/5">
+                </div>
+
+                <div class="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+
+                    <div class="max-w-2xl">
+
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-sky-100">
+                            Customer Service Workspace
+                        </p>
+
+                        <h2 class="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                            Welcome back, {{ auth()->user()->first_name ?? auth()->user()->name }}
+                        </h2>
+
+                        <p class="mt-2 max-w-xl text-sm leading-6 text-sky-100 sm:text-base">
+                            Monitor consumer concerns, review incoming complaints,
+                            and keep service requests moving through the proper workflow.
+                        </p>
+
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+
+                        <a
+                            href="{{ route('customer-service.complaints.create') }}"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-sky-700 shadow-sm transition hover:bg-sky-50">
+
+                            <i class="fas fa-plus"></i>
+
+                            New Complaint
+
+                        </a>
+
+                        <a
+                            href="{{ route('customer-service.consumers.create') }}"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20">
+
+                            <i class="fas fa-user-plus"></i>
+
+                            Register Consumer
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+            <a
+                href="{{ route('customer-service.consumers.index') }}"
+                class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md">
+
+                <div class="flex items-start justify-between gap-4">
 
                     <div>
-                        <p class="text-sm font-medium text-slate-500">
+
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Total Consumers
                         </p>
 
-                        <h2 class="mt-2 text-3xl font-bold text-slate-900">
-                            {{ $totalConsumers ?? 0 }}
-                        </h2>
-
-                        <p class="mt-2 text-xs text-slate-500">
-                            Registered consumers
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                            {{ number_format($totalConsumers) }}
                         </p>
-                    </div>
 
-                    <div
-                        class="w-12 h-12 rounded-xl bg-blue-50
-                            flex items-center justify-center">
-
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-8a4 4 0 110 8 4 4 0 010-8zm6 4a3 3 0 100-6 3 3 0 000 6z" />
-
-                        </svg>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                            Registered consumer accounts
+                        </p>
 
                     </div>
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition group-hover:bg-sky-100">
+
+                        <i class="fas fa-users"></i>
+
+                    </span>
 
                 </div>
 
-            </div>
+            </a>
 
+            <a
+                href="{{ route('customer-service.consumers.index') }}"
+                class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
 
-            {{-- NEW CONSUMERS --}}
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-
-                <div class="flex items-center justify-between">
+                <div class="flex items-start justify-between gap-4">
 
                     <div>
 
-                        <p class="text-sm font-medium text-slate-500">
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             New Today
                         </p>
 
-                        <h2 class="mt-2 text-3xl font-bold text-slate-900">
-                            {{ $newConsumers ?? 0 }}
-                        </h2>
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                            {{ number_format($newConsumers) }}
+                        </p>
 
-                        <p class="mt-2 text-xs text-slate-500">
-                            Registered today
+                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                            Consumers registered today
                         </p>
 
                     </div>
 
-                    <div
-                        class="w-12 h-12 rounded-xl bg-emerald-50
-                            flex items-center justify-center">
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
 
-                        <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <i class="fas fa-user-plus"></i>
 
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-
-                        </svg>
-
-                    </div>
+                    </span>
 
                 </div>
 
-            </div>
+            </a>
 
+            <a
+                href="{{ route('customer-service.complaint-verification.index') }}"
+                class="group rounded-2xl border {{ $pendingComplaints > 0 ? 'border-amber-200' : 'border-slate-200' }} bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
 
-            {{-- ACTIVE CONNECTIONS --}}
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-
-                <div class="flex items-center justify-between">
-
-                    <div>
-
-                        <p class="text-sm font-medium text-slate-500">
-                            Active Connections
-                        </p>
-
-                        <h2 class="mt-2 text-3xl font-bold text-slate-900">
-                            {{ $activeConnections ?? 0 }}
-                        </h2>
-
-                        <p class="mt-2 text-xs text-slate-500">
-                            Active water connections
-                        </p>
-
-                    </div>
-
-                    <div
-                        class="w-12 h-12 rounded-xl bg-cyan-50
-                            flex items-center justify-center">
-
-                        <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 3.5C12 3.5 6 10 6 14a6 6 0 0012 0c0-4-6-10.5-6-10.5z" />
-
-                        </svg>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- PENDING COMPLAINTS --}}
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-
-                <div class="flex items-center justify-between">
+                <div class="flex items-start justify-between gap-4">
 
                     <div>
 
-                        <p class="text-sm font-medium text-slate-500">
-                            Pending Complaints
-                        </p>
-
-                        <h2 class="mt-2 text-3xl font-bold text-slate-900">
-                            {{ $pendingComplaints ?? 0 }}
-                        </h2>
-
-                        <p class="mt-2 text-xs text-slate-500">
-                            Require verification
-                        </p>
-
-                    </div>
-
-                    <div
-                        class="w-12 h-12 rounded-xl bg-amber-50
-                            flex items-center justify-center">
-
-                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v4m0 4h.01M10.29 3.86l-8.82 15a2 2 0 001.72 3h17.62a2 2 0 001.72-3l-8.82-15a2 2 0 00-3.42 0z" />
-
-                        </svg>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- QUICK ACTIONS --}}
-        <div class="bg-white rounded-2xl border border-slate-200
-                shadow-sm p-6">
-
-            <div class="flex items-center justify-between mb-5">
-
-                <div>
-
-                    <h3 class="text-lg font-semibold text-slate-900">
-                        Quick Actions
-                    </h3>
-
-                    <p class="text-sm text-slate-500 mt-1">
-                        Frequently used customer service functions.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                {{-- REGISTER CONSUMER --}}
-                <a href="{{ route('customer-service.consumers.create') }}"
-                    class="group flex items-center gap-4 p-4 rounded-xl
-                      border border-slate-200
-                      hover:border-blue-300 hover:bg-blue-50
-                      transition">
-
-                    <div
-                        class="w-11 h-11 rounded-lg bg-blue-100
-                            flex items-center justify-center
-                            group-hover:bg-blue-200 transition">
-
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-
-                        </svg>
-
-                    </div>
-
-                    <div>
-
-                        <p class="font-semibold text-slate-900">
-                            Register Consumer
-                        </p>
-
-                        <p class="text-xs text-slate-500">
-                            Add new consumer
-                        </p>
-
-                    </div>
-
-                </a>
-
-
-                {{-- VIEW CONSUMERS --}}
-                <a href="{{ route('customer-service.consumers.index') }}"
-                    class="group flex items-center gap-4 p-4 rounded-xl
-                      border border-slate-200
-                      hover:border-cyan-300 hover:bg-cyan-50
-                      transition">
-
-                    <div
-                        class="w-11 h-11 rounded-lg bg-cyan-100
-                            flex items-center justify-center">
-
-                        <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-8a4 4 0 110 8 4 4 0 010-8z" />
-
-                        </svg>
-
-                    </div>
-
-                    <div>
-
-                        <p class="font-semibold text-slate-900">
-                            Consumers
-                        </p>
-
-                        <p class="text-xs text-slate-500">
-                            Manage consumer records
-                        </p>
-
-                    </div>
-
-                </a>
-
-
-                {{-- COMPLAINTS --}}
-                <a href="{{ route('customer-service.complaints.index') }}"
-                    class="group flex items-center gap-4 p-4 rounded-xl
-                      border border-slate-200
-                      hover:border-amber-300 hover:bg-amber-50
-                      transition">
-
-                    <div
-                        class="w-11 h-11 rounded-lg bg-amber-100
-                            flex items-center justify-center">
-
-                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 10h8M8 14h5m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-
-                        </svg>
-
-                    </div>
-
-                    <div>
-
-                        <p class="font-semibold text-slate-900">
-                            Complaints
-                        </p>
-
-                        <p class="text-xs text-slate-500">
-                            View complaint queue
-                        </p>
-
-                    </div>
-
-                </a>
-
-
-                {{-- PENDING --}}
-                <a href="{{ route('customer-service.complaints.index', ['status' => 'Pending']) }}"
-                    class="group flex items-center gap-4 p-4 rounded-xl
-                      border border-slate-200
-                      hover:border-red-300 hover:bg-red-50
-                      transition">
-
-                    <div
-                        class="w-11 h-11 rounded-lg bg-red-100
-                            flex items-center justify-center">
-
-                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v4m0 4h.01M10.29 3.86l-8.82 15a2 2 0 001.72 3h17.62a2 2 0 001.72-3l-8.82-15a2 2 0 00-3.42 0z" />
-
-                        </svg>
-
-                    </div>
-
-                    <div>
-
-                        <p class="font-semibold text-slate-900">
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Pending Verification
                         </p>
 
-                        <p class="text-xs text-slate-500">
-                            Review complaints
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                            {{ number_format($pendingComplaints) }}
+                        </p>
+
+                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                            Complaints awaiting review
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+
+                        <i class="fas fa-shield-halved"></i>
+
+                    </span>
+
+                </div>
+
+            </a>
+
+            <a
+                href="{{ route('customer-service.feedback.index', ['handling_status' => 'New']) }}"
+                class="group rounded-2xl border {{ $newFeedback > 0 ? 'border-red-200' : 'border-slate-200' }} bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+
+                <div class="flex items-start justify-between gap-4">
+
+                    <div>
+
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            New Feedback
+                        </p>
+
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                            {{ number_format($newFeedback) }}
+                        </p>
+
+                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                            Waiting for CS review
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+
+                        <i class="fas fa-star"></i>
+
+                    </span>
+
+                </div>
+
+            </a>
+
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.5fr)]">
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
+
+                    <div class="flex items-start gap-3">
+
+                        <span
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+
+                            <i class="fas fa-chart-column"></i>
+
+                        </span>
+
+                        <div>
+
+                            <h2 class="font-bold text-slate-900">
+                                Complaint Status Overview
+                            </h2>
+
+                            <p class="mt-1 text-xs leading-5 text-slate-500">
+                                Current distribution of complaints across the service workflow.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="p-4 sm:p-6">
+
+                    <div class="h-[280px] sm:h-[320px]">
+                        <canvas id="complaintStatusChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="border-b border-slate-100 px-5 py-5">
+
+                    <div class="flex items-start justify-between gap-3">
+
+                        <div>
+
+                            <h2 class="font-bold text-slate-900">
+                                Requires Attention
+                            </h2>
+
+                            <p class="mt-1 text-xs leading-5 text-slate-500">
+                                Feedback needing Customer Service action.
+                            </p>
+
+                        </div>
+
+                        <span
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+
+                            <i class="fas fa-triangle-exclamation"></i>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="divide-y divide-slate-100">
+
+                    @forelse ($attentionFeedback as $item)
+
+                        <a
+                            href="{{ route('customer-service.feedback.show', $item) }}"
+                            class="block p-4 transition hover:bg-slate-50">
+
+                            <div class="flex items-start gap-3">
+
+                                <span
+                                    class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl
+                                    {{ $item->handling_status === 'New'
+                                        ? 'bg-blue-50 text-blue-600'
+                                        : 'bg-amber-50 text-amber-600' }}">
+
+                                    <i class="fas {{ $item->handling_status === 'New' ? 'fa-envelope' : 'fa-arrow-rotate-right' }}"></i>
+
+                                </span>
+
+                                <div class="min-w-0 flex-1">
+
+                                    <div class="flex items-start justify-between gap-2">
+
+                                        <p class="truncate text-sm font-bold text-slate-800">
+                                            {{ $item->complaint?->complaint_no ?? 'Feedback' }}
+                                        </p>
+
+                                        <span class="shrink-0 text-[10px] text-slate-400">
+                                            {{ $item->created_at->diffForHumans() }}
+                                        </span>
+
+                                    </div>
+
+                                    <p class="mt-1 truncate text-xs text-slate-500">
+                                        {{ $item->consumer?->full_name ?? 'Consumer' }}
+                                    </p>
+
+                                    <span
+                                        class="mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-bold
+                                        {{ $item->handling_status === 'New'
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'bg-amber-50 text-amber-700' }}">
+
+                                        {{ $item->handling_status }}
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </a>
+
+                    @empty
+
+                        <div class="px-5 py-12 text-center">
+
+                            <span
+                                class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+
+                                <i class="fas fa-check"></i>
+
+                            </span>
+
+                            <p class="mt-3 text-sm font-bold text-slate-700">
+                                No pending feedback actions
+                            </p>
+
+                            <p class="mt-1 text-xs leading-5 text-slate-400">
+                                New or follow-up feedback will appear here.
+                            </p>
+
+                        </div>
+
+                    @endforelse
+
+                </div>
+
+                @if ($attentionFeedback->count())
+
+                    <div class="border-t border-slate-100 p-4">
+
+                        <a
+                            href="{{ route('customer-service.feedback.index', ['needs_attention' => 1]) }}"
+                            class="flex items-center justify-center gap-2 text-xs font-bold text-sky-700 hover:text-sky-800">
+
+                            View Feedback Queue
+
+                            <i class="fas fa-arrow-right text-[10px]"></i>
+
+                        </a>
+
+                    </div>
+
+                @endif
+
+            </div>
+
+        </section>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+            <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
+
+                <h2 class="font-bold text-slate-900">
+                    Quick Actions
+                </h2>
+
+                <p class="mt-1 text-xs leading-5 text-slate-500">
+                    Access frequently used Customer Service tasks.
+                </p>
+
+            </div>
+
+            <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-4">
+
+                <a
+                    href="{{ route('customer-service.consumers.create') }}"
+                    class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:bg-sky-50/50">
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition group-hover:bg-sky-100">
+
+                        <i class="fas fa-user-plus"></i>
+
+                    </span>
+
+                    <div class="min-w-0">
+
+                        <p class="text-sm font-bold text-slate-800">
+                            Register Consumer
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Create a consumer account
+                        </p>
+
+                    </div>
+
+                </a>
+
+                <a
+                    href="{{ route('customer-service.complaints.create') }}"
+                    class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-blue-200 hover:bg-blue-50/50">
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+
+                        <i class="fas fa-file-circle-plus"></i>
+
+                    </span>
+
+                    <div>
+
+                        <p class="text-sm font-bold text-slate-800">
+                            Record Complaint
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Log a consumer concern
+                        </p>
+
+                    </div>
+
+                </a>
+
+                <a
+                    href="{{ route('customer-service.complaint-verification.index') }}"
+                    class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-amber-200 hover:bg-amber-50/50">
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+
+                        <i class="fas fa-shield-halved"></i>
+
+                    </span>
+
+                    <div>
+
+                        <p class="text-sm font-bold text-slate-800">
+                            Verify Complaints
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Review pending submissions
+                        </p>
+
+                    </div>
+
+                </a>
+
+                <a
+                    href="{{ route('customer-service.feedback.index') }}"
+                    class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-cyan-200 hover:bg-cyan-50/50">
+
+                    <span
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+
+                        <i class="fas fa-star"></i>
+
+                    </span>
+
+                    <div>
+
+                        <p class="text-sm font-bold text-slate-800">
+                            Consumer Feedback
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Review service experience
                         </p>
 
                     </div>
@@ -336,72 +506,160 @@
 
             </div>
 
-        </div>
+        </section>
 
+        <section class="grid gap-6 xl:grid-cols-2">
 
-        {{-- MAIN CONTENT --}}
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-            {{-- RECENT CONSUMERS --}}
-            <div class="bg-white rounded-2xl border border-slate-200
-                    shadow-sm overflow-hidden">
-
-                <div class="px-6 py-5 border-b border-slate-200
-                        flex items-center justify-between">
+                <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
 
                     <div>
 
-                        <h3 class="font-semibold text-slate-900">
+                        <h2 class="font-bold text-slate-900">
                             Recent Consumers
-                        </h3>
+                        </h2>
 
-                        <p class="text-xs text-slate-500 mt-1">
-                            Recently registered consumers
+                        <p class="mt-1 text-xs text-slate-500">
+                            Latest consumer registrations
                         </p>
 
                     </div>
 
-                    <a href="{{ route('customer-service.consumers.index') }}"
-                        class="text-sm font-medium text-blue-600
-                          hover:text-blue-700">
-
+                    <a
+                        href="{{ route('customer-service.consumers.index') }}"
+                        class="shrink-0 text-xs font-bold text-sky-700 hover:text-sky-800">
                         View All
-
                     </a>
 
                 </div>
 
+                <div class="hidden md:block">
 
-                <div class="divide-y divide-slate-100">
+                    <div class="overflow-x-auto">
 
-                    @forelse($recentConsumers ?? [] as $consumer)
-                        <div class="px-6 py-4 flex items-center
-                                justify-between">
+                        <table class="min-w-full divide-y divide-slate-100">
 
-                            <div>
+                            <thead class="bg-slate-50">
 
-                                <p class="font-medium text-slate-900">
+                                <tr>
 
-                                    {{ $consumer->first_name }}
-                                    {{ $consumer->last_name }}
+                                    <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Consumer
+                                    </th>
 
-                                </p>
+                                    <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Account
+                                    </th>
 
-                                <p class="text-xs text-slate-500 mt-1">
+                                    <th class="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Registered
+                                    </th>
 
-                                    {{ $consumer->consumer_no }}
+                                </tr>
 
-                                </p>
+                            </thead>
 
-                            </div>
+                            <tbody class="divide-y divide-slate-100">
 
-                            <div class="text-right">
+                                @forelse ($recentConsumers as $consumer)
 
-                                <p class="text-xs text-slate-500">
+                                    <tr class="transition hover:bg-slate-50">
 
-                                    {{ $consumer->created_at?->format('M d, Y') }}
+                                        <td class="px-5 py-4">
 
-                                </p>
+                                            <p class="text-sm font-bold text-slate-800">
+                                                {{ $consumer->full_name }}
+                                            </p>
+
+                                            <p class="mt-1 text-xs text-slate-400">
+                                                {{ $consumer->phone ?: 'No phone number' }}
+                                            </p>
+
+                                        </td>
+
+                                        <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                                            {{ $consumer->account_number ?: '—' }}
+                                        </td>
+
+                                        <td class="whitespace-nowrap px-5 py-4 text-right">
+
+                                            <p class="text-xs font-medium text-slate-600">
+                                                {{ $consumer->created_at?->format('M d, Y') }}
+                                            </p>
+
+                                            <p class="mt-1 text-[10px] text-slate-400">
+                                                {{ $consumer->created_at?->format('h:i A') }}
+                                            </p>
+
+                                        </td>
+
+                                    </tr>
+
+                                @empty
+
+                                    <tr>
+
+                                        <td colspan="3" class="px-5 py-12 text-center text-sm text-slate-400">
+                                            No consumer records found.
+                                        </td>
+
+                                    </tr>
+
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                <div class="divide-y divide-slate-100 md:hidden">
+
+                    @forelse ($recentConsumers as $consumer)
+
+                        <div class="p-4">
+
+                            <div class="flex items-start gap-3">
+
+                                <span
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+
+                                    <i class="fas fa-user"></i>
+
+                                </span>
+
+                                <div class="min-w-0 flex-1">
+
+                                    <p class="truncate text-sm font-bold text-slate-800">
+                                        {{ $consumer->full_name }}
+                                    </p>
+
+                                    <p class="mt-1 text-xs font-medium text-slate-500">
+                                        {{ $consumer->account_number ?: 'No account number' }}
+                                    </p>
+
+                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
+
+                                        <span>
+                                            <i class="far fa-calendar mr-1"></i>
+                                            {{ $consumer->created_at?->format('M d, Y') }}
+                                        </span>
+
+                                        @if ($consumer->phone)
+
+                                            <span>
+                                                <i class="fas fa-phone mr-1"></i>
+                                                {{ $consumer->phone }}
+                                            </span>
+
+                                        @endif
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
@@ -409,100 +667,275 @@
 
                     @empty
 
-                        <div class="px-6 py-10 text-center">
-
-                            <p class="text-sm text-slate-500">
-                                No consumers registered yet.
-                            </p>
-
+                        <div class="p-10 text-center text-sm text-slate-400">
+                            No consumer records found.
                         </div>
+
                     @endforelse
 
                 </div>
 
             </div>
 
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-            {{-- RECENT COMPLAINTS --}}
-            <div class="bg-white rounded-2xl border border-slate-200
-                    shadow-sm overflow-hidden">
-
-                <div class="px-6 py-5 border-b border-slate-200
-                        flex items-center justify-between">
+                <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
 
                     <div>
 
-                        <h3 class="font-semibold text-slate-900">
+                        <h2 class="font-bold text-slate-900">
                             Recent Complaints
-                        </h3>
+                        </h2>
 
-                        <p class="text-xs text-slate-500 mt-1">
-                            Latest customer complaints
+                        <p class="mt-1 text-xs text-slate-500">
+                            Latest concerns recorded in the system
                         </p>
 
                     </div>
 
-                    <a href="{{ route('customer-service.complaints.index') }}"
-                        class="text-sm font-medium text-blue-600
-                          hover:text-blue-700">
-
+                    <a
+                        href="{{ route('customer-service.complaints.index') }}"
+                        class="shrink-0 text-xs font-bold text-sky-700 hover:text-sky-800">
                         View All
-
                     </a>
 
                 </div>
 
+                <div class="hidden md:block">
 
-                <div class="divide-y divide-slate-100">
+                    <div class="overflow-x-auto">
 
-                    @forelse($recentComplaints ?? [] as $complaint)
-                        <div class="px-6 py-4 flex items-center
-                                justify-between">
+                        <table class="min-w-full divide-y divide-slate-100">
 
-                            <div>
+                            <thead class="bg-slate-50">
 
-                                <p class="font-medium text-slate-900">
+                                <tr>
 
-                                    {{ $complaint->complaint_number ?? 'Complaint' }}
+                                    <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Complaint
+                                    </th>
 
-                                </p>
+                                    <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Type
+                                    </th>
 
-                                <p class="text-xs text-slate-500 mt-1">
+                                    <th class="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Status
+                                    </th>
 
-                                    {{ $complaint->description ? Str::limit($complaint->description, 45) : 'No description' }}
+                                </tr>
 
-                                </p>
+                            </thead>
+
+                            <tbody class="divide-y divide-slate-100">
+
+                                @forelse ($recentComplaints as $complaint)
+
+                                    <tr class="transition hover:bg-slate-50">
+
+                                        <td class="px-5 py-4">
+
+                                            <a
+                                                href="{{ route('customer-service.complaints.show', $complaint) }}"
+                                                class="text-sm font-bold text-slate-800 transition hover:text-sky-700">
+
+                                                {{ $complaint->complaint_no }}
+
+                                            </a>
+
+                                            <p class="mt-1 max-w-[250px] truncate text-xs text-slate-400">
+                                                {{ $complaint->consumer?->full_name ?? $complaint->complainant_name ?? 'Walk-in Consumer' }}
+                                            </p>
+
+                                        </td>
+
+                                        <td class="px-5 py-4">
+
+                                            <p class="text-xs font-semibold text-slate-600">
+                                                {{ $complaint->category?->name ?? '—' }}
+                                            </p>
+
+                                            <p class="mt-1 text-[10px] text-slate-400">
+                                                {{ $complaint->division?->name ?? '—' }}
+                                            </p>
+
+                                        </td>
+
+                                        <td class="whitespace-nowrap px-5 py-4 text-right">
+
+                                            <span
+                                                class="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold {{ $statusStyles[$complaint->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">
+
+                                                {{ $complaint->status }}
+
+                                            </span>
+
+                                        </td>
+
+                                    </tr>
+
+                                @empty
+
+                                    <tr>
+
+                                        <td colspan="3" class="px-5 py-12 text-center text-sm text-slate-400">
+                                            No complaints found.
+                                        </td>
+
+                                    </tr>
+
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                <div class="divide-y divide-slate-100 md:hidden">
+
+                    @forelse ($recentComplaints as $complaint)
+
+                        <a
+                            href="{{ route('customer-service.complaints.show', $complaint) }}"
+                            class="block p-4 transition active:bg-slate-50">
+
+                            <div class="flex items-start justify-between gap-3">
+
+                                <div class="min-w-0">
+
+                                    <p class="text-sm font-bold text-slate-800">
+                                        {{ $complaint->complaint_no }}
+                                    </p>
+
+                                    <p class="mt-1 truncate text-xs text-slate-500">
+                                        {{ $complaint->category?->name ?? 'Complaint' }}
+                                    </p>
+
+                                </div>
+
+                                <span
+                                    class="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold {{ $statusStyles[$complaint->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">
+
+                                    {{ $complaint->status }}
+
+                                </span>
 
                             </div>
 
-                            <span
-                                class="px-2.5 py-1 rounded-full
-                                     text-xs font-medium
-                                     bg-amber-50 text-amber-700">
+                            <p class="mt-3 line-clamp-2 text-xs leading-5 text-slate-500">
+                                {{ $complaint->description ?: 'No description provided.' }}
+                            </p>
 
-                                {{ $complaint->status ?? 'Pending' }}
+                            <div class="mt-3 flex items-center justify-between gap-3 text-[10px] text-slate-400">
 
-                            </span>
+                                <span class="truncate">
+                                    <i class="fas fa-user mr-1"></i>
+                                    {{ $complaint->consumer?->full_name ?? $complaint->complainant_name ?? 'Walk-in' }}
+                                </span>
 
-                        </div>
+                                <span class="shrink-0">
+                                    {{ $complaint->created_at?->format('M d') }}
+                                </span>
+
+                            </div>
+
+                        </a>
 
                     @empty
 
-                        <div class="px-6 py-10 text-center">
-
-                            <p class="text-sm text-slate-500">
-                                No complaints found.
-                            </p>
-
+                        <div class="p-10 text-center text-sm text-slate-400">
+                            No complaints found.
                         </div>
+
                     @endforelse
 
                 </div>
 
             </div>
 
-        </div>
+        </section>
 
     </div>
 
 @endsection
+
+@push('scripts')
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const canvas = document.getElementById('complaintStatusChart');
+
+            if (!canvas) {
+                return;
+            }
+
+            new Chart(canvas, {
+                type: 'bar',
+
+                data: {
+                    labels: @json(array_keys($complaintStats)),
+                    datasets: [{
+                        label: 'Complaints',
+                        data: @json(array_values($complaintStats)),
+                        backgroundColor: 'rgba(14, 165, 233, 0.72)',
+                        borderColor: 'rgb(2, 132, 199)',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        maxBarThickness: 46
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            displayColors: false
+                        }
+                    },
+
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(226, 232, 240, 0.7)'
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+        });
+    </script>
+
+@endpush

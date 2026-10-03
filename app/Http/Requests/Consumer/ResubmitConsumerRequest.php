@@ -96,6 +96,18 @@ class ResubmitConsumerRequest extends FormRequest
                 'max:150',
             ],
 
+            'latitude' => [
+                'required',
+                'numeric',
+                'between:-90,90',
+            ],
+
+            'longitude' => [
+                'required',
+                'numeric',
+                'between:-180,180',
+            ],
+
             'terms' => [
                 'required',
                 'accepted',
@@ -126,6 +138,18 @@ class ResubmitConsumerRequest extends FormRequest
 
             'barangay.required' =>
             'Please enter your barangay.',
+
+            'latitude.required' =>
+            'Please select the registered water service location on the map.',
+
+            'latitude.numeric' =>
+            'The selected service location is invalid.',
+
+            'longitude.required' =>
+            'Please select the registered water service location on the map.',
+
+            'longitude.numeric' =>
+            'The selected service location is invalid.',
 
             'terms.accepted' =>
             'You must confirm that the corrected information is accurate.',

@@ -130,6 +130,18 @@ class RegisterConsumerRequest extends FormRequest
                 'max:150',
             ],
 
+            'latitude' => [
+                'required',
+                'numeric',
+                'between:-90,90',
+            ],
+
+            'longitude' => [
+                'required',
+                'numeric',
+                'between:-180,180',
+            ],
+
 
             /*
             |--------------------------------------------------------------------------
@@ -195,6 +207,18 @@ class RegisterConsumerRequest extends FormRequest
 
             'barangay.required' =>
             'Please enter your barangay.',
+
+            'latitude.required' =>
+            'Please select the registered water service location on the map.',
+
+            'latitude.numeric' =>
+            'The selected service location is invalid.',
+
+            'longitude.required' =>
+            'Please select the registered water service location on the map.',
+
+            'longitude.numeric' =>
+            'The selected service location is invalid.',
 
             'password.required' =>
             'Please create a password.',

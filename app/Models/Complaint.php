@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Complaint extends Model
 {
@@ -101,11 +102,29 @@ class Complaint extends Model
         );
     }
 
+    public function aiAnalysis(): HasOne
+    {
+        return $this->hasOne(
+            ComplaintAiAnalysis::class
+        );
+    }
+
+    public function commercialResolution(): HasOne
+    {
+        return $this->hasOne(
+            CommercialResolution::class
+        );
+    }
+
     public function maintenanceHistories()
     {
         return $this->hasMany(
             MaintenanceHistory::class
         )->latest('event_at');
+    }
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(ComplaintFeedback::class);
     }
 
     public static function generateComplaintNo(): string

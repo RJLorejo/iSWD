@@ -1,142 +1,189 @@
-<header class="sticky top-0 z-50 bg-white shadow-sm border-b">
+<header
+    class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
 
-    <div class="h-20 px-8 flex items-center justify-between">
+    <div
+        class="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[72px] lg:px-8">
 
-        <div class="flex items-center gap-5">
+        <div class="flex min-w-0 items-center gap-3 sm:gap-4">
 
-            <button @click="sidebarMini=!sidebarMini"
-                class="hidden lg:flex h-10 w-10 rounded-lg hover:bg-gray-100 items-center justify-center">
+            <button
+                type="button"
+                @click="sidebarMini = !sidebarMini"
+                class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 lg:flex"
+                :title="sidebarMini ? 'Expand sidebar' : 'Collapse sidebar'">
 
-                <i class="fa-solid fa-bars"></i>
+                <i
+                    class="fas"
+                    :class="sidebarMini ? 'fa-angles-right' : 'fa-bars'">
+                </i>
 
             </button>
 
-            <button @click="sidebarOpen=true" class="lg:hidden h-10 w-10 rounded-lg hover:bg-gray-100">
+            <button
+                type="button"
+                @click="sidebarOpen = true"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 lg:hidden"
+                aria-label="Open navigation">
 
-                <i class="fa-solid fa-bars"></i>
+                <i class="fas fa-bars"></i>
 
             </button>
 
-            <div>
+            <div class="min-w-0">
 
-                <h1 class="font-bold text-2xl text-slate-700">
-
-                    @yield('title')
-
-                </h1>
-
-                <p class="text-sm text-gray-500">
-
-                    iSWD - Sagay Water District
-
+                <p
+                    class="hidden text-[11px] font-bold uppercase tracking-[0.14em] text-sky-600 sm:block">
+                    Customer Service
                 </p>
+
+                <h1
+                    class="truncate text-base font-bold tracking-tight text-slate-900 sm:text-lg lg:text-xl">
+                    @yield('title', 'Customer Service')
+                </h1>
 
             </div>
 
         </div>
 
-        <div class="flex items-center gap-5">
+        <div class="flex shrink-0 items-center gap-2 sm:gap-3">
 
-            <form method="GET" action="{{ route('search') }}" class="hidden md:block relative">
+            @php
+                $navbarNewFeedbackCount = \App\Models\ComplaintFeedback::query()
+                    ->where('handling_status', 'New')
+                    ->count();
+            @endphp
 
-                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3 text-gray-400"></i>
+            <a
+                href="{{ route('customer-service.feedback.index', ['handling_status' => 'New']) }}"
+                class="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-sky-50 hover:text-sky-700"
+                title="New consumer feedback">
 
-                <input type="search" name="q" value="{{ request('q') }}"
-                    placeholder="Search employees, departments, positions..."
-                    class="pl-11 pr-10 w-80 rounded-xl border bg-gray-50 px-4 py-2 focus:ring-2 focus:ring-sky-500 outline-none transition">
+                <i class="far fa-bell text-lg"></i>
 
-                @if (request('q'))
-                    <a href="{{ route('search') }}" class="absolute right-3 top-3 text-gray-400 hover:text-red-500">
+                @if ($navbarNewFeedbackCount > 0)
 
-                        <i class="fa-solid fa-xmark"></i>
+                    <span
+                        class="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
 
-                    </a>
+                        {{ $navbarNewFeedbackCount > 9 ? '9+' : $navbarNewFeedbackCount }}
+
+                    </span>
+
                 @endif
 
-            </form>
+            </a>
 
-            <button class="relative h-10 w-10 rounded-xl hover:bg-gray-100">
+            <div
+                x-data="{ open: false }"
+                class="relative">
 
-                <i class="fa-regular fa-bell text-xl"></i>
+                <button
+                    type="button"
+                    @click="open = !open"
+                    class="flex items-center gap-2 rounded-xl p-1.5 transition hover:bg-slate-100 sm:gap-3 sm:px-2">
 
-                <span class="absolute right-2 top-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                    <img
+                        src="{{ auth()->user()->avatar_url }}"
+                        alt="{{ auth()->user()->full_name ?? auth()->user()->name }}"
+                        class="h-9 w-9 rounded-xl border border-slate-200 object-cover sm:h-10 sm:w-10">
 
-            </button>
+                    <div class="hidden max-w-[180px] text-left md:block">
 
-            <div x-data="{ open: false }" class="relative">
+                        <p class="truncate text-sm font-bold text-slate-800">
+                            {{ auth()->user()->full_name ?? auth()->user()->name }}
+                        </p>
 
-                <button @click="open=!open" class="flex items-center gap-3 rounded-xl hover:bg-gray-100 px-3 py-2">
-
-                    <img class="w-11 h-11 rounded-full" src="{{ auth()->user()->avatar_url }}" alt="User Avatar">
-
-                    <div class="hidden md:block text-left">
-
-                        <div class="font-semibold">
-
-                            {{ auth()->user()->name }}
-
-                        </div>
-
-                        <div class="text-xs text-gray-500">
-
+                        <p class="truncate text-xs text-slate-500">
                             Customer Service
-
-                        </div>
-
-                    </div>
-
-                    <i class="fa-solid fa-chevron-down text-sm"></i>
-
-                </button>
-
-                <div x-show="open" @click.away="open=false" x-transition
-                    class="absolute right-0 mt-3 bg-white rounded-xl shadow-xl border w-72 overflow-hidden">
-
-                    <div class="bg-gradient-to-r from-sky-700 to-cyan-600 text-white p-5">
-
-                        <h4 class="font-semibold">
-
-                            {{ auth()->user()->name }}
-
-                        </h4>
-
-                        <p class="text-sm">
-
-                            {{ auth()->user()->email }}
-
                         </p>
 
                     </div>
 
-                    <a href="{{ route('profile.show') }}" class="block px-5 py-3 hover:bg-gray-100">
+                    <i
+                        class="fas fa-chevron-down hidden text-[10px] text-slate-400 transition-transform duration-200 sm:block"
+                        :class="open ? 'rotate-180' : ''">
+                    </i>
 
-                        <i class="fa-solid fa-user mr-2"></i>
+                </button>
 
-                        My Profile
+                <div
+                    x-cloak
+                    x-show="open"
+                    @click.outside="open = false"
+                    x-transition.origin.top.right
+                    class="absolute right-0 z-50 mt-3 w-[calc(100vw-2rem)] max-w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
 
-                    </a>
+                    <div
+                        class="bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-5 text-white">
 
-                    <a href="#" class="block px-5 py-3 hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
 
-                        <i class="fa-solid fa-gear mr-2"></i>
+                            <img
+                                src="{{ auth()->user()->avatar_url }}"
+                                alt="{{ auth()->user()->full_name ?? auth()->user()->name }}"
+                                class="h-11 w-11 rounded-xl border border-white/20 object-cover">
 
-                        Settings
+                            <div class="min-w-0">
 
-                    </a>
+                                <p class="truncate text-sm font-bold">
+                                    {{ auth()->user()->full_name ?? auth()->user()->name }}
+                                </p>
 
-                    <form action="{{ route('logout') }}" method="POST">
+                                <p class="mt-0.5 truncate text-xs text-sky-100">
+                                    {{ auth()->user()->email }}
+                                </p>
 
-                        @csrf
+                            </div>
 
-                        <button class="w-full text-left px-5 py-3 hover:bg-red-50 text-red-600">
+                        </div>
 
-                            <i class="fa-solid fa-right-from-bracket mr-2"></i>
+                    </div>
 
-                            Logout
+                    <div class="p-2">
 
-                        </button>
+                        <a
+                            href="{{ route('profile.show') }}"
+                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
 
-                    </form>
+                            <span
+                                class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+
+                                <i class="fas fa-user text-xs"></i>
+
+                            </span>
+
+                            My Profile
+
+                        </a>
+
+                    </div>
+
+                    <div class="border-t border-slate-100 p-2">
+
+                        <form
+                            action="{{ route('logout') }}"
+                            method="POST">
+
+                            @csrf
+
+                            <button
+                                type="submit"
+                                class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50">
+
+                                <span
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500">
+
+                                    <i class="fas fa-right-from-bracket text-xs"></i>
+
+                                </span>
+
+                                Sign Out
+
+                            </button>
+
+                        </form>
+
+                    </div>
 
                 </div>
 

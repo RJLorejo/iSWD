@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ConsumerAddress extends Model
 {
     protected $fillable = [
-
         'consumer_id',
-
         'house_no',
         'street',
         'purok',
@@ -17,13 +15,18 @@ class ConsumerAddress extends Model
         'municipality',
         'province',
         'zip_code',
+
+        // Registered consumer/account location
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
 
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-
     ];
 
     /*

@@ -16,25 +16,9 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    /**
-     * Employee management.
-     *
-     * Consumer accounts are intentionally excluded.
-     */
+
     public function index(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Employee Query
-        |--------------------------------------------------------------------------
-        |
-        | Admin User Management is for employee accounts only.
-        |
-        | Consumer accounts are managed separately through:
-        | - Consumer Verifications
-        | - Customer Service Consumer Management
-        |
-        */
 
         $query = User::query()
             ->with([
@@ -46,88 +30,41 @@ class UserController extends Controller
                 $q->where('name', 'Consumer');
             });
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('search')) {
 
             $search = trim($request->search);
 
             $query->where(function ($q) use ($search) {
 
-                $q->where(
-                    'first_name',
-                    'like',
-                    "%{$search}%"
-                )
-                    ->orWhere(
-                        'middle_name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'last_name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'employee_id',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'email',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'phone',
-                        'like',
-                        "%{$search}%"
-                    );
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('employee_id', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+
+                    // Department
+                    ->orWhereHas('department', function ($department) use ($search) {
+
+                        $department->where(
+                            'department_name',
+                            'like',
+                            "%{$search}%"
+                        );
+                    })
+
+                    // Position
+                    ->orWhereHas('position', function ($position) use ($search) {
+
+                        $position->where(
+                            'position_name',
+                            'like',
+                            "%{$search}%"
+                        );
+                    });
             });
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Department Filter
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('department')) {
-
-            $query->where(
-                'department_id',
-                $request->department
-            );
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Position Filter
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('position')) {
-
-            $query->where(
-                'position_id',
-                $request->position
-            );
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Role Filter
-        |--------------------------------------------------------------------------
-        */
 
         if ($request->filled('role')) {
 
@@ -361,20 +298,8 @@ class UserController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Temporary Password
-        |--------------------------------------------------------------------------
-        */
-
         $password = Str::random(10);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Avatar
-        |--------------------------------------------------------------------------
-        */
 
         $avatar = null;
 
@@ -459,7 +384,7 @@ class UserController extends Controller
             )
             ->with(
                 'success',
-                'Employee created successfully.<br>Temporary Password: '
+                'Employee created successfully.Temporary Password: '
                     . $password
             );
     }
@@ -837,54 +762,33 @@ class UserController extends Controller
 
             $query->where(function ($q) use ($search) {
 
-                $q->where(
-                    'employee_id',
-                    'like',
-                    "%{$search}%"
-                )
-                    ->orWhere(
-                        'first_name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'middle_name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'last_name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'email',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'phone',
-                        'like',
-                        "%{$search}%"
-                    );
+                $q->where('employee_id', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+
+                    ->orWhereHas('department', function ($department) use ($search) {
+
+                        $department->where(
+                            'department_name',
+                            'like',
+                            "%{$search}%"
+                        );
+                    })
+
+                    ->orWhereHas('position', function ($position) use ($search) {
+
+                        $position->where(
+                            'position_name',
+                            'like',
+                            "%{$search}%"
+                        );
+                    });
             });
         }
 
-        if ($request->filled('department')) {
-
-            $query->where(
-                'department_id',
-                $request->department
-            );
-        }
-
-        if ($request->filled('position')) {
-
-            $query->where(
-                'position_id',
-                $request->position
-            );
-        }
 
         if ($request->filled('role')) {
 

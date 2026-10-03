@@ -1,325 +1,357 @@
 @extends('customer-service.layouts.app')
 
+
+
 @section('title', 'Edit Complaint')
 
+
+
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+
 
     <style>
         #complaint-edit-map {
+
             min-height: 420px;
+
             width: 100%;
+
             z-index: 0;
+
         }
 
+
+
         .leaflet-container {
+
             font-family: inherit;
+
         }
     </style>
 @endpush
 
 
+
 @section('content')
 
-    <div class="max-w-6xl mx-auto space-y-6">
 
-        {{-- ========================================================= --}}
-        {{-- HEADER --}}
-        {{-- ========================================================= --}}
+
+    <div class="mx-3 space-y-6">
+
+
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
+
+
             <div>
 
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-slate-500">
+
                     Complaint Management
+
                 </p>
 
-                <h1 class="text-2xl font-bold text-gray-900">
+
+
+                <h1 class="text-2xl font-bold text-slate-900">
+
                     Edit Complaint
+
                 </h1>
 
-                <p class="text-sm text-gray-500 mt-1">
+
+
+                <p class="mt-1 text-sm text-slate-500">
+
                     Update complaint {{ $complaint->complaint_no }}.
+
                 </p>
 
             </div>
 
 
+
             <a href="{{ route('customer-service.complaints.show', $complaint) }}"
-                class="inline-flex items-center justify-center gap-2
-                       px-4 py-2.5 rounded-xl
-                       border border-gray-300
-                       text-gray-700
-                       hover:bg-gray-50 transition">
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+
+                       border border-slate-300 bg-white text-slate-700
+
+                       hover:bg-slate-50 transition">
+
+
 
                 <i class="fas fa-arrow-left"></i>
 
+
+
                 Back to Complaint
 
+
+
             </a>
+
+
 
         </div>
 
 
-        {{-- ========================================================= --}}
-        {{-- VALIDATION ERRORS --}}
-        {{-- ========================================================= --}}
 
         @if ($errors->any())
 
+
+
             <div class="rounded-2xl border border-red-200 bg-red-50 p-5">
+
+
 
                 <div class="flex gap-3">
 
-                    <div class="text-red-600 mt-0.5">
+
+
+                    <div class="mt-0.5 text-red-600">
 
                         <i class="fas fa-circle-exclamation"></i>
 
                     </div>
 
+
+
                     <div>
 
+
+
                         <h2 class="font-semibold text-red-800">
+
                             Please correct the following:
+
                         </h2>
+
+
 
                         <ul class="mt-2 list-disc list-inside text-sm text-red-700 space-y-1">
 
+
+
                             @foreach ($errors->all() as $error)
-                                <li>
-                                    {{ $error }}
-                                </li>
+                                <li>{{ $error }}</li>
                             @endforeach
+
+
 
                         </ul>
 
+
+
                     </div>
+
+
 
                 </div>
 
+
+
             </div>
+
+
 
         @endif
 
 
-        {{-- ========================================================= --}}
-        {{-- FORM --}}
-        {{-- ========================================================= --}}
 
         <form action="{{ route('customer-service.complaints.update', $complaint) }}" method="POST"
-            enctype="multipart/form-data" class="space-y-6">
+            enctype="multipart/form-data" id="complaintForm" class="space-y-6">
+
+
 
             @csrf
+
             @method('PUT')
 
 
-            {{-- ========================================================= --}}
-            {{-- COMPLAINANT INFORMATION --}}
-            {{-- ========================================================= --}}
 
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-                <div class="px-6 py-5 border-b border-gray-100">
+
+
+                <div class="px-5 sm:px-6 py-5 border-b border-slate-100">
+
+
 
                     <div class="flex items-center gap-3">
 
+
+
                         <div
-                            class="w-10 h-10 rounded-xl
-                                   bg-blue-100 text-blue-600
-                                   flex items-center justify-center">
+                            class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700
+
+                                   flex items-center justify-center shrink-0">
+
+
 
                             <i class="fas fa-user"></i>
 
+
+
                         </div>
+
+
 
                         <div>
 
-                            <h2 class="font-semibold text-gray-900">
+
+
+                            <h2 class="font-semibold text-slate-900">
+
                                 Complainant Information
+
                             </h2>
 
-                            <p class="text-sm text-gray-500 mt-1">
-                                Update the registered consumer or walk-in complainant information.
+
+
+                            <p class="mt-1 text-sm text-slate-500">
+
+                                Update the person reporting the concern and the affected SWD account when applicable.
+
                             </p>
+
+
 
                         </div>
 
+
+
                     </div>
+
+
 
                 </div>
 
 
-                <div class="p-6 space-y-6">
 
-                    @php
-
-                        $complainantType = old('complainant_type', $complaint->consumer_id ? 'registered' : 'walk_in');
-
-                    @endphp
+                <div class="p-5 sm:p-6 space-y-6">
 
 
-                    {{-- COMPLAINANT TYPE --}}
 
                     <div>
 
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                            Complainant Type
+
+
+                        <label for="consumer_id" class="block text-sm font-medium text-slate-700 mb-2">
+
+                            Affected SWD Account
+
+                            <span class="font-normal text-slate-400">(Optional)</span>
+
                         </label>
 
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                            {{-- REGISTERED --}}
-
-                            <label
-                                class="flex items-start gap-3 p-4
-                                       rounded-xl border border-gray-200
-                                       cursor-pointer hover:bg-gray-50">
-
-                                <input type="radio" name="complainant_type" value="registered"
-                                    class="mt-1 text-blue-600 focus:ring-blue-500" @checked($complainantType === 'registered')>
-
-                                <div>
-
-                                    <p class="font-semibold text-gray-900">
-                                        Registered Consumer
-                                    </p>
-
-                                    <p class="text-sm text-gray-500 mt-1">
-                                        Complaint belongs to an existing consumer account.
-                                    </p>
-
-                                </div>
-
-                            </label>
-
-
-                            {{-- WALK-IN --}}
-
-                            <label
-                                class="flex items-start gap-3 p-4
-                                       rounded-xl border border-gray-200
-                                       cursor-pointer hover:bg-gray-50">
-
-                                <input type="radio" name="complainant_type" value="walk_in"
-                                    class="mt-1 text-blue-600 focus:ring-blue-500" @checked($complainantType === 'walk_in')>
-
-                                <div>
-
-                                    <p class="font-semibold text-gray-900">
-                                        Walk-in Complainant
-                                    </p>
-
-                                    <p class="text-sm text-gray-500 mt-1">
-                                        Complaint was submitted without a registered consumer account.
-                                    </p>
-
-                                </div>
-
-                            </label>
-
-                        </div>
-
-
-                        @error('complainant_type')
-                            <p class="text-sm text-red-600 mt-2">
-                                {{ $message }}
-                            </p>
-                        @enderror
-
-                    </div>
-
-
-                    {{-- REGISTERED CONSUMER --}}
-
-                    <div id="registered-consumer-section">
-
-                        <label for="consumer_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Consumer
-                        </label>
 
                         <select name="consumer_id" id="consumer_id"
-                            class="w-full rounded-xl border-gray-300
-                                   focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full rounded-xl border-slate-300
+           focus:border-sky-500 focus:ring-sky-500">
 
                             <option value="">
-                                Select Consumer
+                                No account linked
                             </option>
 
                             @foreach ($consumers as $consumer)
-                                <option value="{{ $consumer->id }}" @selected(old('consumer_id', $complaint->consumer_id) == $consumer->id)>
-
-                                    {{ $consumer->last_name }},
-                                    {{ $consumer->first_name }}
-
-                                    @if ($consumer->consumer_no)
-                                        — {{ $consumer->consumer_no }}
+                                <option value="{{ $consumer->id }}" data-account="{{ $consumer->account_number }}"
+                                    data-name="{{ $consumer->full_name }}" data-phone="{{ $consumer->phone }}"
+                                    data-address="{{ $consumer->address?->full_address }}" @selected(old('consumer_id', isset($complaint) ? $complaint->consumer_id : null) == $consumer->id)>
+                                    @if ($consumer->account_number)
+                                        {{ $consumer->account_number }} —
                                     @endif
 
+                                    {{ $consumer->full_name }}
                                 </option>
                             @endforeach
 
                         </select>
 
 
+
+                        <p class="mt-2 text-xs text-slate-500">
+
+                            Select the water account affected by the complaint, if any. Selecting an account will
+
+                            automatically fill in the person reporting and contact number below — you can still edit
+
+                            them afterward.
+
+                        </p>
+
+
+
                         @error('consumer_id')
-                            <p class="text-sm text-red-600 mt-1">
+                            <p class="mt-1 text-sm text-red-600">
+
                                 {{ $message }}
+
                             </p>
                         @enderror
+
+
 
                     </div>
 
 
-                    {{-- WALK-IN --}}
+                    <div id="selectedAccountCard" class="hidden rounded-2xl border border-sky-200 bg-sky-50 p-4">
 
-                    <div id="walk-in-section" class="hidden">
+                        <div class="flex items-start gap-3">
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700
+                   flex items-center justify-center shrink-0">
 
-                            {{-- NAME --}}
-
-                            <div>
-
-                                <label for="complainant_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Complainant Name
-                                </label>
-
-                                <input type="text" name="complainant_name" id="complainant_name"
-                                    value="{{ old('complainant_name', $complaint->complainant_name) }}"
-                                    placeholder="Enter complainant name"
-                                    class="w-full rounded-xl border-gray-300
-                                           focus:border-blue-500 focus:ring-blue-500">
-
-                                @error('complainant_name')
-                                    <p class="text-sm text-red-600 mt-1">
-                                        {{ $message }}
-                                    </p>
-                                @enderror
+                                <i class="fas fa-id-card"></i>
 
                             </div>
 
+                            <div class="flex-1 min-w-0">
 
-                            {{-- PHONE --}}
+                                <p class="text-xs font-semibold uppercase tracking-wide text-sky-600">
+                                    Linked SWD Account
+                                </p>
 
-                            <div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
 
-                                <label for="complainant_phone" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Contact Number
-                                </label>
+                                    <div>
+                                        <p class="text-xs text-slate-500">
+                                            Account Number
+                                        </p>
 
-                                <input type="text" name="complainant_phone" id="complainant_phone"
-                                    value="{{ old('complainant_phone', $complaint->complainant_phone) }}"
-                                    placeholder="Enter contact number"
-                                    class="w-full rounded-xl border-gray-300
-                                           focus:border-blue-500 focus:ring-blue-500">
+                                        <p id="selectedAccountNumber"
+                                            class="mt-1 text-sm font-semibold text-slate-900 break-words">
+                                            —
+                                        </p>
+                                    </div>
 
-                                @error('complainant_phone')
-                                    <p class="text-sm text-red-600 mt-1">
-                                        {{ $message }}
-                                    </p>
-                                @enderror
+                                    <div>
+                                        <p class="text-xs text-slate-500">
+                                            Account Holder
+                                        </p>
+
+                                        <p id="selectedAccountHolder"
+                                            class="mt-1 text-sm font-semibold text-slate-900 break-words">
+                                            —
+                                        </p>
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <p class="text-xs text-slate-500">
+                                            Account Address
+                                        </p>
+
+                                        <p id="selectedAccountAddress"
+                                            class="mt-1 text-sm font-semibold text-slate-900 break-words">
+                                            —
+                                        </p>
+                                    </div>
+
+                                </div>
 
                             </div>
 
@@ -327,281 +359,411 @@
 
                     </div>
 
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+
+                        <div>
+
+
+
+                            <label for="complainant_name" class="block text-sm font-medium text-slate-700 mb-2">
+
+                                Person Reporting
+
+                                <span class="text-red-500">*</span>
+
+                            </label>
+
+
+
+                            <input type="text" name="complainant_name" id="complainant_name"
+                                value="{{ old('complainant_name', $complaint->complainant_name ?: optional($complaint->consumer)->full_name) }}"
+                                required placeholder="Enter the full name of the person reporting"
+                                class="w-full rounded-xl border-slate-300
+
+                                       focus:border-sky-500 focus:ring-sky-500">
+
+
+
+                            <p class="mt-2 text-xs text-slate-500">
+
+                                This is the person who reported the complaint to Customer Service.
+
+                            </p>
+
+
+
+                            @error('complainant_name')
+                                <p class="mt-1 text-sm text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+                            @enderror
+
+
+
+                        </div>
+
+
+
+                        <div>
+
+
+
+                            <label for="complainant_phone" class="block text-sm font-medium text-slate-700 mb-2">
+
+                                Contact Number
+
+                                <span class="font-normal text-slate-400">(Optional)</span>
+
+                            </label>
+
+
+
+                            <input type="text" name="complainant_phone" id="complainant_phone"
+                                value="{{ old('complainant_phone', $complaint->complainant_phone ?: optional($complaint->consumer)->phone) }}"
+                                placeholder="Enter contact number"
+                                class="w-full rounded-xl border-slate-300
+
+                                       focus:border-sky-500 focus:ring-sky-500">
+
+
+
+                            <p class="mt-2 text-xs text-slate-500">
+
+                                Contact information of the person reporting the complaint.
+
+                            </p>
+
+
+
+                            @error('complainant_phone')
+                                <p class="mt-1 text-sm text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+                            @enderror
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+
+
+                        <div class="flex items-start gap-3">
+
+
+
+                            <i class="fas fa-circle-info text-sky-600 mt-0.5"></i>
+
+
+
+                            <div>
+
+
+
+                                <p class="text-sm font-semibold text-slate-800">
+
+                                    Person Reporting and Affected Account
+
+                                </p>
+
+
+
+                                <p class="mt-1 text-xs leading-5 text-slate-600">
+
+                                    The person reporting identifies who brought the concern to Customer Service. The
+
+                                    affected SWD account identifies which water account the complaint concerns. They do
+
+                                    not have to be the same person.
+
+                                </p>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
                 </div>
+
+
 
             </div>
 
 
-            {{-- ========================================================= --}}
-            {{-- COMPLAINT INFORMATION --}}
-            {{-- ========================================================= --}}
 
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-                <div class="px-6 py-5 border-b border-gray-100">
+
+
+                <div class="px-5 sm:px-6 py-5 border-b border-slate-100">
+
+
 
                     <div class="flex items-center gap-3">
 
-                        <div
-                            class="w-10 h-10 rounded-xl
-                                   bg-orange-100 text-orange-600
-                                   flex items-center justify-center">
 
-                            <i class="fas fa-triangle-exclamation"></i>
+
+                        <div
+                            class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600
+
+                                   flex items-center justify-center shrink-0">
+
+
+
+                            <i class="fas fa-file-circle-exclamation"></i>
+
+
 
                         </div>
+
+
 
                         <div>
 
-                            <h2 class="font-semibold text-gray-900">
-                                Complaint Information
+
+
+                            <h2 class="font-semibold text-slate-900">
+
+                                Complaint Classification
+
                             </h2>
 
-                            <p class="text-sm text-gray-500 mt-1">
-                                Update the classification and complaint details.
+
+
+                            <p class="mt-1 text-sm text-slate-500">
+
+                                Update the responsible division, complaint type, and complaint details.
+
                             </p>
+
+
 
                         </div>
 
+
+
                     </div>
+
+
 
                 </div>
 
 
-                <div class="p-6 space-y-6">
 
-                    {{-- DIVISION / COMPLAINT TYPE / STATUS --}}
+                <div class="p-5 sm:p-6 space-y-6">
+
+
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                        {{-- DIVISION --}}
+
 
                         <div>
 
-                            <label for="division_id" class="block text-sm font-medium text-gray-700 mb-2">
+
+
+                            <label for="division_id" class="block text-sm font-medium text-slate-700 mb-2">
+
                                 Division
 
                                 <span class="text-red-500">*</span>
+
                             </label>
 
+
+
                             <select name="division_id" id="division_id" required
-                                class="w-full rounded-xl border-gray-300
-                                       focus:border-blue-500 focus:ring-blue-500">
+                                class="w-full rounded-xl border-slate-300
+
+                                       focus:border-sky-500 focus:ring-sky-500">
+
+
 
                                 <option value="">
+
                                     Select Division
+
                                 </option>
 
+
+
                                 @foreach ($divisions as $division)
-                                    <option value="{{ $division->id }}" @selected(old('division_id', $complaint->division_id) == $division->id)>
+                                    <option value="{{ $division->id }}" data-name="{{ $division->name }}"
+                                        @selected(old('division_id', $complaint->division_id) == $division->id)>
+
+
 
                                         {{ $division->name }}
+
+
 
                                     </option>
                                 @endforeach
 
+
+
                             </select>
+
 
 
                             @error('division_id')
-                                <p class="text-sm text-red-600 mt-1">
+                                <p class="mt-1 text-sm text-red-600">
+
                                     {{ $message }}
+
                                 </p>
                             @enderror
+
+
 
                         </div>
 
 
-                        {{-- COMPLAINT TYPE --}}
 
                         <div>
 
-                            <label for="complaint_category_id" class="block text-sm font-medium text-gray-700 mb-2">
+
+
+                            <label for="complaint_category_id" class="block text-sm font-medium text-slate-700 mb-2">
+
+
+
                                 Complaint Type
 
                                 <span class="text-red-500">*</span>
+
+
+
                             </label>
 
+
+
                             <select name="complaint_category_id" id="complaint_category_id" required
-                                class="w-full rounded-xl border-gray-300
-                                       focus:border-blue-500 focus:ring-blue-500">
+                                class="w-full rounded-xl border-slate-300
+
+                                       focus:border-sky-500 focus:ring-sky-500
+
+                                       disabled:bg-slate-100 disabled:text-slate-500">
+
+
 
                                 <option value="">
+
                                     Select Complaint Type
+
                                 </option>
+
+
 
                             </select>
 
 
+
                             @error('complaint_category_id')
-                                <p class="text-sm text-red-600 mt-1">
+                                <p class="mt-1 text-sm text-red-600">
+
                                     {{ $message }}
+
                                 </p>
                             @enderror
 
+
+
                         </div>
 
 
-                        {{-- STATUS --}}
 
                         <div>
 
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+
+
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+
                                 Status
+
                             </label>
 
+
+
                             <div
-                                class="w-full rounded-xl
-                                       border border-gray-200
-                                       bg-gray-50 px-4 py-2.5
-                                       text-gray-700">
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50
+
+                                       px-4 py-2.5 text-slate-700">
+
+
 
                                 {{ $complaint->status }}
 
+
+
                             </div>
 
-                            <p class="text-xs text-gray-500 mt-2">
+
+
+                            <p class="mt-2 text-xs text-slate-500">
+
                                 Status is managed through complaint workflow actions.
+
                             </p>
 
+
+
                         </div>
+
+
 
                     </div>
 
 
-                    {{-- DESCRIPTION --}}
+                    <div id="commercialAddressSection"
+                        class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-                    <div>
+                        <div class="px-5 sm:px-6 py-5 border-b border-slate-100">
 
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                            Problem Description
-
-                            <span class="text-red-500">*</span>
-                        </label>
-
-                        <textarea name="description" id="description" rows="5" required
-                            class="w-full rounded-xl border-gray-300
-                                   focus:border-blue-500 focus:ring-blue-500">{{ old('description', $complaint->description) }}</textarea>
-
-
-                        @error('description')
-                            <p class="text-sm text-red-600 mt-1">
-                                {{ $message }}
-                            </p>
-                        @enderror
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- ========================================================= --}}
-            {{-- LOCATION --}}
-            {{-- ========================================================= --}}
-
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
-                <div class="px-6 py-5 border-b border-gray-100">
-
-                    <div class="flex items-center gap-3">
-
-                        <div
-                            class="w-10 h-10 rounded-xl
-                                   bg-emerald-100 text-emerald-600
-                                   flex items-center justify-center">
-
-                            <i class="fas fa-location-dot"></i>
-
-                        </div>
-
-                        <div>
-
-                            <h2 class="font-semibold text-gray-900">
-                                Problem Location
-                            </h2>
-
-                            <p class="text-sm text-gray-500 mt-1">
-                                Update the reported address or exact map location.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="p-6 space-y-6">
-
-
-                    {{-- MAP --}}
-
-                    <div>
-
-                        <div class="flex items-center justify-between gap-4 mb-3">
-
-                            <div>
-
-                                <label class="block text-sm font-medium text-gray-700">
-                                    Reported Problem Location
-                                </label>
-
-                                <p class="text-xs text-gray-500 mt-1">
-                                    Click the map or drag the marker to change the exact location.
-                                </p>
-
-                            </div>
-
-                            <i class="fas fa-map-location-dot text-blue-600 text-lg"></i>
-
-                        </div>
-
-
-                        <div id="complaint-edit-map"
-                            class="w-full h-[420px]
-                                   rounded-2xl border border-gray-300
-                                   overflow-hidden relative z-0">
-                        </div>
-
-
-                        {{-- HIDDEN COORDINATES --}}
-
-                        <input type="hidden" name="latitude" id="latitude"
-                            value="{{ old('latitude', $complaint->latitude) }}">
-
-                        <input type="hidden" name="longitude" id="longitude"
-                            value="{{ old('longitude', $complaint->longitude) }}">
-
-
-                        {{-- HUMAN-READABLE LOCATION --}}
-
-                        <div id="selected-location"
-                            class="mt-4 rounded-xl
-                                   bg-blue-50 border border-blue-200 p-4">
-
-                            <div class="flex items-start gap-3">
+                            <div class="flex items-center gap-3">
 
                                 <div
-                                    class="w-9 h-9 rounded-lg
-                                           bg-blue-100 text-blue-600
-                                           flex items-center justify-center shrink-0">
+                                    class="w-10 h-10 rounded-xl
+                       bg-violet-100 text-violet-700
+                       flex items-center justify-center shrink-0">
 
                                     <i class="fas fa-location-dot"></i>
 
                                 </div>
 
-                                <div class="min-w-0">
+                                <div>
 
-                                    <p class="text-sm font-semibold text-blue-900">
-                                        Reported Location
-                                    </p>
+                                    <h2 class="font-semibold text-slate-900">
+                                        Complainant Address
+                                    </h2>
 
-                                    <p id="detected-address" class="text-xs text-blue-700 mt-1 break-words">
-
-                                        {{ old('address', $complaint->address) }}
-
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Enter the complainant's address because no SWD account is linked to this Commercial
+                                        Services complaint.
                                     </p>
 
                                 </div>
@@ -609,893 +771,1826 @@
                             </div>
 
                         </div>
-                        {{-- ADDRESS --}}
 
-                        <div>
+                        <div class="p-5 sm:p-6">
 
-                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
-                                Problem Address
+                            <label for="commercial_address" class="block text-sm font-medium text-slate-700 mb-2">
 
+                                Complainant Address
                                 <span class="text-red-500">*</span>
+
                             </label>
 
-                            <input type="text" name="address" id="address"
-                                value="{{ old('address', $complaint->address) }}" required
-                                placeholder="House No., Street, Barangay, Sagay City"
-                                class="w-full rounded-xl border-gray-300
-                                   focus:border-blue-500 focus:ring-blue-500">
+                            <input type="text" id="commercial_address" value="{{ old('address') }}"
+                                placeholder="Enter the complainant's complete address"
+                                class="w-full rounded-xl border-slate-300
+                   focus:border-sky-500 focus:ring-sky-500">
 
-                            <p class="text-xs text-gray-500 mt-2">
-                                Move the map marker only when you need to change the complaint location.
+                            <p class="mt-2 text-xs text-slate-500">
+                                This address is used only when the Commercial Services complaint has no linked SWD account.
                             </p>
-
-
-                            @error('address')
-                                <p class="text-sm text-red-600 mt-1">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-
-                        </div>
-
-
-                        {{-- LANDMARK --}}
-
-                        <div>
-
-                            <label for="landmark" class="block text-sm font-medium text-gray-700 mb-2">
-                                Landmark
-                            </label>
-
-                            <input type="text" name="landmark" id="landmark"
-                                value="{{ old('landmark', $complaint->landmark) }}"
-                                placeholder="Example: Near barangay hall, school, store, etc."
-                                class="w-full rounded-xl border-gray-300
-                                   focus:border-blue-500 focus:ring-blue-500">
-
-
-                            @error('landmark')
-                                <p class="text-sm text-red-600 mt-1">
-                                    {{ $message }}
-                                </p>
-                            @enderror
 
                         </div>
 
                     </div>
 
+
+
+                    <div id="divisionInformation" class="hidden">
+
+
+
+                        <div id="engineeringInformation" class="hidden rounded-xl border border-sky-200 bg-sky-50 p-4">
+
+
+
+                            <div class="flex items-start gap-3">
+
+
+
+                                <div
+                                    class="w-9 h-9 rounded-lg bg-sky-100 text-sky-700
+
+                                           flex items-center justify-center shrink-0">
+
+
+
+                                    <i class="fas fa-screwdriver-wrench"></i>
+
+
+
+                                </div>
+
+
+
+                                <div>
+
+
+
+                                    <p class="text-sm font-semibold text-sky-900">
+
+                                        Engineering Operation
+
+                                    </p>
+
+
+
+                                    <p class="mt-1 text-sm text-sky-700">
+
+                                        A service location is required for Engineering Operation complaints.
+
+                                    </p>
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+                        <div id="commercialInformation"
+                            class="hidden rounded-xl border border-violet-200 bg-violet-50 p-4">
+
+
+
+                            <div class="flex items-start gap-3">
+
+
+
+                                <div
+                                    class="w-9 h-9 rounded-lg bg-violet-100 text-violet-700
+
+                                           flex items-center justify-center shrink-0">
+
+
+
+                                    <i class="fas fa-file-invoice"></i>
+
+
+
+                                </div>
+
+
+
+                                <div>
+
+
+
+                                    <p class="text-sm font-semibold text-violet-900">
+
+                                        Commercial Services
+
+                                    </p>
+
+
+
+                                    <p class="mt-1 text-sm text-violet-700">
+
+                                        Customer Service handles this concern. Service location and map information are
+
+                                        not required.
+
+                                    </p>
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                    <div>
+
+
+
+                        <label for="description" class="block text-sm font-medium text-slate-700 mb-2">
+
+                            Description
+
+                            <span class="text-red-500">*</span>
+
+                        </label>
+
+
+
+                        <textarea name="description" id="description" rows="5" required maxlength="5000"
+                            placeholder="Describe the consumer's concern in detail..."
+                            class="w-full rounded-xl border-slate-300
+
+                                   focus:border-sky-500 focus:ring-sky-500">{{ old('description', $complaint->description) }}</textarea>
+
+
+
+                        <div class="flex items-start justify-between gap-4 mt-2">
+
+
+
+                            <p id="descriptionHelp" class="text-xs text-slate-500">
+
+                                Provide enough information for the complaint to be properly reviewed.
+
+                            </p>
+
+
+
+                            <p class="text-xs text-slate-400 shrink-0">
+
+                                <span id="descriptionCount">0</span>/5000
+
+                            </p>
+
+
+
+                        </div>
+
+
+
+                        @error('description')
+                            <p class="mt-1 text-sm text-red-600">
+
+                                {{ $message }}
+
+                            </p>
+                        @enderror
+
+
+
+                    </div>
+
+
+
                 </div>
+
+
 
             </div>
 
 
-            {{-- ========================================================= --}}
-            {{-- PHOTO --}}
-            {{-- ========================================================= --}}
 
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div id="engineeringLocationSection"
+                class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-                <div class="px-6 py-5 border-b border-gray-100">
 
-                    <div class="flex items-center gap-3">
 
-                        <div
-                            class="w-10 h-10 rounded-xl
-                                   bg-purple-100 text-purple-600
-                                   flex items-center justify-center">
+                <div class="px-5 sm:px-6 py-5 border-b border-slate-100">
 
-                            <i class="fas fa-camera"></i>
+
+
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+
+
+                        <div class="flex items-center gap-3">
+
+
+
+                            <div
+                                class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700
+
+                                       flex items-center justify-center shrink-0">
+
+
+
+                                <i class="fas fa-location-dot"></i>
+
+
+
+                            </div>
+
+
+
+                            <div>
+
+
+
+                                <h2 class="font-semibold text-slate-900">
+
+                                    Service Location
+
+                                </h2>
+
+
+
+                                <p class="mt-1 text-sm text-slate-500">
+
+                                    Update the location of the Engineering Operation concern.
+
+                                </p>
+
+
+
+                            </div>
+
+
 
                         </div>
 
-                        <div>
 
-                            <h2 class="font-semibold text-gray-900">
-                                Photo Evidence
-                            </h2>
 
-                            <p class="text-sm text-gray-500 mt-1">
-                                Keep the current photo or upload a replacement.
-                            </p>
+                        <span
+                            class="inline-flex self-start sm:self-auto items-center gap-2
 
-                        </div>
+                                   rounded-full bg-emerald-50 px-3 py-1.5
+
+                                   text-xs font-medium text-emerald-700">
+
+
+
+                            <i class="fas fa-screwdriver-wrench"></i>
+
+
+
+                            Engineering Operation
+
+
+
+                        </span>
+
+
 
                     </div>
+
+
 
                 </div>
 
 
-                <div class="p-6 space-y-5">
 
-                    {{-- CURRENT PHOTO --}}
+                <div class="p-5 sm:p-6 space-y-6">
+
+
+
+                    <div>
+
+
+
+                        <div class="mb-3">
+
+
+
+                            <label class="block text-sm font-medium text-slate-700">
+
+                                Pin Service Location
+
+                                <span class="font-normal text-slate-400">(Optional)</span>
+
+                            </label>
+
+
+
+                            <p class="mt-1 text-xs text-slate-500">
+
+                                The saved location is shown below. Click the map or drag the marker only if the service
+
+                                location needs to be changed.
+
+                            </p>
+
+
+
+                        </div>
+
+
+
+                        <div id="complaint-edit-map"
+                            class="w-full h-[420px] rounded-2xl border border-slate-300 overflow-hidden relative z-0">
+
+                        </div>
+
+
+
+                        <input type="hidden" name="latitude" id="latitude"
+                            value="{{ old('latitude', $complaint->latitude) }}">
+
+
+
+                        <input type="hidden" name="longitude" id="longitude"
+                            value="{{ old('longitude', $complaint->longitude) }}">
+
+
+
+                        <div id="mapStatus" class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+
+
+
+                            <div class="flex items-start gap-3">
+
+
+
+                                <i class="fas fa-location-dot text-sky-600 mt-0.5"></i>
+
+
+
+                                <div>
+
+
+
+                                    <p class="text-sm font-medium text-sky-900">
+
+                                        Service Location
+
+                                    </p>
+
+
+
+                                    <p id="mapStatusText" class="mt-1 text-xs text-sky-700">
+
+
+
+                                        @if (old('latitude', $complaint->latitude) && old('longitude', $complaint->longitude))
+                                            Current saved location is shown. Move the marker only if the location needs to
+
+                                            be changed.
+                                        @else
+                                            Click the map to select the service location.
+                                        @endif
+
+
+
+                                    </p>
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+                        @error('latitude')
+                            <p class="mt-2 text-sm text-red-600">
+
+                                {{ $message }}
+
+                            </p>
+                        @enderror
+
+
+
+                        @error('longitude')
+                            <p class="mt-2 text-sm text-red-600">
+
+                                {{ $message }}
+
+                            </p>
+                        @enderror
+
+
+
+                    </div>
+
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+
+                        <div>
+
+
+
+                            <label for="address" class="block text-sm font-medium text-slate-700 mb-2">
+
+
+
+                                Address
+
+                                <span class="text-red-500">*</span>
+
+
+
+                            </label>
+
+
+
+                            <input type="text" name="address" id="address"
+                                value="{{ old('address', $complaint->address) }}"
+                                placeholder="Pin the location above or enter the address manually" required
+                                class="w-full rounded-xl border-slate-300
+
+                       focus:border-sky-500 focus:ring-sky-500">
+
+
+
+                            <p class="mt-2 text-xs text-slate-500">
+
+                                Moving the map marker automatically updates this address. You can still edit it manually if
+
+                                the detected address is inaccurate.
+
+                            </p>
+
+
+
+                            @error('address')
+                                <p class="mt-1 text-sm text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+                            @enderror
+
+
+
+                        </div>
+
+
+
+                        <div>
+
+
+
+                            <label for="landmark" class="block text-sm font-medium text-slate-700 mb-2">
+
+
+
+                                Nearby Landmark
+
+                                <span class="font-normal text-slate-400">(Optional)</span>
+
+
+
+                            </label>
+
+
+
+                            <input type="text" name="landmark" id="landmark"
+                                value="{{ old('landmark', $complaint->landmark) }}"
+                                placeholder="Near barangay hall, school, store, etc."
+                                class="w-full rounded-xl border-slate-300
+
+                       focus:border-sky-500 focus:ring-sky-500">
+
+
+
+                            <p class="mt-2 text-xs text-slate-500">
+
+                                Add a nearby landmark to help the plumber locate the service area.
+
+                            </p>
+
+
+
+                            @error('landmark')
+                                <p class="mt-1 text-sm text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+                            @enderror
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+
+
+                <div class="px-5 sm:px-6 py-5 border-b border-slate-100">
+
+
+
+                    <div class="flex items-center gap-3">
+
+
+
+                        <div
+                            class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700
+
+                                   flex items-center justify-center shrink-0">
+
+
+
+                            <i class="fas fa-camera"></i>
+
+
+
+                        </div>
+
+
+
+                        <div>
+
+
+
+                            <h2 id="evidenceHeading" class="font-semibold text-slate-900">
+
+                                Supporting Photo
+
+                            </h2>
+
+
+
+                            <p id="evidenceDescription" class="mt-1 text-sm text-slate-500">
+
+                                Keep the current photo or upload a replacement.
+
+                            </p>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+                <div class="p-5 sm:p-6 space-y-5">
+
+
 
                     @if ($complaint->photo)
                         <div>
 
-                            <p class="text-sm font-medium text-gray-700 mb-2">
+
+
+                            <p id="currentEvidenceLabel" class="text-sm font-medium text-slate-700 mb-2">
+
                                 Current Photo
+
                             </p>
 
-                            <div
-                                class="max-w-md rounded-2xl
-                                       border border-gray-200
-                                       overflow-hidden bg-gray-50">
 
-                                <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
-                                    class="w-full max-h-72 object-cover">
+
+                            <div
+                                class="max-w-md rounded-2xl border border-slate-200
+
+                                       overflow-hidden bg-slate-50">
+
+
+
+                                <img src="{{ asset('storage/' . $complaint->photo) }}"
+                                    alt="Complaint supporting evidence" class="w-full max-h-72 object-cover">
+
+
 
                             </div>
+
+
 
                         </div>
                     @endif
 
 
-                    {{-- NEW PHOTO --}}
 
                     <div>
 
-                        <label for="photo" class="block text-sm font-medium text-gray-700 mb-2">
+
+
+                        <label for="photo" id="photoLabel" class="block text-sm font-medium text-slate-700 mb-2">
+
                             {{ $complaint->photo ? 'Replace Photo' : 'Upload Photo' }}
+
+                            <span class="font-normal text-slate-400">(Optional)</span>
+
                         </label>
 
-                        <input type="file" name="photo" id="photo" accept="image/*"
-                            class="block w-full text-sm text-gray-600
-                                   file:mr-4 file:py-2.5 file:px-4
-                                   file:rounded-xl file:border-0
-                                   file:text-sm file:font-semibold
-                                   file:bg-blue-50 file:text-blue-700
-                                   hover:file:bg-blue-100">
 
-                        <p class="text-xs text-gray-500 mt-2">
-                            Leave this empty to keep the current photo.
+
+                        <input type="file" name="photo" id="photo" accept="image/jpeg,image/png,image/webp"
+                            class="block w-full text-sm text-slate-600
+
+                                   file:mr-4 file:py-2.5 file:px-4
+
+                                   file:rounded-xl file:border-0
+
+                                   file:text-sm file:font-semibold
+
+                                   file:bg-sky-50 file:text-sky-700
+
+                                   hover:file:bg-sky-100">
+
+
+
+                        <p class="mt-2 text-xs text-slate-500">
+
+                            Leave this empty to keep the current image. JPG, JPEG, PNG or WEBP, maximum 5 MB.
+
                         </p>
 
 
+
                         @error('photo')
-                            <p class="text-sm text-red-600 mt-1">
+                            <p class="mt-1 text-sm text-red-600">
+
                                 {{ $message }}
+
                             </p>
                         @enderror
 
+
+
                     </div>
+
+
 
                 </div>
 
+
+
             </div>
 
 
-            {{-- ========================================================= --}}
-            {{-- ACTIONS --}}
-            {{-- ========================================================= --}}
 
-            <div class="flex flex-col-reverse sm:flex-row
-                       sm:items-center sm:justify-end gap-3">
+            <div
+                class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3
 
-                <a href="{{ route('customer-service.complaints.show', $complaint) }}"
-                    class="inline-flex items-center justify-center gap-2
-                           px-5 py-3 rounded-xl
-                           border border-gray-300
-                           text-gray-700
-                           hover:bg-gray-50 transition">
-
-                    <i class="fas fa-xmark"></i>
-
-                    Cancel
-
-                </a>
+                       bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
 
 
-                <button type="submit"
-                    class="inline-flex items-center justify-center gap-2
-                           px-6 py-3 rounded-xl
-                           bg-blue-600 text-white font-semibold
-                           hover:bg-blue-700 transition">
 
-                    <i class="fas fa-floppy-disk"></i>
+                <p id="beforeSubmitText" class="text-xs text-slate-500">
 
-                    Save Changes
+                    Review the updated complaint information before saving.
 
-                </button>
+                </p>
+
+
+
+                <div class="flex flex-col-reverse sm:flex-row gap-3">
+
+
+
+                    <a href="{{ route('customer-service.complaints.show', $complaint) }}"
+                        class="inline-flex items-center justify-center gap-2
+
+                               px-5 py-3 rounded-xl
+
+                               border border-slate-300 text-slate-700
+
+                               hover:bg-slate-50 transition">
+
+
+
+                        <i class="fas fa-xmark"></i>
+
+
+
+                        Cancel
+
+
+
+                    </a>
+
+
+
+                    <button type="submit" id="submitButton"
+                        class="inline-flex items-center justify-center gap-2
+
+                               px-6 py-3 rounded-xl
+
+                               bg-sky-700 text-white font-semibold
+
+                               hover:bg-sky-800 transition
+
+                               disabled:opacity-60 disabled:cursor-not-allowed">
+
+
+
+                        <i id="submitIcon" class="fas fa-floppy-disk"></i>
+
+
+
+                        <span id="submitText">
+
+                            Save Changes
+
+                        </span>
+
+
+
+                    </button>
+
+
+
+                </div>
+
+
 
             </div>
+
+
 
         </form>
 
+
+
     </div>
 
+
+
 @endsection
+
 
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
-    {{-- ========================================================= --}}
-    {{-- DIVISION → COMPLAINT TYPE --}}
-    {{-- ========================================================= --}}
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-
-            const divisions =
-                @json($divisions);
-
-            const divisionSelect =
-                document.getElementById(
-                    'division_id'
-                );
-
-            const complaintTypeSelect =
-                document.getElementById(
-                    'complaint_category_id'
-                );
+            const divisions = @json($divisions);
 
             const selectedComplaintType =
                 @json(old('complaint_category_id', $complaint->complaint_category_id));
 
+            const complaintForm = document.getElementById('complaintForm');
 
-            function populateComplaintTypes(
-                divisionId,
-                selectedId = null
-            ) {
+            const consumerSelect = document.getElementById('consumer_id');
+            const selectedAccountCard = document.getElementById('selectedAccountCard');
+            const selectedAccountNumber = document.getElementById('selectedAccountNumber');
+            const selectedAccountHolder = document.getElementById('selectedAccountHolder');
+            const selectedAccountAddress = document.getElementById('selectedAccountAddress');
 
-                complaintTypeSelect.innerHTML =
+            const complainantNameInput = document.getElementById('complainant_name');
+            const complainantPhoneInput = document.getElementById('complainant_phone');
+
+            const divisionSelect = document.getElementById('division_id');
+            const complaintTypeSelect = document.getElementById('complaint_category_id');
+
+            const divisionInformation = document.getElementById('divisionInformation');
+            const engineeringInformation = document.getElementById('engineeringInformation');
+            const commercialInformation = document.getElementById('commercialInformation');
+
+            const engineeringLocationSection = document.getElementById('engineeringLocationSection');
+            const commercialAddressSection = document.getElementById('commercialAddressSection');
+
+            const addressInput = document.getElementById('address');
+            const commercialAddressInput = document.getElementById('commercial_address');
+
+            const landmarkInput = document.getElementById('landmark');
+            const latitudeInput = document.getElementById('latitude');
+            const longitudeInput = document.getElementById('longitude');
+
+            const descriptionInput = document.getElementById('description');
+            const descriptionCount = document.getElementById('descriptionCount');
+            const descriptionHelp = document.getElementById('descriptionHelp');
+
+            const evidenceHeading = document.getElementById('evidenceHeading');
+            const evidenceDescription = document.getElementById('evidenceDescription');
+            const currentEvidenceLabel = document.getElementById('currentEvidenceLabel');
+            const photoLabel = document.getElementById('photoLabel');
+
+            const beforeSubmitText = document.getElementById('beforeSubmitText');
+            const submitButton = document.getElementById('submitButton');
+            const submitIcon = document.getElementById('submitIcon');
+            const submitText = document.getElementById('submitText');
+
+            const mapElement = document.getElementById('complaint-edit-map');
+            const mapStatus = document.getElementById('mapStatus');
+            const mapStatusText = document.getElementById('mapStatusText');
+
+            let map = null;
+            let marker = null;
+            let mapInitialized = false;
+
+            const initialDivision =
+                divisions.find(function(division) {
+                    return String(division.id) ===
+                        String(divisionSelect ? divisionSelect.value : '');
+                }) || null;
+
+            const initialDivisionName =
+                initialDivision ?
+                String(initialDivision.name || '').toLowerCase() :
+                '';
+
+            const initiallyCommercial =
+                initialDivisionName.includes('commercial');
+
+            const initiallyEngineering =
+                initialDivisionName.includes('engineering');
+
+            let engineeringAddressValue = '';
+
+            let commercialAddressValue = '';
+
+            if (initiallyEngineering) {
+                engineeringAddressValue =
+                    addressInput ?
+                    addressInput.value :
                     '';
+            }
 
-
-                if (!divisionId) {
-
-                    complaintTypeSelect.disabled =
-                        true;
-
-                    complaintTypeSelect.innerHTML =
-                        '<option value="">Select a division first</option>';
-
-                    return;
-
-                }
-
-
-                const division =
-                    divisions.find(
-                        function(item) {
-
-                            return String(item.id) ===
-                                String(divisionId);
-
-                        }
+            if (
+                initiallyCommercial &&
+                !(
+                    consumerSelect &&
+                    consumerSelect.value
+                )
+            ) {
+                commercialAddressValue =
+                    commercialAddressInput &&
+                    commercialAddressInput.value ?
+                    commercialAddressInput.value :
+                    (
+                        addressInput ?
+                        addressInput.value :
+                        ''
                     );
 
+                if (commercialAddressInput) {
+                    commercialAddressInput.value =
+                        commercialAddressValue;
+                }
+            }
+
+            const defaultLatitude = 10.9447;
+            const defaultLongitude = 123.4247;
+
+            function getSelectedDivision() {
+                if (!divisionSelect || !divisionSelect.value) {
+                    return null;
+                }
+
+                return divisions.find(function(division) {
+                    return String(division.id) ===
+                        String(divisionSelect.value);
+                }) || null;
+            }
+
+            function getDivisionName() {
+                const division = getSelectedDivision();
+
+                return division ?
+                    String(division.name || '').trim() :
+                    '';
+            }
+
+            function isEngineering() {
+                return getDivisionName()
+                    .toLowerCase()
+                    .includes('engineering');
+            }
+
+            function isCommercial() {
+                return getDivisionName()
+                    .toLowerCase()
+                    .includes('commercial');
+            }
+
+            function hasLinkedConsumer() {
+                return Boolean(
+                    consumerSelect &&
+                    consumerSelect.value
+                );
+            }
+
+            function getSelectedConsumerOption() {
+                if (
+                    !consumerSelect ||
+                    !consumerSelect.value
+                ) {
+                    return null;
+                }
+
+                return consumerSelect.options[
+                    consumerSelect.selectedIndex
+                ] || null;
+            }
+
+            function updateAccountCard() {
+                if (
+                    !consumerSelect ||
+                    !selectedAccountCard
+                ) {
+                    return;
+                }
+
+                const option =
+                    getSelectedConsumerOption();
+
+                if (!option) {
+                    selectedAccountCard.classList.add(
+                        'hidden'
+                    );
+
+                    if (selectedAccountNumber) {
+                        selectedAccountNumber.textContent =
+                            '—';
+                    }
+
+                    if (selectedAccountHolder) {
+                        selectedAccountHolder.textContent =
+                            '—';
+                    }
+
+                    if (selectedAccountAddress) {
+                        selectedAccountAddress.textContent =
+                            '—';
+                    }
+
+                    return;
+                }
+
+                const accountNumber =
+                    String(
+                        option.dataset.account || ''
+                    ).trim();
+
+                const accountHolder =
+                    String(
+                        option.dataset.name || ''
+                    ).trim();
+
+                const accountAddress =
+                    String(
+                        option.dataset.address || ''
+                    ).trim();
+
+                if (selectedAccountNumber) {
+                    selectedAccountNumber.textContent =
+                        accountNumber || '—';
+                }
+
+                if (selectedAccountHolder) {
+                    selectedAccountHolder.textContent =
+                        accountHolder || '—';
+                }
+
+                if (selectedAccountAddress) {
+                    selectedAccountAddress.textContent =
+                        accountAddress ||
+                        'No registered address';
+                }
+
+                selectedAccountCard.classList.remove(
+                    'hidden'
+                );
+            }
+
+            function autofillComplainantFromAccount() {
+                const option =
+                    getSelectedConsumerOption();
+
+                if (!option) {
+                    return;
+                }
+
+                const accountHolder =
+                    String(
+                        option.dataset.name || ''
+                    ).trim();
+
+                const phone =
+                    String(
+                        option.dataset.phone || ''
+                    ).trim();
 
                 if (
-                    !division ||
-                    !division.complaint_types ||
-                    division.complaint_types.length === 0
+                    complainantNameInput &&
+                    accountHolder
                 ) {
-
-                    complaintTypeSelect.disabled =
-                        true;
-
-                    complaintTypeSelect.innerHTML =
-                        '<option value="">No complaint types available</option>';
-
-                    return;
-
+                    complainantNameInput.value =
+                        accountHolder;
                 }
 
+                if (
+                    complainantPhoneInput &&
+                    phone
+                ) {
+                    complainantPhoneInput.value =
+                        phone;
+                }
+            }
 
-                complaintTypeSelect.disabled =
-                    false;
+            function populateComplaintTypes(
+                preserveSelection = true
+            ) {
+                if (!complaintTypeSelect) {
+                    return;
+                }
 
+                const division =
+                    getSelectedDivision();
 
-                const placeholder =
-                    document.createElement(
-                        'option'
-                    );
-
-                placeholder.value =
+                const currentValue =
+                    preserveSelection ?
+                    (
+                        complaintTypeSelect.value ||
+                        selectedComplaintType
+                    ) :
                     '';
 
+                complaintTypeSelect.innerHTML = '';
+
+                if (!division) {
+                    const option =
+                        document.createElement('option');
+
+                    option.value = '';
+                    option.textContent =
+                        'Select a division first';
+
+                    complaintTypeSelect.appendChild(
+                        option
+                    );
+
+                    complaintTypeSelect.disabled = true;
+
+                    return;
+                }
+
+                const placeholder =
+                    document.createElement('option');
+
+                placeholder.value = '';
                 placeholder.textContent =
                     'Select Complaint Type';
 
-                complaintTypeSelect
-                    .appendChild(
-                        placeholder
-                    );
-
-
-                division.complaint_types.forEach(
-                    function(type) {
-
-                        const option =
-                            document.createElement(
-                                'option'
-                            );
-
-
-                        option.value =
-                            type.id;
-
-
-                        option.textContent =
-                            type.code ?
-                            `${type.code} — ${type.name}` :
-                            type.name;
-
-
-                        if (
-                            selectedId !== null &&
-                            String(selectedId) ===
-                            String(type.id)
-                        ) {
-
-                            option.selected =
-                                true;
-
-                        }
-
-
-                        complaintTypeSelect
-                            .appendChild(
-                                option
-                            );
-
-                    }
+                complaintTypeSelect.appendChild(
+                    placeholder
                 );
 
-            }
+                const complaintTypes =
+                    division.complaint_types ||
+                    division.complaintTypes || [];
 
+                complaintTypes.forEach(function(type) {
+                    const option =
+                        document.createElement('option');
 
-            divisionSelect.addEventListener(
-                'change',
-                function() {
+                    option.value = type.id;
+                    option.textContent = type.name;
 
-                    populateComplaintTypes(
-                        this.value
+                    complaintTypeSelect.appendChild(
+                        option
                     );
+                });
 
+                complaintTypeSelect.disabled = false;
+
+                if (
+                    currentValue &&
+                    Array.from(
+                        complaintTypeSelect.options
+                    ).some(function(option) {
+                        return String(option.value) ===
+                            String(currentValue);
+                    })
+                ) {
+                    complaintTypeSelect.value =
+                        currentValue;
                 }
-            );
-
-
-            if (divisionSelect.value) {
-
-                populateComplaintTypes(
-                    divisionSelect.value,
-                    selectedComplaintType
-                );
-
             }
 
-        });
-    </script>
-
-
-    {{-- ========================================================= --}}
-    {{-- COMPLAINANT TYPE --}}
-    {{-- ========================================================= --}}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const registeredSection =
-                document.getElementById(
-                    'registered-consumer-section'
-                );
-
-            const walkInSection =
-                document.getElementById(
-                    'walk-in-section'
-                );
-
-            const consumerSelect =
-                document.getElementById(
-                    'consumer_id'
-                );
-
-            const complainantName =
-                document.getElementById(
-                    'complainant_name'
-                );
-
-            const complainantPhone =
-                document.getElementById(
-                    'complainant_phone'
-                );
-
-
-            function updateComplainantSections() {
-
-                const selected =
-                    document.querySelector(
-                        'input[name="complainant_type"]:checked'
-                    );
-
-
-                if (!selected) {
+            function setMapStatus(message) {
+                if (
+                    !mapStatus ||
+                    !mapStatusText
+                ) {
                     return;
                 }
 
+                if (!message) {
+                    mapStatus.classList.add('hidden');
+                    mapStatusText.textContent = '';
 
-                if (
-                    selected.value ===
-                    'registered'
-                ) {
-
-                    registeredSection
-                        .classList
-                        .remove('hidden');
-
-                    walkInSection
-                        .classList
-                        .add('hidden');
-
-
-                    consumerSelect.disabled =
-                        false;
-
-                    complainantName.disabled =
-                        true;
-
-                    complainantPhone.disabled =
-                        true;
-
+                    return;
                 }
 
-
-                if (
-                    selected.value ===
-                    'walk_in'
-                ) {
-
-                    registeredSection
-                        .classList
-                        .add('hidden');
-
-                    walkInSection
-                        .classList
-                        .remove('hidden');
-
-
-                    consumerSelect.disabled =
-                        true;
-
-                    consumerSelect.value =
-                        '';
-
-                    complainantName.disabled =
-                        false;
-
-                    complainantPhone.disabled =
-                        false;
-
-                }
-
+                mapStatusText.textContent = message;
+                mapStatus.classList.remove('hidden');
             }
-
-
-            document
-                .querySelectorAll(
-                    'input[name="complainant_type"]'
-                )
-                .forEach(
-                    function(radio) {
-
-                        radio.addEventListener(
-                            'change',
-                            updateComplainantSections
-                        );
-
-                    }
-                );
-
-
-            updateComplainantSections();
-
-        });
-    </script>
-
-
-    {{-- ========================================================= --}}
-    {{-- MAP + REVERSE GEOCODING --}}
-    {{-- ========================================================= --}}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const mapElement =
-                document.getElementById(
-                    'complaint-edit-map'
-                );
-
-
-            if (!mapElement) {
-                return;
-            }
-
-
-            const latitudeInput =
-                document.getElementById(
-                    'latitude'
-                );
-
-            const longitudeInput =
-                document.getElementById(
-                    'longitude'
-                );
-
-            const addressInput =
-                document.getElementById(
-                    'address'
-                );
-
-            const detectedAddress =
-                document.getElementById(
-                    'detected-address'
-                );
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Default Sagay City
-            |--------------------------------------------------------------------------
-            */
-
-            const defaultLatitude =
-                10.9447;
-
-            const defaultLongitude =
-                123.4200;
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Existing Location
-            |--------------------------------------------------------------------------
-            */
-
-            const savedLatitude =
-                parseFloat(
-                    latitudeInput.value
-                );
-
-            const savedLongitude =
-                parseFloat(
-                    longitudeInput.value
-                );
-
-
-            const hasExistingLocation = !isNaN(savedLatitude) &&
-                !isNaN(savedLongitude);
-
-
-            const initialLatitude =
-                hasExistingLocation ?
-                savedLatitude :
-                defaultLatitude;
-
-            const initialLongitude =
-                hasExistingLocation ?
-                savedLongitude :
-                defaultLongitude;
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Create Map
-            |--------------------------------------------------------------------------
-            */
-
-            const map =
-                L.map(
-                    'complaint-edit-map', {
-                        zoomControl: true,
-                        attributionControl: true
-                    }
-                );
-
-
-            L.tileLayer(
-                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors'
-                }
-            ).addTo(map);
-
-
-            map.setView(
-                [
-                    initialLatitude,
-                    initialLongitude
-                ],
-                hasExistingLocation ? 17 : 14
-            );
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Marker
-            |--------------------------------------------------------------------------
-            */
-
-            const marker =
-                L.marker(
-                    [
-                        initialLatitude,
-                        initialLongitude
-                    ], {
-                        draggable: true
-                    }
-                )
-                .addTo(map);
-
-
-            marker.bindPopup(`
-                <div class="text-sm">
-
-                    <div class="font-semibold text-gray-900">
-
-                        <i class="fas fa-location-dot text-blue-600 mr-1"></i>
-
-                        Reported Problem Location
-
-                    </div>
-
-                    <div class="text-gray-500 mt-1">
-
-                        Drag the marker or click the map to change the location.
-
-                    </div>
-
-                </div>
-            `);
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Reverse Geocoding
-            |--------------------------------------------------------------------------
-            */
 
             async function reverseGeocode(
-                lat,
-                lng
+                latitude,
+                longitude
             ) {
-
-                detectedAddress.textContent =
-                    'Detecting address...';
-
+                setMapStatus('Detecting address...');
 
                 try {
-
-                    const response =
-                        await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-                                headers: {
-                                    'Accept': 'application/json'
-                                }
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=18&addressdetails=1`, {
+                            headers: {
+                                'Accept': 'application/json'
                             }
-                        );
-
+                        }
+                    );
 
                     if (!response.ok) {
-
                         throw new Error(
-                            'Reverse geocoding failed.'
+                            'Unable to detect address.'
                         );
-
                     }
-
 
                     const data =
                         await response.json();
 
+                    const detectedAddress =
+                        String(
+                            data.display_name || ''
+                        ).trim();
 
-                    if (data.display_name) {
+                    if (detectedAddress) {
+                        engineeringAddressValue =
+                            detectedAddress;
 
-                        addressInput.value =
-                            data.display_name;
+                        if (addressInput) {
+                            addressInput.value =
+                                detectedAddress;
+                        }
 
-                        detectedAddress.textContent =
-                            data.display_name;
-
+                        setMapStatus(
+                            detectedAddress
+                        );
                     } else {
-
-                        detectedAddress.textContent =
-                            'Address could not be detected. Please enter it manually.';
-
+                        setMapStatus(
+                            'Location selected. Please enter the address manually.'
+                        );
                     }
-
                 } catch (error) {
-
-                    console.error(
-                        'Reverse geocoding error:',
-                        error
+                    setMapStatus(
+                        'Location selected, but the address could not be detected. Please enter it manually.'
                     );
-
-
-                    detectedAddress.textContent =
-                        'Unable to detect the address. Please enter it manually.';
-
                 }
-
             }
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Update Location
-            |--------------------------------------------------------------------------
-            */
-
-            function updateLocation(
-                lat,
-                lng,
+            function setMarker(
+                latitude,
+                longitude,
                 detectAddress = true
             ) {
+                if (!map) {
+                    return;
+                }
 
-                const formattedLatitude =
-                    Number(lat).toFixed(7);
+                const lat = Number(latitude);
+                const lng = Number(longitude);
 
-                const formattedLongitude =
-                    Number(lng).toFixed(7);
+                if (
+                    !Number.isFinite(lat) ||
+                    !Number.isFinite(lng)
+                ) {
+                    return;
+                }
 
+                if (!marker) {
+                    marker = L.marker(
+                        [lat, lng], {
+                            draggable: true
+                        }
+                    ).addTo(map);
 
-                latitudeInput.value =
-                    formattedLatitude;
+                    marker.on(
+                        'dragend',
+                        function(event) {
+                            const position =
+                                event.target.getLatLng();
 
-                longitudeInput.value =
-                    formattedLongitude;
+                            if (latitudeInput) {
+                                latitudeInput.value =
+                                    position.lat.toFixed(7);
+                            }
 
+                            if (longitudeInput) {
+                                longitudeInput.value =
+                                    position.lng.toFixed(7);
+                            }
 
-                marker.setLatLng([
-                    lat,
-                    lng
-                ]);
+                            reverseGeocode(
+                                position.lat,
+                                position.lng
+                            );
+                        }
+                    );
+                } else {
+                    marker.setLatLng([lat, lng]);
+                }
 
+                if (latitudeInput) {
+                    latitudeInput.value =
+                        lat.toFixed(7);
+                }
 
-                map.panTo([
-                    lat,
-                    lng
-                ]);
+                if (longitudeInput) {
+                    longitudeInput.value =
+                        lng.toFixed(7);
+                }
 
+                map.setView(
+                    [lat, lng],
+                    Math.max(
+                        map.getZoom(),
+                        17
+                    )
+                );
 
                 if (detectAddress) {
-
                     reverseGeocode(
-                        formattedLatitude,
-                        formattedLongitude
+                        lat,
+                        lng
                     );
-
+                } else {
+                    if (engineeringAddressValue) {
+                        setMapStatus(
+                            engineeringAddressValue
+                        );
+                    } else {
+                        setMapStatus(
+                            'Saved service location.'
+                        );
+                    }
                 }
-
             }
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Map Click
-            |--------------------------------------------------------------------------
-            */
-
-            map.on(
-                'click',
-                function(event) {
-
-                    updateLocation(
-                        event.latlng.lat,
-                        event.latlng.lng,
-                        true
-                    );
-
+            function initializeMap() {
+                if (
+                    mapInitialized ||
+                    !mapElement ||
+                    typeof L === 'undefined'
+                ) {
+                    return;
                 }
-            );
 
+                map = L.map(
+                    mapElement
+                ).setView(
+                    [
+                        defaultLatitude,
+                        defaultLongitude
+                    ],
+                    14
+                );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Marker Drag
-            |--------------------------------------------------------------------------
-            */
+                L.tileLayer(
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }
+                ).addTo(map);
 
-            marker.on(
-                'dragend',
-                function(event) {
+                map.on(
+                    'click',
+                    function(event) {
+                        setMarker(
+                            event.latlng.lat,
+                            event.latlng.lng,
+                            true
+                        );
+                    }
+                );
 
-                    const position =
-                        event
-                        .target
-                        .getLatLng();
+                mapInitialized = true;
 
+                const savedLatitude =
+                    latitudeInput ?
+                    parseFloat(
+                        latitudeInput.value
+                    ) :
+                    NaN;
 
-                    updateLocation(
-                        position.lat,
-                        position.lng,
-                        true
+                const savedLongitude =
+                    longitudeInput ?
+                    parseFloat(
+                        longitudeInput.value
+                    ) :
+                    NaN;
+
+                if (
+                    Number.isFinite(savedLatitude) &&
+                    Number.isFinite(savedLongitude)
+                ) {
+                    setMarker(
+                        savedLatitude,
+                        savedLongitude,
+                        false
                     );
-
                 }
-            );
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Preserve Existing Location
-            |--------------------------------------------------------------------------
-            |
-            | IMPORTANT:
-            | Do not reverse geocode automatically when opening Edit.
-            | This prevents the saved address from being replaced just
-            | because the user opened this page.
-            |
-            */
-
-            if (hasExistingLocation) {
-
-                latitudeInput.value =
-                    Number(
-                        savedLatitude
-                    ).toFixed(7);
-
-                longitudeInput.value =
-                    Number(
-                        savedLongitude
-                    ).toFixed(7);
-
+                setTimeout(function() {
+                    if (map) {
+                        map.invalidateSize();
+                    }
+                }, 150);
             }
 
+            function updateDivisionInformation() {
+                if (
+                    !divisionInformation ||
+                    !engineeringInformation ||
+                    !commercialInformation
+                ) {
+                    return;
+                }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Map Size Fix
-            |--------------------------------------------------------------------------
-            */
+                if (isEngineering()) {
+                    divisionInformation.classList.remove(
+                        'hidden'
+                    );
 
-            function refreshMap() {
+                    engineeringInformation.classList.remove(
+                        'hidden'
+                    );
 
-                map.invalidateSize({
-                    animate: false,
-                    pan: false
-                });
+                    commercialInformation.classList.add(
+                        'hidden'
+                    );
 
+                    return;
+                }
+
+                if (isCommercial()) {
+                    divisionInformation.classList.remove(
+                        'hidden'
+                    );
+
+                    engineeringInformation.classList.add(
+                        'hidden'
+                    );
+
+                    commercialInformation.classList.remove(
+                        'hidden'
+                    );
+
+                    return;
+                }
+
+                divisionInformation.classList.add(
+                    'hidden'
+                );
+
+                engineeringInformation.classList.add(
+                    'hidden'
+                );
+
+                commercialInformation.classList.add(
+                    'hidden'
+                );
             }
 
+            function updateLocationSections() {
+                const engineering =
+                    isEngineering();
 
-            requestAnimationFrame(
-                function() {
+                const commercial =
+                    isCommercial();
 
-                    refreshMap();
+                const linkedConsumer =
+                    hasLinkedConsumer();
 
-                    setTimeout(
-                        refreshMap,
-                        100
-                    );
+                if (engineering) {
+                    if (engineeringLocationSection) {
+                        engineeringLocationSection.classList.remove(
+                            'hidden'
+                        );
+                    }
 
-                    setTimeout(
-                        refreshMap,
-                        300
-                    );
+                    if (commercialAddressSection) {
+                        commercialAddressSection.classList.add(
+                            'hidden'
+                        );
+                    }
 
-                    setTimeout(
-                        refreshMap,
-                        600
-                    );
+                    if (addressInput) {
+                        addressInput.value =
+                            engineeringAddressValue;
 
-                    setTimeout(
-                        refreshMap,
-                        1000
-                    );
+                        addressInput.required = true;
+                        addressInput.name = 'address';
+                    }
 
+                    if (commercialAddressInput) {
+                        commercialAddressInput.required =
+                            false;
+
+                        commercialAddressInput.removeAttribute(
+                            'name'
+                        );
+                    }
+
+                    initializeMap();
+
+                    setTimeout(function() {
+                        if (map) {
+                            map.invalidateSize();
+                        }
+                    }, 150);
+
+                    return;
                 }
-            );
 
+                if (commercial) {
+                    if (engineeringLocationSection) {
+                        engineeringLocationSection.classList.add(
+                            'hidden'
+                        );
+                    }
 
-            window.addEventListener(
-                'resize',
-                refreshMap
-            );
+                    if (linkedConsumer) {
+                        if (commercialAddressSection) {
+                            commercialAddressSection.classList.add(
+                                'hidden'
+                            );
+                        }
 
+                        if (commercialAddressInput) {
+                            commercialAddressInput.required =
+                                false;
+
+                            commercialAddressInput.removeAttribute(
+                                'name'
+                            );
+                        }
+
+                        if (addressInput) {
+                            addressInput.required = false;
+
+                            addressInput.removeAttribute(
+                                'name'
+                            );
+                        }
+                    } else {
+                        if (commercialAddressSection) {
+                            commercialAddressSection.classList.remove(
+                                'hidden'
+                            );
+                        }
+
+                        if (commercialAddressInput) {
+                            commercialAddressInput.value =
+                                commercialAddressValue;
+
+                            commercialAddressInput.required =
+                                true;
+
+                            commercialAddressInput.name =
+                                'address';
+                        }
+
+                        if (addressInput) {
+                            addressInput.required = false;
+
+                            addressInput.removeAttribute(
+                                'name'
+                            );
+                        }
+                    }
+
+                    return;
+                }
+
+                if (engineeringLocationSection) {
+                    engineeringLocationSection.classList.add(
+                        'hidden'
+                    );
+                }
+
+                if (commercialAddressSection) {
+                    commercialAddressSection.classList.add(
+                        'hidden'
+                    );
+                }
+
+                if (addressInput) {
+                    addressInput.required = false;
+                    addressInput.removeAttribute('name');
+                }
+
+                if (commercialAddressInput) {
+                    commercialAddressInput.required = false;
+
+                    commercialAddressInput.removeAttribute(
+                        'name'
+                    );
+                }
+            }
+
+            function updateDivisionSpecificText() {
+                if (isEngineering()) {
+                    if (descriptionHelp) {
+                        descriptionHelp.textContent =
+                            'Describe the Engineering Operation concern clearly, including what happened and where the problem is occurring.';
+                    }
+
+                    if (evidenceHeading) {
+                        evidenceHeading.textContent =
+                            'Supporting Photo';
+                    }
+
+                    if (evidenceDescription) {
+                        evidenceDescription.textContent =
+                            'Upload a clear photo of the reported service problem when available.';
+                    }
+
+                    if (currentEvidenceLabel) {
+                        currentEvidenceLabel.textContent =
+                            'Current Complaint Photo';
+                    }
+
+                    if (photoLabel) {
+                        photoLabel.textContent =
+                            'Replace Complaint Photo';
+                    }
+
+                    if (beforeSubmitText) {
+                        beforeSubmitText.textContent =
+                            'Review the Engineering Operation complaint information before saving changes.';
+                    }
+
+                    return;
+                }
+
+                if (isCommercial()) {
+                    if (descriptionHelp) {
+                        descriptionHelp.textContent =
+                            'Describe the Commercial Services concern clearly so Customer Service can review and process it.';
+                    }
+
+                    if (evidenceHeading) {
+                        evidenceHeading.textContent =
+                            'Supporting Evidence';
+                    }
+
+                    if (evidenceDescription) {
+                        evidenceDescription.textContent =
+                            'Upload an image that may help Customer Service review the concern, if available.';
+                    }
+
+                    if (currentEvidenceLabel) {
+                        currentEvidenceLabel.textContent =
+                            'Current Supporting Evidence';
+                    }
+
+                    if (photoLabel) {
+                        photoLabel.textContent =
+                            'Replace Supporting Image';
+                    }
+
+                    if (beforeSubmitText) {
+                        beforeSubmitText.textContent =
+                            'Review the Commercial Services complaint information before saving changes.';
+                    }
+
+                    return;
+                }
+
+                if (descriptionHelp) {
+                    descriptionHelp.textContent =
+                        'Provide enough information for the complaint to be properly reviewed.';
+                }
+
+                if (evidenceHeading) {
+                    evidenceHeading.textContent =
+                        'Supporting Photo / Evidence';
+                }
+
+                if (evidenceDescription) {
+                    evidenceDescription.textContent =
+                        'Upload a supporting image when available.';
+                }
+
+                if (currentEvidenceLabel) {
+                    currentEvidenceLabel.textContent =
+                        'Current Supporting Image';
+                }
+
+                if (photoLabel) {
+                    photoLabel.textContent =
+                        'Replace Supporting Image';
+                }
+
+                if (beforeSubmitText) {
+                    beforeSubmitText.textContent =
+                        'Review the complaint information before saving changes.';
+                }
+            }
+
+            function updateDescriptionCount() {
+                if (
+                    !descriptionInput ||
+                    !descriptionCount
+                ) {
+                    return;
+                }
+
+                descriptionCount.textContent =
+                    descriptionInput.value.length;
+            }
+
+            if (addressInput) {
+                addressInput.addEventListener(
+                    'input',
+                    function() {
+                        engineeringAddressValue =
+                            addressInput.value;
+                    }
+                );
+            }
+
+            if (commercialAddressInput) {
+                commercialAddressInput.addEventListener(
+                    'input',
+                    function() {
+                        commercialAddressValue =
+                            commercialAddressInput.value;
+                    }
+                );
+            }
+
+            if (consumerSelect) {
+                consumerSelect.addEventListener(
+                    'change',
+                    function() {
+                        updateAccountCard();
+                        autofillComplainantFromAccount();
+                        updateLocationSections();
+                    }
+                );
+            }
+
+            if (divisionSelect) {
+                divisionSelect.addEventListener(
+                    'change',
+                    function() {
+                        populateComplaintTypes(false);
+                        updateDivisionInformation();
+                        updateLocationSections();
+                        updateDivisionSpecificText();
+                    }
+                );
+            }
+
+            if (descriptionInput) {
+                descriptionInput.addEventListener(
+                    'input',
+                    updateDescriptionCount
+                );
+            }
+
+            if (complaintForm) {
+                complaintForm.addEventListener(
+                    'submit',
+                    function() {
+                        if (
+                            isCommercial() &&
+                            !hasLinkedConsumer()
+                        ) {
+                            if (commercialAddressInput) {
+                                commercialAddressValue =
+                                    commercialAddressInput.value;
+
+                                commercialAddressInput.name =
+                                    'address';
+
+                                commercialAddressInput.required =
+                                    true;
+                            }
+
+                            if (addressInput) {
+                                addressInput.required = false;
+
+                                addressInput.removeAttribute(
+                                    'name'
+                                );
+                            }
+                        } else if (isEngineering()) {
+                            if (addressInput) {
+                                engineeringAddressValue =
+                                    addressInput.value;
+
+                                addressInput.name =
+                                    'address';
+
+                                addressInput.required = true;
+                            }
+
+                            if (commercialAddressInput) {
+                                commercialAddressInput.required =
+                                    false;
+
+                                commercialAddressInput.removeAttribute(
+                                    'name'
+                                );
+                            }
+                        } else {
+                            if (addressInput) {
+                                addressInput.required = false;
+
+                                addressInput.removeAttribute(
+                                    'name'
+                                );
+                            }
+
+                            if (commercialAddressInput) {
+                                commercialAddressInput.required =
+                                    false;
+
+                                commercialAddressInput.removeAttribute(
+                                    'name'
+                                );
+                            }
+                        }
+
+                        if (submitButton) {
+                            submitButton.disabled = true;
+                        }
+
+                        if (submitIcon) {
+                            submitIcon.className =
+                                'fas fa-spinner fa-spin';
+                        }
+
+                        if (submitText) {
+                            submitText.textContent =
+                                'Saving Changes...';
+                        }
+                    }
+                );
+            }
+
+            updateAccountCard();
+            populateComplaintTypes(true);
+            updateDivisionInformation();
+            updateLocationSections();
+            updateDivisionSpecificText();
+            updateDescriptionCount();
         });
     </script>
 @endpush

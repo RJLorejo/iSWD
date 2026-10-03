@@ -291,46 +291,6 @@
 
             </div>
 
-
-            {{-- WORK --}}
-
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-
-                <h2 class="text-lg font-bold text-gray-900 mb-5">
-                    Work & Repair
-                </h2>
-
-                <div class="space-y-6">
-
-                    <div>
-
-                        <p class="text-sm font-semibold text-gray-500 mb-2">
-                            Work Performed
-                        </p>
-
-                        <div class="bg-gray-50 rounded-xl p-4 whitespace-pre-line text-gray-700">
-                            {{ $report->work_performed }}
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-sm font-semibold text-gray-500 mb-2">
-                            Repair Procedure
-                        </p>
-
-                        <div class="bg-gray-50 rounded-xl p-4 whitespace-pre-line text-gray-700">
-                            {{ $report->repair_procedure }}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
             {{-- RESOURCES --}}
 
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">

@@ -4,42 +4,29 @@
 
 @section('content')
 
-    <div class="space-y-6">
-
-        {{-- ========================================================= --}}
-        {{-- VALIDATION ERRORS --}}
-        {{-- ========================================================= --}}
+    <div class="max-w-7xl mx-auto space-y-5">
 
         @if ($errors->any())
-
-            <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+            <div class="rounded-xl border border-red-200 bg-red-50 p-4">
 
                 <div class="flex items-start gap-3">
 
-                    <div
-                        class="w-9 h-9 rounded-lg
-                               bg-red-100 flex items-center
-                               justify-center shrink-0">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-100">
 
                         <i class="fa-solid fa-circle-exclamation text-red-600"></i>
 
                     </div>
 
+                    <div class="min-w-0">
 
-                    <div>
-
-                        <h3 class="font-semibold text-red-800">
+                        <h3 class="text-sm font-semibold text-red-800">
                             Please correct the following errors:
                         </h3>
 
-                        <ul
-                            class="mt-2 text-sm text-red-700
-                                   list-disc list-inside space-y-1">
+                        <ul class="mt-1.5 list-inside list-disc space-y-0.5 text-sm text-red-700">
 
                             @foreach ($errors->all() as $error)
-                                <li>
-                                    {{ $error }}
-                                </li>
+                                <li>{{ $error }}</li>
                             @endforeach
 
                         </ul>
@@ -49,30 +36,19 @@
                 </div>
 
             </div>
-
         @endif
 
 
-        {{-- ========================================================= --}}
-        {{-- PAGE HEADER --}}
-        {{-- ========================================================= --}}
-
         <x-form.page-header title="Edit Consumer"
-            subtitle="Update consumer information, online access, address, and password." />
+            subtitle="Update consumer information, service location, portal access, or password." />
 
-
-        {{-- ========================================================= --}}
-        {{-- FORM --}}
-        {{-- ========================================================= --}}
 
         <x-form.card>
 
-            <form method="POST"
-                action="{{ route('customer-service.consumers.update', $consumer) }}">
+            <form method="POST" action="{{ route('customer-service.consumers.update', $consumer) }}">
 
                 @csrf
                 @method('PUT')
-
 
                 @include('customer-service.consumers.partials.form', [
                     'consumer' => $consumer,

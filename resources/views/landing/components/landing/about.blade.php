@@ -1,40 +1,97 @@
-
-<!-- About Section -->
-<section id="about" class="py-20 lg:py-28 bg-white">
-    <div class="max-w-7xl mx-auto px-6 sm:px-8">
-        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+<section id="about" class="scroll-mt-20 bg-white py-16 sm:py-20 lg:py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid items-center gap-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-16">
             <div>
-                <span class="text-sky-600 font-semibold tracking-wider uppercase text-sm">About the Platform</span>
-                <h2 class="text-3xl sm:text-4xl font-bold text-slate-800 mt-2 mb-6">
-                    Streamlining Water Service Complaints with AI
+                <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+                    <span class="h-px w-8 bg-sky-500"></span>
+                    About the Platform
+                </div>
+
+                <h2 class="mt-4 max-w-xl text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+                    A connected approach to consumer complaint and service management
                 </h2>
-                <p class="text-slate-600 leading-relaxed text-base sm:text-lg">
-                    iSWD is an AI-assisted consumer complaint management and service support system developed for Sagay Water District. It bridges the gap between consumer reports, customer service triage, and field response operations.
+
+                <p class="mt-5 text-base leading-7 text-slate-600">
+                    iSWD is an AI-Assisted Consumer Complaint Management and Service Support System developed for Sagay Water District. It connects consumer complaint submission, Customer Service assessment, division routing, field service coordination, accomplishment reporting, and complaint resolution in one platform.
                 </p>
-                <p class="mt-4 text-slate-600 leading-relaxed text-base sm:text-lg">
-                    By leveraging Natural Language Processing and operational analytics, iSWD converts natural consumer feedback into actionable service requests while recommending division routing, urgency levels, and field assignments—always keeping human personnel in full control.
+
+                <p class="mt-4 text-base leading-7 text-slate-600">
+                    AI supports personnel by providing recommendations for complaint classification, priority, urgency, and service routing. These recommendations remain subject to review and confirmation by authorized Sagay Water District personnel.
                 </p>
+
+                <div class="mt-7 rounded-2xl border border-sky-100 bg-sky-50/70 p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-700 text-white">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900">
+                                Human-guided decision support
+                            </h3>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">
+                                AI recommendations assist the workflow while verification, assignment, review, and final service decisions remain under authorized personnel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div class="bg-sky-50/80 rounded-2xl p-6 shadow-sm border border-sky-100">
-                    <div class="text-3xl mb-3">💬</div>
-                    <h3 class="font-bold text-lg text-slate-800">Natural Intake</h3>
-                    <p class="mt-2 text-sm text-slate-600">Submit issues naturally in local language (Hiligaynon/English).</p>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-lg">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-700 transition group-hover:bg-sky-700 group-hover:text-white">
+                        <i class="fa-solid fa-file-circle-plus text-lg"></i>
+                    </div>
+
+                    <h3 class="mt-5 text-base font-semibold text-slate-900">
+                        Complaint Management
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Receive, verify, track, and manage consumer complaints from initial submission through final resolution.
+                    </p>
                 </div>
-                <div class="bg-blue-50/80 rounded-2xl p-6 shadow-sm border border-blue-100">
-                    <div class="text-3xl mb-3">🧠</div>
-                    <h3 class="font-bold text-lg text-slate-800">AI Triage</h3>
-                    <p class="mt-2 text-sm text-slate-600">Automated classification, urgency assessment, and prioritization.</p>
+
+                <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-lg">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    </div>
+
+                    <h3 class="mt-5 text-base font-semibold text-slate-900">
+                        AI-Assisted Assessment
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Assist personnel in identifying complaint classification, priority, urgency, and appropriate service routing.
+                    </p>
                 </div>
-                <div class="bg-cyan-50/80 rounded-2xl p-6 shadow-sm border border-cyan-100">
-                    <div class="text-3xl mb-3">🔧</div>
-                    <h3 class="font-bold text-lg text-slate-800">Smart Routing</h3>
-                    <p class="mt-2 text-sm text-slate-600">Plumber recommendations based on location, workload, and availability.</p>
+
+                <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-lg">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 transition group-hover:bg-cyan-700 group-hover:text-white">
+                        <i class="fa-solid fa-people-group text-lg"></i>
+                    </div>
+
+                    <h3 class="mt-5 text-base font-semibold text-slate-900">
+                        Service Coordination
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Route verified concerns to the appropriate division and coordinate service response when field work is required.
+                    </p>
                 </div>
-                <div class="bg-slate-100/80 rounded-2xl p-6 shadow-sm border border-slate-200">
-                    <div class="text-3xl mb-3">📊</div>
-                    <h3 class="font-bold text-lg text-slate-800">Field Analytics</h3>
-                    <p class="mt-2 text-sm text-slate-600">Real-time status tracking, work orders, and resolution reports.</p>
+
+                <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-lg">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-slate-800 group-hover:text-white">
+                        <i class="fa-solid fa-chart-column text-lg"></i>
+                    </div>
+
+                    <h3 class="mt-5 text-base font-semibold text-slate-900">
+                        Monitoring & Reports
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Monitor complaint progress, service performance, accomplishment records, and operational reporting.
+                    </p>
                 </div>
             </div>
         </div>

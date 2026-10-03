@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceReport;
+use App\Notifications\ComplaintCompleted;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MaintenanceReviewController extends Controller
 {
@@ -186,6 +188,62 @@ class MaintenanceReviewController extends Controller
             ]);
         });
 
+        $complaint = $maintenanceReport->complaint;
+
+        $complaint->load([
+            'consumer.user',
+            'category',
+            'division',
+        ]);
+
+        $emailNotificationSent = false;
+
+        $user = $complaint->consumer?->user;
+
+        if ($user?->email) {
+            try {
+                $user->notify(
+                    new ComplaintCompleted(
+                        $complaint
+                    )
+                );
+
+                $emailNotificationSent = true;
+            } catch (\Throwable $exception) {
+                Log::error(
+                    'Engineering complaint completion email failed.',
+                    [
+                        'complaint_id' =>
+                            $complaint->id,
+
+                        'complaint_no' =>
+                            $complaint->complaint_no,
+
+                        'user_id' =>
+                            $user->id,
+
+                        'email' =>
+                            $user->email,
+
+                        'error' =>
+                            $exception->getMessage(),
+                    ]
+                );
+            }
+        }
+
+        if ($emailNotificationSent) {
+            return redirect()
+                ->route(
+                    'maintenance-manager.maintenance-reviews.show',
+                    $maintenanceReport
+                )
+                ->with(
+                    'success',
+                    'Service accomplishment approved successfully. The complaint is now completed and the consumer has been notified by email.'
+                );
+        }
+
         return redirect()
             ->route(
                 'maintenance-manager.maintenance-reviews.show',
@@ -263,7 +321,7 @@ class MaintenanceReviewController extends Controller
             )
             ->with(
                 'success',
-                'Accomplishment report returned to the technician for correction.'
+                'Accomplishment report returned to the plumber for correction.'
             );
     }
 }

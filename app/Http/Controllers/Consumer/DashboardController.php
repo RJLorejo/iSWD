@@ -7,38 +7,42 @@ use App\Models\Complaint;
 use App\Models\ServiceAnnouncement;
 use Illuminate\Support\Facades\Auth;
 
-
 class DashboardController extends Controller
 {
     public function index()
     {
-
         $consumer = Auth::user()->consumer;
 
         if (!$consumer) {
             abort(403, 'Consumer profile not found.');
         }
 
-        $baseQuery = Complaint::where(
-            'consumer_id',
-            $consumer->id
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | Base Complaint Query
+        |--------------------------------------------------------------------------
+        */
 
-        $activeComplaints = (clone $baseQuery)
-            ->whereIn('status', [
-                'Pending',
-                'Verified',
-                'Assigned',
-                'In Progress',
-            ])
-            ->count();
+        $baseQuery = Complaint::query()
+            ->where('consumer_id', $consumer->id);
 
-        $completedComplaints = (clone $baseQuery)
-            ->whereIn('status', [
-                'Completed',
-                'Closed',
-            ])
-            ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard Statistics
+        |--------------------------------------------------------------------------
+        |
+        | Pending:
+        | Complaint is still in the verification / initial review stage.
+        |
+        | Active:
+        | Complaint/request has moved beyond initial review and is currently
+        | being processed or handled by maintenance.
+        |
+        | Completed:
+        | Work/request has already been completed or closed.
+        |
+        */
 
         $pendingComplaints = (clone $baseQuery)
             ->whereIn('status', [
@@ -47,30 +51,95 @@ class DashboardController extends Controller
             ])
             ->count();
 
+
+        $activeComplaints = (clone $baseQuery)
+            ->whereIn('status', [
+                'CS Processing',
+                'For Maintenance',
+                'Assigned',
+                'In Progress',
+                'Accomplished',
+            ])
+            ->count();
+
+
+        $completedComplaints = (clone $baseQuery)
+            ->whereIn('status', [
+                'Completed',
+                'Closed',
+            ])
+            ->count();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recent Complaints
+        |--------------------------------------------------------------------------
+        */
+
         $recentComplaints = (clone $baseQuery)
             ->with([
+                'division',
                 'category',
-                'technicians',
             ])
-            ->latest()
+            ->latest('created_at')
             ->limit(5)
             ->get();
 
-        $announcements = ServiceAnnouncement::active()
+
+        /*
+        |--------------------------------------------------------------------------
+        | Service Announcements
+        |--------------------------------------------------------------------------
+        */
+
+        $announcements = ServiceAnnouncement::published()
+            ->with([
+                'reads' => function ($query) use ($consumer) {
+
+                    $query->where(
+                        'consumer_id',
+                        $consumer->id
+                    );
+
+                },
+            ])
             ->latest('published_at')
-            ->take(5)
+            ->limit(5)
             ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unread Announcement Count
+        |--------------------------------------------------------------------------
+        */
+
+        $unreadAnnouncementCount = ServiceAnnouncement::published()
+            ->whereDoesntHave(
+                'reads',
+                function ($query) use ($consumer) {
+
+                    $query->where(
+                        'consumer_id',
+                        $consumer->id
+                    );
+
+                }
+            )
+            ->count();
+
 
         return view(
             'consumer.dashboard',
-
             compact(
                 'consumer',
                 'activeComplaints',
-                'completedComplaints',
                 'pendingComplaints',
+                'completedComplaints',
                 'recentComplaints',
-                'announcements'
+                'announcements',
+                'unreadAnnouncementCount'
             )
         );
     }

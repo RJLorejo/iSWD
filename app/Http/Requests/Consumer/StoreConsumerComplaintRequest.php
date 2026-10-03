@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Consumer;
 
+use App\Models\Division;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreConsumerComplaintRequest extends FormRequest
 {
@@ -23,52 +25,44 @@ class StoreConsumerComplaintRequest extends FormRequest
 
     public function rules(): array
     {
+        $engineeringDivision = Division::query()
+            ->where('name', 'Engineering Operation')
+            ->first();
+
+        $isEngineering = $engineeringDivision
+            && (int) $this->input('division_id') === (int) $engineeringDivision->id;
+
         return [
-
-            /*
-            |--------------------------------------------------------------------------
-            | Division
-            |--------------------------------------------------------------------------
-            */
-
             'division_id' => [
                 'required',
                 'integer',
-                'exists:divisions,id',
+                Rule::exists('divisions', 'id')
+                    ->where('is_active', true),
             ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Complaint Type
-            |--------------------------------------------------------------------------
-            */
 
             'complaint_category_id' => [
                 'required',
                 'integer',
-                'exists:complaint_categories,id',
+                Rule::exists('complaint_categories', 'id')
+                    ->where(function ($query) {
+                        $query
+                            ->where('is_active', true)
+                            ->where(
+                                'division_id',
+                                $this->input('division_id')
+                            );
+                    }),
             ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Complaint Information
-            |--------------------------------------------------------------------------
-            */
 
             'description' => [
                 'required',
                 'string',
+                'min:10',
                 'max:5000',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Location
-            |--------------------------------------------------------------------------
-            */
-
             'address' => [
-                'required',
+                $isEngineering ? 'required' : 'nullable',
                 'string',
                 'max:500',
             ],
@@ -91,12 +85,6 @@ class StoreConsumerComplaintRequest extends FormRequest
                 'between:-180,180',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Supporting Photo
-            |--------------------------------------------------------------------------
-            */
-
             'photo' => [
                 'nullable',
                 'image',
@@ -109,27 +97,29 @@ class StoreConsumerComplaintRequest extends FormRequest
     public function messages(): array
     {
         return [
-
             'division_id.required' =>
                 'Please select the division responsible for your concern.',
 
             'division_id.exists' =>
-                'The selected division is invalid.',
+                'The selected division is invalid or inactive.',
 
             'complaint_category_id.required' =>
                 'Please select the type of concern you want to report.',
 
             'complaint_category_id.exists' =>
-                'The selected complaint type is invalid.',
+                'The selected complaint type does not belong to the selected division or is no longer available.',
 
             'description.required' =>
-                'Please describe what happened.',
+                'Please describe your concern.',
+
+            'description.min' =>
+                'Please provide at least 10 characters describing your concern.',
 
             'description.max' =>
                 'The description must not exceed 5,000 characters.',
 
             'address.required' =>
-                'Please provide the location where the problem occurred.',
+                'Please provide the location where the reported concern occurred.',
 
             'address.max' =>
                 'The address must not exceed 500 characters.',
@@ -138,16 +128,16 @@ class StoreConsumerComplaintRequest extends FormRequest
                 'The landmark must not exceed 255 characters.',
 
             'latitude.numeric' =>
-                'The map latitude must be a valid number.',
+                'The selected map location is invalid.',
 
             'latitude.between' =>
-                'The map latitude is outside the valid range.',
+                'The latitude must be between -90 and 90.',
 
             'longitude.numeric' =>
-                'The map longitude must be a valid number.',
+                'The selected map location is invalid.',
 
             'longitude.between' =>
-                'The map longitude is outside the valid range.',
+                'The longitude must be between -180 and 180.',
 
             'photo.image' =>
                 'The uploaded file must be an image.',

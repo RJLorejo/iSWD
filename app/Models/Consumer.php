@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Notifications\Notifiable;
 
 class Consumer extends Model
 {
     use SoftDeletes;
+    use Notifiable;
 
     protected $fillable = [
 
@@ -133,6 +136,11 @@ class Consumer extends Model
         );
     }
 
+    public function feedback()
+    {
+        return $this->hasMany(ComplaintFeedback::class);
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -146,6 +154,26 @@ class Consumer extends Model
             User::class,
             'verified_by'
         );
+    }
+
+    public function announcementReads(): HasMany
+    {
+        return $this->hasMany(
+            AnnouncementRead::class,
+            'consumer_id'
+        );
+    }
+
+    public function readAnnouncements(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ServiceAnnouncement::class,
+            'announcement_reads',
+            'consumer_id',
+            'service_announcement_id'
+        )
+            ->withPivot('read_at')
+            ->withTimestamps();
     }
 
 

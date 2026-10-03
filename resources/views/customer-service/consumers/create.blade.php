@@ -4,40 +4,29 @@
 
 @section('content')
 
-    <div class="space-y-6">
-
-        {{-- ========================================================= --}}
-        {{-- VALIDATION ERRORS --}}
-        {{-- ========================================================= --}}
+    <div class="max-w-7xl mx-auto space-y-5">
 
         @if ($errors->any())
-
-            <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+            <div class="rounded-xl border border-red-200 bg-red-50 p-4">
 
                 <div class="flex items-start gap-3">
 
-                    <div
-                        class="w-9 h-9 rounded-lg
-                               bg-red-100 flex items-center
-                               justify-center shrink-0">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-100">
+
                         <i class="fa-solid fa-circle-exclamation text-red-600"></i>
+
                     </div>
 
+                    <div class="min-w-0">
 
-                    <div>
-
-                        <h3 class="font-semibold text-red-800">
+                        <h3 class="text-sm font-semibold text-red-800">
                             Please correct the following errors:
                         </h3>
 
-                        <ul
-                            class="mt-2 text-sm text-red-700
-                                   list-disc list-inside space-y-1">
+                        <ul class="mt-1.5 list-inside list-disc space-y-0.5 text-sm text-red-700">
 
                             @foreach ($errors->all() as $error)
-                                <li>
-                                    {{ $error }}
-                                </li>
+                                <li>{{ $error }}</li>
                             @endforeach
 
                         </ul>
@@ -47,55 +36,11 @@
                 </div>
 
             </div>
-
         @endif
 
 
-        {{-- ========================================================= --}}
-        {{-- PAGE HEADER --}}
-        {{-- ========================================================= --}}
+        <x-form.page-header title="Register Consumer" subtitle="Register a consumer and create their iSWD online account." />
 
-        <x-form.page-header title="Register Consumer"
-            subtitle="Register a consumer and automatically create their iSWD online account." />
-
-
-        {{-- ========================================================= --}}
-        {{-- INFORMATION --}}
-        {{-- ========================================================= --}}
-
-        <div class="rounded-xl border border-blue-200
-                   bg-blue-50 p-4">
-
-            <div class="flex items-start gap-3">
-
-                <div
-                    class="w-9 h-9 rounded-lg
-                           bg-blue-100 text-blue-600
-                           flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-circle-info"></i>
-                </div>
-
-                <div>
-
-                    <p class="font-medium text-blue-900">
-                        Online account included
-                    </p>
-
-                    <p class="text-sm text-blue-700 mt-1">
-                        A consumer portal account will be created automatically.
-                        After registration, a temporary password will be shown once.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- FORM --}}
-        {{-- ========================================================= --}}
 
         <x-form.card>
 

@@ -27,16 +27,8 @@ class ConsumerController extends Controller
             ]);
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('search')) {
-
             $search = trim($request->search);
-
             $query->where(function ($q) use ($search) {
 
                 $q->where(
@@ -69,13 +61,6 @@ class ConsumerController extends Controller
                         'like',
                         "%{$search}%"
                     )
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Residential Address Search
-                    |--------------------------------------------------------------------------
-                    */
-
                     ->orWhereHas(
                         'address',
                         function ($address) use ($search) {
@@ -117,12 +102,6 @@ class ConsumerController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Status Filter
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('status')) {
 
             $query->where(
@@ -132,50 +111,149 @@ class ConsumerController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pagination
-        |--------------------------------------------------------------------------
-        */
-
         $consumers = $query
-            ->latest()
+            ->latest('created_at')
             ->paginate(10)
             ->withQueryString();
 
+        $totalConsumers = Consumer::count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Statistics
-        |--------------------------------------------------------------------------
-        */
+        $activeConsumers = Consumer::where(
+            'is_active',
+            true
+        )->count();
+
+        $inactiveConsumers = Consumer::where(
+            'is_active',
+            false
+        )->count();
+
+        $todayConsumers = Consumer::whereDate(
+            'created_at',
+            today()
+        )->count();
 
         return view(
             'customer-service.consumers.index',
-            [
-                'consumers' => $consumers,
+            compact(
+                'consumers',
+                'totalConsumers',
+                'activeConsumers',
+                'inactiveConsumers',
+                'todayConsumers'
+            )
+        );
+    }
 
-                'totalConsumers' =>
-                Consumer::count(),
+    /**
+     * Print filtered consumer report.
+     */
+    public function printReport(Request $request)
+    {
+        $query = Consumer::query()
+            ->with([
+                'address',
+                'user',
+            ]);
 
-                'activeConsumers' =>
-                Consumer::where(
-                    'is_active',
-                    true
-                )->count(),
 
-                'inactiveConsumers' =>
-                Consumer::where(
-                    'is_active',
-                    false
-                )->count(),
+        if ($request->filled('search')) {
 
-                'todayConsumers' =>
-                Consumer::whereDate(
-                    'created_at',
-                    today()
-                )->count(),
-            ]
+            $search = trim($request->search);
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where(
+                    'account_number',
+                    'like',
+                    "%{$search}%"
+                )
+                    ->orWhere(
+                        'first_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'middle_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'last_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'phone',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'email',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhereHas(
+                        'address',
+                        function ($address) use ($search) {
+
+                            $address
+                                ->where(
+                                    'house_no',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'street',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'purok',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'barangay',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'municipality',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'province',
+                                    'like',
+                                    "%{$search}%"
+                                );
+                        }
+                    );
+            });
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Status Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('status')) {
+
+            $query->where(
+                'is_active',
+                $request->status
+            );
+        }
+
+        $consumers = $query
+            ->latest('created_at')
+            ->get();
+
+        return view(
+            'customer-service.consumers.print-report',
+            compact('consumers')
         );
     }
 
@@ -202,14 +280,10 @@ class ConsumerController extends Controller
 
 
         /*
-    |--------------------------------------------------------------------------
-    | Generate Temporary Password
-    |--------------------------------------------------------------------------
-    |
-    | This plain password exists only during this request.
-    | Only the hashed version is stored in the users table.
-    |
-    */
+        |--------------------------------------------------------------------------
+        | Generate Temporary Password
+        |--------------------------------------------------------------------------
+        */
 
         $temporaryPassword =
             'SWD@' . Str::upper(
@@ -224,10 +298,10 @@ class ConsumerController extends Controller
             ) {
 
                 /*
-            |--------------------------------------------------------------------------
-            | Create Portal User
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Create Portal User
+                |--------------------------------------------------------------------------
+                */
 
                 $user = User::create([
 
@@ -258,21 +332,9 @@ class ConsumerController extends Controller
                         $temporaryPassword
                     ),
 
-                    /*
-                |--------------------------------------------------------------------------
-                | CS-Created Account Is Immediately Active
-                |--------------------------------------------------------------------------
-                */
-
                     'is_active' => true,
                 ]);
 
-
-                /*
-            |--------------------------------------------------------------------------
-            | Consumer Role
-            |--------------------------------------------------------------------------
-            */
 
                 $user->assignRole(
                     'Consumer'
@@ -280,10 +342,10 @@ class ConsumerController extends Controller
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Create Consumer
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Create Consumer
+                |--------------------------------------------------------------------------
+                */
 
                 $consumer = Consumer::create([
 
@@ -316,16 +378,37 @@ class ConsumerController extends Controller
                     'email' =>
                     $validated['email'],
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | CS-created consumers are already verified
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'verification_status' =>
+                    'Verified',
+
+                    'verified_at' =>
+                    now(),
+
+                    'verified_by' =>
+                    auth()->id(),
+
+                    'verification_reason' =>
+                    null,
+
+                    'registration_source' =>
+                    'Customer Service',
+
                     'is_active' =>
                     true,
                 ]);
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Residential Address
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Registered Service Address
+                |--------------------------------------------------------------------------
+                */
 
                 ConsumerAddress::create([
 
@@ -352,6 +435,18 @@ class ConsumerController extends Controller
 
                     'province' =>
                     $validated['province'],
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Registered Service Coordinates
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'latitude' =>
+                    $validated['latitude'],
+
+                    'longitude' =>
+                    $validated['longitude'],
                 ]);
 
 
@@ -361,13 +456,10 @@ class ConsumerController extends Controller
 
 
         /*
-    |--------------------------------------------------------------------------
-    | Redirect With One-Time Credentials
-    |--------------------------------------------------------------------------
-    |
-    | Do NOT save the plain password to the database.
-    |
-    */
+        |--------------------------------------------------------------------------
+        | Redirect With One-Time Credentials
+        |--------------------------------------------------------------------------
+        */
 
         return redirect()
             ->route(
@@ -398,6 +490,7 @@ class ConsumerController extends Controller
         $consumer->load([
             'address',
             'user',
+            'verifier',
             'complaints.division',
             'complaints.category',
         ]);
@@ -413,9 +506,46 @@ class ConsumerController extends Controller
     /**
      * Show edit form.
      */
+    /**
+     * Show edit form.
+     */
     public function edit(
         Consumer $consumer
     ) {
+        /*
+    |--------------------------------------------------------------------------
+    | Protect Self-Registered Consumers
+    |--------------------------------------------------------------------------
+    |
+    | Customer Service may view self-registered consumers while their
+    | registration is being reviewed, but only the Administrator handles
+    | verification.
+    |
+    | Once the Administrator verifies the registration, Customer Service
+    | may edit the consumer normally.
+    |
+    | Consumers created directly by Customer Service are already verified,
+    | so this restriction does not affect them.
+    |
+    */
+
+        if (
+            $consumer->registration_source === 'Self Registration' &&
+            $consumer->verification_status !== 'Verified'
+        ) {
+            return redirect()
+                ->route(
+                    'customer-service.consumers.show',
+                    $consumer
+                )
+                ->with(
+                    'error',
+                    $consumer->verification_status === 'Rejected'
+                        ? 'This self-registration was rejected. The consumer must correct and resubmit the registration before it can be edited by Customer Service.'
+                        : 'This self-registered consumer is awaiting administrator verification and cannot be edited yet.'
+                );
+        }
+
         $consumer->load([
             'address',
             'user',
@@ -436,6 +566,24 @@ class ConsumerController extends Controller
         UpdateConsumerRequest $request,
         Consumer $consumer
     ) {
+
+
+        if (
+            $consumer->registration_source === 'Self Registration' &&
+            $consumer->verification_status !== 'Verified'
+        ) {
+            return redirect()
+                ->route(
+                    'customer-service.consumers.show',
+                    $consumer
+                )
+                ->with(
+                    'error',
+                    $consumer->verification_status === 'Rejected'
+                        ? 'This self-registration was rejected. The consumer must correct and resubmit the registration before it can be edited by Customer Service.'
+                        : 'This self-registered consumer is awaiting administrator verification and cannot be edited yet.'
+                );
+        }
         $validated =
             $request->validated();
 
@@ -447,10 +595,10 @@ class ConsumerController extends Controller
             ) {
 
                 /*
-            |--------------------------------------------------------------------------
-            | Consumer
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Consumer
+                |--------------------------------------------------------------------------
+                */
 
                 $consumer->update([
 
@@ -486,10 +634,10 @@ class ConsumerController extends Controller
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Residential Address
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Registered Service Address
+                |--------------------------------------------------------------------------
+                */
 
                 $consumer->address()->updateOrCreate(
 
@@ -520,15 +668,26 @@ class ConsumerController extends Controller
                         'province' =>
                         $validated['province'],
 
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Registered Service Coordinates
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'latitude' =>
+                        $validated['latitude'],
+
+                        'longitude' =>
+                        $validated['longitude'],
                     ]
                 );
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Portal Account
-            |--------------------------------------------------------------------------
-            */
+                |--------------------------------------------------------------------------
+                | Portal Account
+                |--------------------------------------------------------------------------
+                */
 
                 if ($consumer->user) {
 
@@ -556,22 +715,16 @@ class ConsumerController extends Controller
                         'email' =>
                         $consumer->email,
 
-                        /*
-                    |--------------------------------------------------------------------------
-                    | Synchronize Active / Inactive
-                    |--------------------------------------------------------------------------
-                    */
-
                         'is_active' =>
                         $consumer->is_active,
                     ]);
 
 
                     /*
-                |--------------------------------------------------------------------------
-                | Reset Password
-                |--------------------------------------------------------------------------
-                */
+                    |--------------------------------------------------------------------------
+                    | Reset Password
+                    |--------------------------------------------------------------------------
+                    */
 
                     if (
                         !empty($validated['new_password'])
@@ -583,7 +736,6 @@ class ConsumerController extends Controller
                             Hash::make(
                                 $validated['new_password']
                             ),
-
                         ]);
                     }
                 }
@@ -612,80 +764,48 @@ class ConsumerController extends Controller
         DB::transaction(
             function () use ($consumer) {
 
-                /*
-            |--------------------------------------------------------------------------
-            | Load Related Records
-            |--------------------------------------------------------------------------
-            */
-
                 $consumer->load([
                     'user',
                     'address',
                 ]);
 
 
-                /*
-            |--------------------------------------------------------------------------
-            | Keep User Reference
-            |--------------------------------------------------------------------------
-            |
-            | Save it before deleting the consumer.
-            |
-            */
-
-                $user = $consumer->user;
+                $user =
+                    $consumer->user;
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Consumer Address
-            |--------------------------------------------------------------------------
-            |
-            | ConsumerAddress does not use SoftDeletes,
-            | so delete() permanently removes it.
-            |
-            */
+                |--------------------------------------------------------------------------
+                | Consumer Address
+                |--------------------------------------------------------------------------
+                */
 
                 if ($consumer->address) {
 
-                    $consumer->address->delete();
+                    $consumer->address
+                        ->delete();
                 }
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Consumer
-            |--------------------------------------------------------------------------
-            |
-            | Consumer uses SoftDeletes.
-            | forceDelete() permanently removes it.
-            |
-            */
+                |--------------------------------------------------------------------------
+                | Consumer
+                |--------------------------------------------------------------------------
+                */
 
                 $consumer->forceDelete();
 
 
                 /*
-            |--------------------------------------------------------------------------
-            | Portal User
-            |--------------------------------------------------------------------------
-            |
-            | User also uses SoftDeletes.
-            | forceDelete() permanently removes it.
-            |
-            */
+                |--------------------------------------------------------------------------
+                | Portal User
+                |--------------------------------------------------------------------------
+                */
 
                 if ($user) {
 
-                    /*
-                 * Remove Spatie role relationships first.
-                 */
                     $user->syncRoles([]);
 
-
-                    /*
-                 * Permanently delete the User.
-                 */
                     $user->forceDelete();
                 }
             }

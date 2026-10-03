@@ -4,216 +4,197 @@
 
 @section('content')
 
-    <div class="space-y-6">
+    <div class="space-y-5">
 
-        {{-- ===================================================== --}}
-        {{-- HEADER --}}
-        {{-- ===================================================== --}}
+        @if (session('success'))
+            <div class="rounded-xl border border-green-200 bg-green-50 p-4">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-check text-green-600"></i>
+                    <p class="text-sm font-medium text-green-800">
+                        {{ session('success') }}
+                    </p>
+                </div>
+            </div>
+        @endif
 
-        <div
-            class="flex flex-col md:flex-row
-                   md:items-center md:justify-between gap-4"
-        >
+        @if (session('error'))
+            <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-exclamation text-red-600"></i>
+                    <p class="text-sm font-medium text-red-800">
+                        {{ session('error') }}
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
             <div>
-
                 <h1 class="text-2xl font-bold text-gray-900">
                     Consumers
                 </h1>
 
-                <p class="text-sm text-gray-500 mt-1">
-                    Manage registered Sagay Water District consumers.
+                <p class="mt-1 text-sm text-gray-500">
+                    Manage registered Sagay Water District consumers and portal access.
                 </p>
-
             </div>
 
-
-            <a
-                href="{{ route('customer-service.consumers.create') }}"
-                class="inline-flex items-center justify-center gap-2
-                       px-5 py-2.5 rounded-xl
-                       bg-gradient-to-r
-                       from-sky-700 via-blue-700 to-cyan-600
-                       text-white font-medium
-                       hover:from-sky-800
-                       hover:via-blue-800
-                       hover:to-cyan-700
-                       transition shadow-sm"
-            >
+            <a href="{{ route('customer-service.consumers.create') }}"
+                class="inline-flex items-center justify-center gap-2 rounded-lg
+                       bg-blue-600 px-4 py-2.5 text-sm font-medium text-white
+                       transition hover:bg-blue-700">
 
                 <i class="fa-solid fa-user-plus"></i>
-
                 Register Consumer
 
             </a>
 
         </div>
 
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 
-        {{-- ===================================================== --}}
-        {{-- FLASH MESSAGES --}}
-        {{-- ===================================================== --}}
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
 
-        @if (session('success'))
+                    <div>
+                        <p class="text-xs font-medium text-gray-500">
+                            Total Consumers
+                        </p>
 
-            <div
-                class="rounded-xl border border-green-200
-                       bg-green-50 p-4"
-            >
+                        <p class="mt-1 text-2xl font-bold text-gray-900">
+                            {{ number_format($totalConsumers) }}
+                        </p>
+                    </div>
 
-                <div class="flex items-center gap-3">
-
-                    <i class="fa-solid fa-circle-check text-green-600"></i>
-
-                    <p class="text-sm font-medium text-green-800">
-                        {{ session('success') }}
-                    </p>
-
-                </div>
-
-            </div>
-
-        @endif
-
-
-        @if (session('error'))
-
-            <div
-                class="rounded-xl border border-red-200
-                       bg-red-50 p-4"
-            >
-
-                <div class="flex items-center gap-3">
-
-                    <i class="fa-solid fa-circle-exclamation text-red-600"></i>
-
-                    <p class="text-sm font-medium text-red-800">
-                        {{ session('error') }}
-                    </p>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
 
                 </div>
-
             </div>
 
-        @endif
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
 
+                    <div>
+                        <p class="text-xs font-medium text-gray-500">
+                            Active
+                        </p>
 
-        {{-- ===================================================== --}}
-        {{-- STATISTICS --}}
-        {{-- ===================================================== --}}
+                        <p class="mt-1 text-2xl font-bold text-gray-900">
+                            {{ number_format($activeConsumers) }}
+                        </p>
+                    </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
 
-            <x-admin.stat-card
-                title="Total Consumers"
-                :value="$totalConsumers"
-                icon="fa-solid fa-users"
-                color="blue"
-            />
+                </div>
+            </div>
 
-            <x-admin.stat-card
-                title="Active Consumers"
-                :value="$activeConsumers"
-                icon="fa-solid fa-circle-check"
-                color="green"
-            />
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
 
-            <x-admin.stat-card
-                title="Inactive Consumers"
-                :value="$inactiveConsumers"
-                icon="fa-solid fa-circle-xmark"
-                color="red"
-            />
+                    <div>
+                        <p class="text-xs font-medium text-gray-500">
+                            Inactive
+                        </p>
 
-            <x-admin.stat-card
-                title="Registered Today"
-                :value="$todayConsumers"
-                icon="fa-solid fa-calendar-day"
-                color="purple"
-            />
+                        <p class="mt-1 text-2xl font-bold text-gray-900">
+                            {{ number_format($inactiveConsumers) }}
+                        </p>
+                    </div>
+
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+
+                    <div>
+                        <p class="text-xs font-medium text-gray-500">
+                            Registered Today
+                        </p>
+
+                        <p class="mt-1 text-2xl font-bold text-gray-900">
+                            {{ number_format($todayConsumers) }}
+                        </p>
+                    </div>
+
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                        <i class="fa-solid fa-calendar-day"></i>
+                    </div>
+
+                </div>
+            </div>
 
         </div>
 
+        {{-- ========================================================= --}}
+        {{-- SEARCH / FILTER --}}
+        {{-- ========================================================= --}}
 
-        {{-- ===================================================== --}}
-        {{-- FILTERS --}}
-        {{-- ===================================================== --}}
+        <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
 
-        <div
-            class="bg-white rounded-2xl
-                   border border-gray-200 shadow-sm"
-        >
+            <form method="GET" class="p-4">
 
-            <form method="GET" class="p-5">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
 
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    {{-- Search --}}
+                    <div class="md:col-span-6">
 
-                    <div class="md:col-span-7">
-
-                        <label
-                            class="block text-sm font-medium
-                                   text-gray-700 mb-2"
-                        >
+                        <label for="search" class="mb-1 block text-sm font-medium text-gray-700">
                             Search Consumer
                         </label>
-
 
                         <div class="relative">
 
                             <i
                                 class="fa-solid fa-magnifying-glass
-                                       absolute left-4 top-1/2
-                                       -translate-y-1/2 text-gray-400"
-                            ></i>
+                               absolute left-3 top-1/2
+                               -translate-y-1/2 text-sm text-gray-400">
+                            </i>
 
-                            <input
-                                type="text"
-                                name="search"
-                                value="{{ request('search') }}"
-                                placeholder="Account number, name, phone, email, address..."
-                                class="w-full pl-11 pr-4 py-2.5
-                                       rounded-xl border-gray-300
-                                       focus:border-blue-500
-                                       focus:ring-blue-500"
-                            >
+                            <input type="text" name="search" id="search" value="{{ request('search') }}"
+                                placeholder="Account number, name, phone, email or address"
+                                class="w-full rounded-lg border-gray-300
+                               py-2 pl-9 pr-3 text-sm
+                               focus:border-blue-500
+                               focus:ring-blue-500">
 
                         </div>
 
                     </div>
 
 
+                    {{-- Status --}}
                     <div class="md:col-span-3">
 
-                        <label
-                            class="block text-sm font-medium
-                                   text-gray-700 mb-2"
-                        >
+                        <label for="status" class="mb-1 block text-sm font-medium text-gray-700">
                             Status
                         </label>
 
-                        <select
-                            name="status"
-                            class="w-full py-2.5 rounded-xl
-                                   border-gray-300
-                                   focus:border-blue-500
-                                   focus:ring-blue-500"
-                        >
+                        <select name="status" id="status"
+                            class="w-full rounded-lg border-gray-300
+                           py-2 text-sm
+                           focus:border-blue-500
+                           focus:ring-blue-500">
 
                             <option value="">
                                 All Consumers
                             </option>
 
-                            <option
-                                value="1"
-                                @selected(request('status') === '1')
-                            >
+                            <option value="1" @selected(request('status') === '1')>
                                 Active
                             </option>
 
-                            <option
-                                value="0"
-                                @selected(request('status') === '0')
-                            >
+                            <option value="0" @selected(request('status') === '0')>
                                 Inactive
                             </option>
 
@@ -222,26 +203,55 @@
                     </div>
 
 
-                    <div class="md:col-span-2 flex items-end">
+                    {{-- Actions --}}
+                    <div class="flex items-end gap-2 md:col-span-3">
 
-                        <button
-                            type="submit"
-                            class="w-full inline-flex
-                                   items-center justify-center gap-2
-                                   py-2.5 rounded-xl
-                                   bg-gradient-to-r
-                                   from-sky-700 via-blue-700 to-cyan-600
-                                   text-white font-medium
-                                   hover:from-sky-800
-                                   hover:via-blue-800
-                                   hover:to-cyan-700 transition"
-                        >
+                        {{-- Filter --}}
+                        <button type="submit"
+                            class="inline-flex flex-1 items-center
+                           justify-center gap-2 rounded-lg
+                           bg-blue-600 px-3 py-2
+                           text-sm font-medium text-white
+                           transition hover:bg-blue-700">
 
                             <i class="fa-solid fa-filter"></i>
 
                             Filter
 
                         </button>
+
+
+                        {{-- Clear --}}
+                        @if (request()->filled('search') || request()->filled('status'))
+                            <a href="{{ route('customer-service.consumers.index') }}"
+                                class="inline-flex h-[38px] w-[38px]
+                               shrink-0 items-center justify-center
+                               rounded-lg border border-gray-300
+                               text-gray-500 transition
+                               hover:bg-gray-50 hover:text-gray-700"
+                                title="Clear filters">
+
+                                <i class="fa-solid fa-xmark"></i>
+
+                            </a>
+                        @endif
+
+
+                        {{-- Print --}}
+                        <a href="{{ route('customer-service.consumers.print-report', request()->only(['search', 'status'])) }}"
+                            target="_blank"
+                            class="inline-flex h-[38px] w-[38px]
+                           shrink-0 items-center justify-center
+                           rounded-lg border border-gray-300
+                           bg-white text-gray-600
+                           transition
+                           hover:bg-gray-50 hover:text-gray-900"
+                            title="Print Consumers">
+
+                            <i class="fa-solid fa-print"></i>
+
+
+                        </a>
 
                     </div>
 
@@ -251,44 +261,31 @@
 
         </div>
 
-
-        {{-- ===================================================== --}}
-        {{-- MOBILE CARDS --}}
-        {{-- ===================================================== --}}
-
-        <div class="lg:hidden space-y-4">
+        <div class="space-y-3 lg:hidden">
 
             @forelse ($consumers as $consumer)
-
-                <div
-                    class="bg-white rounded-2xl
-                           border border-gray-200
-                           shadow-sm p-5"
-                >
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 
                     <div class="flex items-start justify-between gap-3">
 
-                        <div class="flex items-center gap-3 min-w-0">
+                        <div class="flex min-w-0 items-center gap-3">
 
                             <div
-                                class="w-11 h-11 rounded-xl
-                                       bg-blue-100 text-blue-700
-                                       flex items-center justify-center
-                                       shrink-0"
-                            >
+                                class="flex h-10 w-10 shrink-0
+                                       items-center justify-center rounded-lg
+                                       bg-blue-50 text-blue-600">
 
                                 <i class="fa-solid fa-user"></i>
 
                             </div>
 
-
                             <div class="min-w-0">
 
-                                <p class="font-semibold text-gray-900 truncate">
+                                <p class="truncate font-semibold text-gray-900">
                                     {{ $consumer->full_name }}
                                 </p>
 
-                                <p class="text-xs text-gray-500 mt-0.5">
+                                <p class="mt-0.5 text-xs font-medium text-gray-500">
                                     {{ $consumer->account_number }}
                                 </p>
 
@@ -296,145 +293,117 @@
 
                         </div>
 
-
                         @if ($consumer->is_active)
+                            <span
+                                class="inline-flex shrink-0 items-center gap-1
+                                       rounded-full bg-green-50 px-2.5 py-1
+                                       text-xs font-semibold text-green-700">
 
-                            <x-admin.badge color="green">
+                                <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
                                 Active
-                            </x-admin.badge>
 
+                            </span>
                         @else
+                            <span
+                                class="inline-flex shrink-0 items-center gap-1
+                                       rounded-full bg-red-50 px-2.5 py-1
+                                       text-xs font-semibold text-red-700">
 
-                            <x-admin.badge color="red">
+                                <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
                                 Inactive
-                            </x-admin.badge>
 
+                            </span>
                         @endif
 
                     </div>
 
+                    <div class="mt-4 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
 
-                    <div class="mt-5 space-y-3 text-sm">
+                        <div class="flex items-start gap-2.5">
 
-                        <div class="flex items-start gap-3">
-
-                            <i
-                                class="fa-solid fa-phone
-                                       text-gray-400 mt-1 w-4"
-                            ></i>
+                            <i class="fa-solid fa-phone mt-1 w-4 text-xs text-gray-400"></i>
 
                             <span class="text-gray-700">
-                                {{ $consumer->phone }}
+                                {{ $consumer->phone ?: 'No contact number' }}
                             </span>
 
                         </div>
 
+                        <div class="flex min-w-0 items-start gap-2.5">
 
-                        @if ($consumer->email)
+                            <i class="fa-solid fa-envelope mt-1 w-4 text-xs text-gray-400"></i>
 
-                            <div class="flex items-start gap-3">
+                            <span class="min-w-0 break-all text-gray-700">
+                                {{ $consumer->email ?: 'No email address' }}
+                            </span>
 
-                                <i
-                                    class="fa-solid fa-envelope
-                                           text-gray-400 mt-1 w-4"
-                                ></i>
+                        </div>
 
-                                <span class="text-gray-700 break-all">
-                                    {{ $consumer->email }}
-                                </span>
+                        <div class="flex items-start gap-2.5">
 
-                            </div>
-
-                        @endif
-
-
-                        <div class="flex items-start gap-3">
-
-                            <i
-                                class="fa-solid fa-location-dot
-                                       text-gray-400 mt-1 w-4"
-                            ></i>
+                            <i class="fa-solid fa-location-dot mt-1 w-4 text-xs text-gray-400"></i>
 
                             <span class="text-gray-700">
 
                                 @if ($consumer->address)
-
-                                    {{ $consumer->address->barangay }},
-                                    {{ $consumer->address->municipality }},
-                                    {{ $consumer->address->province }}
-
+                                    {{ collect([$consumer->address->barangay, $consumer->address->municipality, $consumer->address->province])->filter()->implode(', ') ?:
+                                        'No address recorded' }}
                                 @else
-
                                     No address recorded
-
                                 @endif
 
                             </span>
 
                         </div>
 
+                        <div class="flex items-start gap-2.5">
 
-                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-globe mt-1 w-4 text-xs text-gray-400"></i>
 
-                            <i
-                                class="fa-solid fa-globe
-                                       text-gray-400 mt-1 w-4"
-                            ></i>
-
-                            <span class="text-gray-700">
-
-                                {{ $consumer->user
-                                    ? 'Portal Account Active'
-                                    : 'Offline Consumer' }}
-
-                            </span>
+                            @if ($consumer->user && $consumer->user->is_active)
+                                <span class="font-medium text-green-600">
+                                    Portal Active
+                                </span>
+                            @elseif ($consumer->user)
+                                <span class="font-medium text-red-600">
+                                    Portal Inactive
+                                </span>
+                            @else
+                                <span class="font-medium text-amber-600">
+                                    Account Missing
+                                </span>
+                            @endif
 
                         </div>
 
                     </div>
 
+                    <div class="mt-4 flex gap-2 border-t border-gray-100 pt-3">
 
-                    <div
-                        class="mt-5 pt-4 border-t border-gray-100
-                               flex items-center gap-2"
-                    >
-
-                        <a
-                            href="{{ route(
-                                'customer-service.consumers.show',
-                                $consumer
-                            ) }}"
-                            class="flex-1 inline-flex items-center
-                                   justify-center gap-2
-                                   py-2.5 rounded-xl
-                                   bg-blue-50 text-blue-700
-                                   hover:bg-blue-100"
-                        >
+                        <a href="{{ route('customer-service.consumers.show', $consumer) }}"
+                            class="inline-flex flex-1 items-center justify-center gap-2
+                                   rounded-lg bg-blue-50 py-2
+                                   text-sm font-medium text-blue-700
+                                   transition hover:bg-blue-100">
 
                             <i class="fa-solid fa-eye"></i>
-
                             View
 
                         </a>
 
+                        @if ($consumer->registration_source !== 'Self Registration' || $consumer->verification_status === 'Verified')
+                            <a href="{{ route('customer-service.consumers.edit', $consumer) }}"
+                                class="inline-flex flex-1 items-center justify-center gap-2
+               rounded-lg bg-amber-50 py-2
+               text-sm font-medium text-amber-700
+               transition hover:bg-amber-100">
 
-                        <a
-                            href="{{ route(
-                                'customer-service.consumers.edit',
-                                $consumer
-                            ) }}"
-                            class="flex-1 inline-flex items-center
-                                   justify-center gap-2
-                                   py-2.5 rounded-xl
-                                   bg-amber-50 text-amber-700
-                                   hover:bg-amber-100"
-                        >
+                                <i class="fa-solid fa-pen-to-square"></i>
 
-                            <i class="fa-solid fa-pen-to-square"></i>
+                                Edit
 
-                            Edit
-
-                        </a>
+                            </a>
+                        @endif
 
                     </div>
 
@@ -442,61 +411,51 @@
 
             @empty
 
-                <div
-                    class="bg-white rounded-2xl border
-                           border-gray-200 p-10 text-center"
-                >
+                <div class="rounded-xl border border-gray-200 bg-white p-8 text-center">
 
-                    <i class="fa-solid fa-users text-3xl text-gray-300"></i>
+                    <div
+                        class="mx-auto flex h-12 w-12 items-center
+                               justify-center rounded-xl bg-gray-50 text-gray-300">
 
-                    <h3 class="font-semibold text-gray-900 mt-4">
+                        <i class="fa-solid fa-users text-xl"></i>
+
+                    </div>
+
+                    <h3 class="mt-3 font-semibold text-gray-900">
                         No consumers found
                     </h3>
 
-                    <p class="text-sm text-gray-500 mt-1">
-                        Try changing your filters or register a new consumer.
+                    <p class="mt-1 text-sm text-gray-500">
+                        Try changing your search or filter.
                     </p>
 
                 </div>
-
             @endforelse
 
         </div>
 
-
-        {{-- ===================================================== --}}
-        {{-- DESKTOP TABLE --}}
-        {{-- ===================================================== --}}
-
         <div
-            class="hidden lg:block bg-white rounded-2xl
-                   border border-gray-200
-                   shadow-sm overflow-hidden"
-        >
+            class="hidden overflow-hidden rounded-xl border
+                   border-gray-200 bg-white shadow-sm lg:block">
 
-            <div
-                class="px-6 py-5 border-b border-gray-200
-                       flex items-center justify-between"
-            >
+            <div class="flex items-center justify-between
+                       border-b border-gray-200 px-5 py-4">
 
                 <div>
-
                     <h2 class="font-semibold text-gray-900">
                         Registered Consumers
                     </h2>
 
-                    <p class="text-sm text-gray-500 mt-1">
+                    <p class="mt-0.5 text-xs text-gray-500">
                         Consumer records registered in the system.
                     </p>
-
                 </div>
 
-                <span class="text-sm text-gray-500">
-                    {{ $consumers->total() }} records
+                <span class="text-xs font-medium text-gray-500">
+                    {{ number_format($consumers->total()) }} records
                 </span>
 
             </div>
-
 
             <div class="overflow-x-auto">
 
@@ -507,58 +466,44 @@
                         <tr>
 
                             <th
-                                class="px-6 py-4 text-left
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
+                                class="px-5 py-3 text-left
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-gray-500">
                                 Consumer
                             </th>
 
                             <th
-                                class="px-6 py-4 text-left
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
+                                class="px-5 py-3 text-left
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-gray-500">
                                 Account
                             </th>
 
                             <th
-                                class="px-6 py-4 text-left
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
-                                Location
-                            </th>
-
-                            <th
-                                class="px-6 py-4 text-left
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
+                                class="px-5 py-3 text-left
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-gray-500">
                                 Contact
                             </th>
 
                             <th
-                                class="px-6 py-4 text-left
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
-                                Portal
+                                class="px-5 py-3 text-left
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-gray-500">
+                                Location
                             </th>
 
                             <th
-                                class="px-6 py-4 text-left
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
+                                class="px-5 py-3 text-left
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-gray-500">
                                 Status
                             </th>
 
                             <th
-                                class="px-6 py-4 text-right
-                                       text-xs font-semibold
-                                       text-gray-500 uppercase"
-                            >
+                                class="px-5 py-3 text-right
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-gray-500">
                                 Actions
                             </th>
 
@@ -566,198 +511,188 @@
 
                     </thead>
 
-
                     <tbody class="divide-y divide-gray-100">
 
                         @forelse ($consumers as $consumer)
+                            <tr class="transition hover:bg-gray-50">
 
-                            <tr class="hover:bg-gray-50">
+                                <td class="px-5 py-3.5">
 
-                                <td class="px-6 py-4">
-
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-start gap-3">
 
                                         <div
-                                            class="w-10 h-10 rounded-xl
-                                                   bg-blue-100 text-blue-700
-                                                   flex items-center justify-center
-                                                   shrink-0"
-                                        >
+                                            class="flex h-9 w-9 shrink-0
+                   items-center justify-center
+                   rounded-lg bg-blue-50 text-blue-600">
 
-                                            <i class="fa-solid fa-user"></i>
+                                            <i class="fa-solid fa-user text-sm"></i>
 
                                         </div>
 
+                                        <div class="min-w-0">
 
-                                        <p class="font-semibold text-gray-900">
-                                            {{ $consumer->full_name }}
-                                        </p>
+                                            {{-- Consumer Name --}}
+                                            <p class="font-medium text-gray-900">
+                                                {{ $consumer->full_name }}
+                                            </p>
+
+
+                                            {{-- Email --}}
+                                            @if ($consumer->email)
+                                                <p
+                                                    class="mt-0.5 max-w-[220px]
+                          truncate text-xs text-gray-500">
+
+                                                    {{ $consumer->email }}
+
+                                                </p>
+                                            @endif
+
+
+                                            {{-- Portal Status --}}
+                                            <div class="mt-1.5">
+
+                                                @if ($consumer->user && $consumer->user->is_active)
+                                                    <span
+                                                        class="inline-flex items-center gap-1
+                               text-[10px] font-medium text-green-600">
+
+                                                        <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+
+                                                        Portal Active
+
+                                                    </span>
+                                                @elseif ($consumer->user)
+                                                    <span
+                                                        class="inline-flex items-center gap-1
+                               text-[10px] font-medium text-red-600">
+
+                                                        <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+
+                                                        Portal Inactive
+
+                                                    </span>
+                                                @else
+                                                    <span
+                                                        class="inline-flex items-center gap-1
+                               text-[10px] font-medium text-amber-600">
+
+                                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+
+                                                        Portal Missing
+
+                                                    </span>
+                                                @endif
+
+                                            </div>
+
+                                        </div>
 
                                     </div>
 
                                 </td>
 
+                                <td class="whitespace-nowrap px-5 py-3.5">
 
-                                <td class="px-6 py-4">
-
-                                    <p class="text-sm font-medium text-gray-900">
+                                    <span class="text-sm font-medium text-gray-800">
                                         {{ $consumer->account_number }}
+                                    </span>
+
+                                </td>
+
+                                <td class="whitespace-nowrap px-5 py-3.5">
+
+                                    <p class="text-sm text-gray-700">
+                                        {{ $consumer->phone ?: '—' }}
                                     </p>
 
                                 </td>
 
-
-                                <td class="px-6 py-4">
+                                <td class="px-5 py-3.5">
 
                                     @if ($consumer->address)
-
-                                        <p class="text-sm text-gray-900">
-                                            {{ $consumer->address->barangay }}
+                                        <p class="text-sm text-gray-800">
+                                            {{ $consumer->address->barangay ?: '—' }}
                                         </p>
 
-                                        <p class="text-xs text-gray-500 mt-1">
-
-                                            {{ $consumer->address->municipality }},
-                                            {{ $consumer->address->province }}
-
+                                        <p class="mt-0.5 text-xs text-gray-500">
+                                            {{ collect([$consumer->address->municipality, $consumer->address->province])->filter()->implode(', ') }}
                                         </p>
-
                                     @else
-
                                         <span class="text-sm text-gray-400">
                                             No address
                                         </span>
-
                                     @endif
 
                                 </td>
 
 
-                                <td class="px-6 py-4">
-
-                                    <p class="text-sm text-gray-700">
-                                        {{ $consumer->phone }}
-                                    </p>
-
-                                    @if ($consumer->email)
-
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            {{ $consumer->email }}
-                                        </p>
-
-                                    @endif
-
-                                </td>
-
-
-                                <td class="px-6 py-4">
-
-                                    @if ($consumer->user)
-
-                                        <x-admin.badge color="green">
-                                            Portal Active
-                                        </x-admin.badge>
-
-                                    @else
-
-                                        <x-admin.badge color="gray">
-                                            Offline
-                                        </x-admin.badge>
-
-                                    @endif
-
-                                </td>
-
-
-                                <td class="px-6 py-4">
+                                <td class="whitespace-nowrap px-5 py-3.5">
 
                                     @if ($consumer->is_active)
+                                        <span
+                                            class="inline-flex items-center gap-1.5
+                                                   rounded-full bg-green-50 px-2.5 py-1
+                                                   text-xs font-semibold text-green-700">
 
-                                        <x-admin.badge color="green">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
                                             Active
-                                        </x-admin.badge>
 
+                                        </span>
                                     @else
+                                        <span
+                                            class="inline-flex items-center gap-1.5
+                                                   rounded-full bg-red-50 px-2.5 py-1
+                                                   text-xs font-semibold text-red-700">
 
-                                        <x-admin.badge color="red">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
                                             Inactive
-                                        </x-admin.badge>
 
+                                        </span>
                                     @endif
 
                                 </td>
 
+                                <td class="whitespace-nowrap px-5 py-3.5">
 
-                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-end gap-1.5">
 
-                                    <div
-                                        class="flex items-center
-                                               justify-end gap-2"
-                                    >
+                                        <a href="{{ route('customer-service.consumers.show', $consumer) }}"
+                                            class="inline-flex h-8 w-8 items-center justify-center
+                                                   rounded-lg bg-blue-50 text-blue-600
+                                                   transition hover:bg-blue-100"
+                                            title="View Consumer">
 
-                                        <a
-                                            href="{{ route(
-                                                'customer-service.consumers.show',
-                                                $consumer
-                                            ) }}"
-                                            class="w-9 h-9 rounded-lg
-                                                   inline-flex items-center
-                                                   justify-center
-                                                   bg-blue-50 text-blue-600
-                                                   hover:bg-blue-100"
-                                            title="View Consumer"
-                                        >
-
-                                            <i class="fa-solid fa-eye"></i>
+                                            <i class="fa-solid fa-eye text-xs"></i>
 
                                         </a>
 
+                                        @if ($consumer->registration_source !== 'Self Registration' || $consumer->verification_status === 'Verified')
+                                            <a href="{{ route('customer-service.consumers.edit', $consumer) }}"
+                                                class="inline-flex h-8 w-8 items-center justify-center
+               rounded-lg bg-amber-50 text-amber-600
+               transition hover:bg-amber-100"
+                                                title="Edit Consumer">
 
-                                        <a
-                                            href="{{ route(
-                                                'customer-service.consumers.edit',
-                                                $consumer
-                                            ) }}"
-                                            class="w-9 h-9 rounded-lg
-                                                   inline-flex items-center
-                                                   justify-center
-                                                   bg-amber-50 text-amber-600
-                                                   hover:bg-amber-100"
-                                            title="Edit Consumer"
-                                        >
+                                                <i class="fa-solid fa-pen-to-square text-xs"></i>
 
-                                            <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                        @endif
 
-                                        </a>
-
-
-                                        <form
-                                            action="{{ route(
-                                                'customer-service.consumers.destroy',
-                                                $consumer
-                                            ) }}"
+                                        <form action="{{ route('customer-service.consumers.destroy', $consumer) }}"
                                             method="POST"
-                                            onsubmit="
-                                                return confirm(
-                                                    'Are you sure you want to delete this consumer?'
-                                                );
-                                            "
-                                        >
+                                            onsubmit="return confirm('Permanently delete this consumer account? This action cannot be undone.');">
 
                                             @csrf
                                             @method('DELETE')
 
-                                            <button
-                                                type="submit"
-                                                class="w-9 h-9 rounded-lg
-                                                       inline-flex items-center
-                                                       justify-center
-                                                       bg-red-50 text-red-600
-                                                       hover:bg-red-100"
-                                                title="Delete Consumer"
-                                            >
+                                            <button type="submit"
+                                                class="inline-flex h-8 w-8 items-center justify-center
+                                                       rounded-lg bg-red-50 text-red-600
+                                                       transition hover:bg-red-100"
+                                                title="Delete Consumer">
 
-                                                <i class="fa-solid fa-trash"></i>
+                                                <i class="fa-solid fa-trash text-xs"></i>
 
                                             </button>
 
@@ -773,24 +708,28 @@
 
                             <tr>
 
-                                <td
-                                    colspan="7"
-                                    class="px-6 py-16 text-center"
-                                >
+                                <td colspan="6" class="px-6 py-12 text-center">
 
-                                    <i
-                                        class="fa-solid fa-users
-                                               text-3xl text-gray-300"
-                                    ></i>
+                                    <div
+                                        class="mx-auto flex h-12 w-12 items-center
+                                               justify-center rounded-xl
+                                               bg-gray-50 text-gray-300">
 
-                                    <h3 class="font-semibold text-gray-900 mt-4">
+                                        <i class="fa-solid fa-users text-xl"></i>
+
+                                    </div>
+
+                                    <h3 class="mt-3 font-semibold text-gray-900">
                                         No consumers found
                                     </h3>
+
+                                    <p class="mt-1 text-sm text-gray-500">
+                                        Try changing your search or filter.
+                                    </p>
 
                                 </td>
 
                             </tr>
-
                         @endforelse
 
                     </tbody>
@@ -801,14 +740,10 @@
 
         </div>
 
-
-        {{-- Pagination --}}
         @if ($consumers->hasPages())
-
             <div>
-                {{ $consumers->links() }}
+                {{ $consumers->withQueryString()->links() }}
             </div>
-
         @endif
 
     </div>

@@ -4,97 +4,48 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
-    /**
-     * Determine the correct layout based on the authenticated user's role.
-     */
     private function profileLayout(): string
     {
         $user = Auth::user();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Administrator
-        |--------------------------------------------------------------------------
-        |
-        | IMPORTANT:
-        | Your actual Spatie role is "Administrator", not "Admin".
-        |
-        */
 
         if ($user->hasRole('Administrator')) {
             return 'admin.layouts.app';
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Maintenance Manager
-        |--------------------------------------------------------------------------
-        */
-
         if ($user->hasRole('Maintenance Manager')) {
             return 'maintenance-manager.layouts.app';
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Maintenance Technician
-        |--------------------------------------------------------------------------
-        */
 
         if ($user->hasRole('Maintenance Technician')) {
             return 'technician.layouts.app';
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Customer Service
-        |--------------------------------------------------------------------------
-        */
-
         if ($user->hasRole('Customer Service')) {
             return 'customer-service.layouts.app';
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Consumer
-        |--------------------------------------------------------------------------
-        */
 
         if ($user->hasRole('Consumer')) {
             return 'consumer.layouts.app';
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Fallback
-        |--------------------------------------------------------------------------
-        */
-
         return 'layouts.app';
     }
 
-
-    /**
-     * Display authenticated user's profile.
-     */
     public function show()
     {
         $user = Auth::user()->load([
             'department',
             'position',
             'roles',
+            'consumer.address',
         ]);
 
         $layout = $this->profileLayout();
@@ -108,16 +59,13 @@ class ProfileController extends Controller
         );
     }
 
-
-    /**
-     * Display edit profile page.
-     */
     public function edit()
     {
         $user = Auth::user()->load([
             'department',
             'position',
             'roles',
+            'consumer.address',
         ]);
 
         $layout = $this->profileLayout();
@@ -131,16 +79,11 @@ class ProfileController extends Controller
         );
     }
 
-
-    /**
-     * Update authenticated user's profile.
-     */
     public function update(Request $request)
     {
         $user = Auth::user();
 
         $validated = $request->validate([
-
             'first_name' => [
                 'required',
                 'string',
@@ -169,11 +112,8 @@ class ProfileController extends Controller
                 'required',
                 'email',
                 'max:255',
-
-                Rule::unique(
-                    'users',
-                    'email'
-                )->ignore($user->id),
+                Rule::unique('users', 'email')
+                    ->ignore($user->id),
             ],
 
             'phone' => [
@@ -190,51 +130,102 @@ class ProfileController extends Controller
             ],
         ]);
 
+        $validated['first_name'] = trim(
+            $validated['first_name']
+        );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Avatar
-        |--------------------------------------------------------------------------
-        */
+        $validated['middle_name'] = !empty(
+            $validated['middle_name']
+        )
+            ? trim($validated['middle_name'])
+            : null;
+
+        $validated['last_name'] = trim(
+            $validated['last_name']
+        );
+
+        $validated['suffix'] = !empty(
+            $validated['suffix']
+        )
+            ? trim($validated['suffix'])
+            : null;
+
+        $validated['email'] = strtolower(
+            trim($validated['email'])
+        );
+
+        $validated['phone'] = !empty(
+            $validated['phone']
+        )
+            ? trim($validated['phone'])
+            : null;
+
+        $oldAvatar = $user->avatar;
+        $newAvatar = null;
 
         if ($request->hasFile('avatar')) {
-
-            /*
-             * Delete old avatar.
-             */
-
-            if ($user->avatar) {
-
-                Storage::disk('public')
-                    ->delete(
-                        $user->avatar
-                    );
-            }
-
-
-            /*
-             * Store new avatar.
-             */
-
-            $validated['avatar'] = $request
+            $newAvatar = $request
                 ->file('avatar')
                 ->store(
                     'avatars',
                     'public'
                 );
+
+            $validated['avatar'] = $newAvatar;
         }
 
+        try {
+            DB::transaction(function () use (
+                $user,
+                $validated
+            ) {
+                $user->update($validated);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update User
-        |--------------------------------------------------------------------------
-        */
+                $consumer = $user->consumer;
 
-        $user->update(
-            $validated
-        );
+                if ($consumer) {
+                    $consumer->update([
+                        'first_name' =>
+                            $validated['first_name'],
 
+                        'middle_name' =>
+                            $validated['middle_name'],
+
+                        'last_name' =>
+                            $validated['last_name'],
+
+                        'suffix' =>
+                            $validated['suffix'],
+
+                        'email' =>
+                            $validated['email'],
+
+                        'phone' =>
+                            $validated['phone'],
+                    ]);
+                }
+            });
+        } catch (\Throwable $exception) {
+            if (
+                $newAvatar &&
+                Storage::disk('public')->exists($newAvatar)
+            ) {
+                Storage::disk('public')
+                    ->delete($newAvatar);
+            }
+
+            throw $exception;
+        }
+
+        if (
+            $newAvatar &&
+            $oldAvatar &&
+            $oldAvatar !== $newAvatar &&
+            Storage::disk('public')->exists($oldAvatar)
+        ) {
+            Storage::disk('public')
+                ->delete($oldAvatar);
+        }
 
         return redirect()
             ->route('profile.show')
@@ -244,14 +235,11 @@ class ProfileController extends Controller
             );
     }
 
-
-    /**
-     * Update authenticated user's password.
-     */
     public function updatePassword(Request $request)
     {
-        $validated = $request->validate([
+        $user = Auth::user();
 
+        $validated = $request->validate([
             'current_password' => [
                 'required',
                 'string',
@@ -261,19 +249,12 @@ class ProfileController extends Controller
                 'required',
                 'string',
                 'confirmed',
-                'min:8',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers(),
             ],
         ]);
-
-
-        $user = Auth::user();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Verify Current Password
-        |--------------------------------------------------------------------------
-        */
 
         if (
             !Hash::check(
@@ -281,20 +262,12 @@ class ProfileController extends Controller
                 $user->password
             )
         ) {
-
             return back()
                 ->withErrors([
                     'current_password' =>
-                    'Current password is incorrect.',
+                        'Current password is incorrect.',
                 ]);
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Update Password
-        |--------------------------------------------------------------------------
-        */
 
         $user->update([
             'password' => Hash::make(
@@ -302,8 +275,8 @@ class ProfileController extends Controller
             ),
         ]);
 
-
-        return back()
+        return redirect()
+            ->route('profile.show')
             ->with(
                 'success',
                 'Password updated successfully.'

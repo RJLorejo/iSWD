@@ -66,24 +66,24 @@ class RegisterController extends Controller
                 'employee_id' => null,
 
                 'first_name' =>
-                    $validated['first_name'],
+                $validated['first_name'],
 
                 'middle_name' =>
-                    $validated['middle_name']
+                $validated['middle_name']
                     ?? null,
 
                 'last_name' =>
-                    $validated['last_name'],
+                $validated['last_name'],
 
                 'suffix' =>
-                    $validated['suffix']
+                $validated['suffix']
                     ?? null,
 
                 'email' =>
-                    $validated['email'],
+                $validated['email'],
 
                 'phone' =>
-                    $validated['phone'],
+                $validated['phone'],
 
                 /*
                  * User model has:
@@ -94,7 +94,7 @@ class RegisterController extends Controller
                  */
 
                 'password' =>
-                    $validated['password'],
+                $validated['password'],
 
                 /*
                  * Pending registrations must remain inactive.
@@ -128,10 +128,10 @@ class RegisterController extends Controller
                 */
 
                 'account_number' =>
-                    $validated['account_number'],
+                $validated['account_number'],
 
                 'user_id' =>
-                    $user->id,
+                $user->id,
 
 
                 /*
@@ -141,21 +141,21 @@ class RegisterController extends Controller
                 */
 
                 'first_name' =>
-                    $validated['first_name'],
+                $validated['first_name'],
 
                 'middle_name' =>
-                    $validated['middle_name']
+                $validated['middle_name']
                     ?? null,
 
                 'last_name' =>
-                    $validated['last_name'],
+                $validated['last_name'],
 
                 'suffix' =>
-                    $validated['suffix']
+                $validated['suffix']
                     ?? null,
 
                 'sex' =>
-                    $validated['sex'],
+                $validated['sex'],
 
 
                 /*
@@ -165,10 +165,10 @@ class RegisterController extends Controller
                 */
 
                 'phone' =>
-                    $validated['phone'],
+                $validated['phone'],
 
                 'email' =>
-                    $validated['email'],
+                $validated['email'],
 
 
                 /*
@@ -190,16 +190,16 @@ class RegisterController extends Controller
                 */
 
                 'verification_status' =>
-                    'Pending Verification',
+                'Pending Verification',
 
                 'verified_at' =>
-                    null,
+                null,
 
                 'verified_by' =>
-                    null,
+                null,
 
                 'verification_reason' =>
-                    null,
+                null,
 
 
                 /*
@@ -209,10 +209,10 @@ class RegisterController extends Controller
                 */
 
                 'email_verified_at' =>
-                    null,
+                null,
 
                 'phone_verified_at' =>
-                    null,
+                null,
 
 
                 /*
@@ -222,7 +222,7 @@ class RegisterController extends Controller
                 */
 
                 'registration_source' =>
-                    'Self Registration',
+                'Self Registration',
 
 
                 /*
@@ -235,7 +235,7 @@ class RegisterController extends Controller
                 */
 
                 'is_active' =>
-                    false,
+                false,
             ]);
 
 
@@ -248,28 +248,40 @@ class RegisterController extends Controller
             ConsumerAddress::create([
 
                 'consumer_id' =>
-                    $consumer->id,
+                $consumer->id,
 
                 'house_no' =>
-                    $validated['house_no']
+                $validated['house_no']
                     ?? null,
 
                 'street' =>
-                    $validated['street']
+                $validated['street']
                     ?? null,
 
                 'purok' =>
-                    $validated['purok']
+                $validated['purok']
                     ?? null,
 
                 'barangay' =>
-                    $validated['barangay'],
+                $validated['barangay'],
 
                 'municipality' =>
-                    'Sagay',
+                'Sagay',
 
                 'province' =>
-                    'Negros Occidental',
+                'Negros Occidental',
+
+                /*
+    |--------------------------------------------------------------------------
+    | Registered Water Service Location
+    |--------------------------------------------------------------------------
+    */
+
+                'latitude' =>
+                $validated['latitude'],
+
+                'longitude' =>
+                $validated['longitude'],
             ]);
         });
 

@@ -51,6 +51,7 @@ class RegistrationStatusController extends Controller
 
         $consumer = $user->consumer()
             ->with('address')
+
             ->firstOrFail();
 
         abort_unless(
@@ -168,6 +169,12 @@ class RegistrationStatusController extends Controller
 
                         'province' =>
                         'Negros Occidental',
+
+                        'latitude' =>
+                        $validated['latitude'],
+
+                        'longitude' =>
+                        $validated['longitude'],
                     ]
                 );
         });

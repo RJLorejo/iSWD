@@ -73,14 +73,11 @@ class StoreConsumerRequest extends FormRequest
                 'max:20',
             ],
 
+
             /*
             |--------------------------------------------------------------------------
             | Portal Login Email
             |--------------------------------------------------------------------------
-            |
-            | Every consumer created by Customer Service now receives
-            | an online portal account.
-            |
             */
 
             'email' => [
@@ -88,12 +85,6 @@ class StoreConsumerRequest extends FormRequest
                 'email',
                 'max:255',
 
-                /*
-                 * Do NOT exclude soft-deleted users here.
-                 *
-                 * The database unique constraint still sees those rows,
-                 * so validation must also see them.
-                 */
                 Rule::unique(
                     'users',
                     'email'
@@ -103,7 +94,7 @@ class StoreConsumerRequest extends FormRequest
 
             /*
             |--------------------------------------------------------------------------
-            | Residential Address
+            | Registered Service Address
             |--------------------------------------------------------------------------
             */
 
@@ -143,6 +134,24 @@ class StoreConsumerRequest extends FormRequest
                 'max:255',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Registered Service Coordinates
+            |--------------------------------------------------------------------------
+            */
+
+            'latitude' => [
+                'required',
+                'numeric',
+                'between:-90,90',
+            ],
+
+            'longitude' => [
+                'required',
+                'numeric',
+                'between:-180,180',
+            ],
         ];
     }
 
@@ -189,6 +198,31 @@ class StoreConsumerRequest extends FormRequest
 
             'province.required' =>
                 'Please enter the province.',
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Map Location
+            |--------------------------------------------------------------------------
+            */
+
+            'latitude.required' =>
+                'Please select the registered water service location on the map.',
+
+            'latitude.numeric' =>
+                'The selected service location is invalid.',
+
+            'latitude.between' =>
+                'The selected latitude is invalid.',
+
+            'longitude.required' =>
+                'Please select the registered water service location on the map.',
+
+            'longitude.numeric' =>
+                'The selected service location is invalid.',
+
+            'longitude.between' =>
+                'The selected longitude is invalid.',
         ];
     }
 }

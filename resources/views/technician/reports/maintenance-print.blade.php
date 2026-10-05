@@ -1,450 +1,374 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.report')
 
-<head>
+@section('title', 'Technician Work Summary')
 
-    <meta charset="UTF-8">
+@section('report-title', 'Technician Work Summary')
 
-    <title>Technician Work Summary</title>
+@section(
+    'report-subtitle',
+    'Field Maintenance Accomplishment Summary'
+)
+
+@section('report-period')
+    Reporting Period:
+    {{ $from->format('F d, Y') }}
+    —
+    {{ $to->format('F d, Y') }}
+@endsection
+
+@section('prepared-by-name')
+    {{ auth()->user()->full_name
+        ?? auth()->user()->name
+        ?? 'N/A' }}
+@endsection
+
+@section('prepared-by-role', 'Maintenance Technician')
+
+
+@push('styles')
 
     <style>
-        * {
-            box-sizing: border-box;
+
+        .work-summary-cards {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 4mm;
+            margin-bottom: 5mm;
         }
 
-        body {
-            font-family: Arial, sans-serif;
+        .work-summary-card {
+            border: 1px solid #d1d5db;
+            padding: 3mm 4mm;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .work-summary-label {
+            color: #6b7280;
+            font-size: 7pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .work-summary-value {
+            margin-top: 1mm;
             color: #111827;
-            margin: 36px;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        h1,
-        h2,
-        p {
-            margin-top: 0;
-        }
-
-        .no-print {
-            margin-bottom: 20px;
-        }
-
-        .print-button {
-            padding: 10px 18px;
-            background: #2563eb;
-            color: #ffffff;
-            border: 0;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .header {
-            border-bottom: 2px solid #111827;
-            padding-bottom: 16px;
-            margin-bottom: 20px;
-        }
-
-        .header-top {
-            display: table;
-            width: 100%;
-        }
-
-        .header-left,
-        .header-right {
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .header-right {
-            text-align: right;
-        }
-
-        .header h1 {
-            margin-bottom: 5px;
-            font-size: 23px;
-        }
-
-        .organization {
+            font-size: 14pt;
             font-weight: 700;
-            margin-bottom: 2px;
+            line-height: 1.2;
         }
 
-        .muted {
-            color: #6b7280;
+        .technician-work-table th:nth-child(1),
+        .technician-work-table td:nth-child(1) {
+            width: 19%;
         }
 
-        .technician {
-            font-weight: 700;
-            font-size: 13px;
-            margin-bottom: 3px;
+        .technician-work-table th:nth-child(2),
+        .technician-work-table td:nth-child(2) {
+            width: 22%;
         }
 
-        .summary {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-            border-spacing: 10px 0;
-            margin: 22px -10px;
+        .technician-work-table th:nth-child(3),
+        .technician-work-table td:nth-child(3) {
+            width: 24%;
         }
 
-        .summary-box {
-            display: table-cell;
-            border: 1px solid #d1d5db;
-            padding: 14px;
-            vertical-align: top;
+        .technician-work-table th:nth-child(4),
+        .technician-work-table td:nth-child(4) {
+            width: 13%;
         }
 
-        .summary-label {
-            color: #6b7280;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        .summary-value {
-            font-size: 22px;
-            font-weight: bold;
-            margin-top: 4px;
-        }
-
-        .section-title {
-            margin-top: 28px;
-            margin-bottom: 4px;
-            font-size: 16px;
-        }
-
-        .section-description {
-            color: #6b7280;
-            margin-bottom: 12px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            border: 1px solid #d1d5db;
-            padding: 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        th {
-            background: #f3f4f6;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
+        .technician-work-table th:nth-child(5),
+        .technician-work-table td:nth-child(5) {
+            width: 22%;
         }
 
         .complaint-number {
             font-weight: 700;
         }
 
-        .small {
-            font-size: 10px;
+        .table-secondary {
+            margin-top: 0.8mm;
+            color: #6b7280;
+            font-size: 6.5pt;
+            line-height: 1.3;
         }
 
-        .urgency {
+        .urgency-value {
             font-weight: 700;
         }
 
-        .footer {
-            margin-top: 35px;
-            padding-top: 12px;
-            border-top: 1px solid #d1d5db;
-            font-size: 10px;
-            color: #6b7280;
+        @page {
+            size: A4 landscape;
+            margin: 9mm;
         }
 
         @media print {
-            body {
-                margin: 18px;
+
+            .work-summary-cards {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 4mm !important;
             }
 
-            .no-print {
-                display: none;
+            .work-summary-card {
+                padding: 2.5mm 3mm !important;
             }
 
-            thead {
-                display: table-header-group;
+            .work-summary-value {
+                font-size: 12pt !important;
             }
 
-            tr {
-                page-break-inside: avoid;
+            .technician-work-table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                font-size: 7pt !important;
             }
+
+            .technician-work-table th {
+                font-size: 6.5pt !important;
+            }
+
+            .technician-work-table th,
+            .technician-work-table td {
+                padding: 1.7mm 1.5mm !important;
+            }
+
         }
+
     </style>
 
-</head>
-
-<body>
-
-    <div class="no-print">
-
-        <button
-            onclick="window.print()"
-            class="print-button"
-        >
-            Print Summary
-        </button>
-
-    </div>
+@endpush
 
 
-    <div class="header">
+@section('report-content')
 
-        <div class="header-top">
+    <section class="report-section avoid-break">
 
-            <div class="header-left">
+        <div class="work-summary-cards">
 
-                <h1>
-                    Technician Work Summary
-                </h1>
+            <div class="work-summary-card">
 
-                <p class="organization">
-                    iSWD — Sagay Water District
-                </p>
+                <div class="work-summary-label">
+                    Accomplished Work
+                </div>
 
-                <p class="muted">
-                    Field Maintenance Operations
-                </p>
+                <div class="work-summary-value">
+                    {{ $total }}
+                </div>
 
             </div>
 
 
-            <div class="header-right">
+            <div class="work-summary-card">
 
-                <p class="technician">
-                    {{ auth()->user()->full_name }}
-                </p>
+                <div class="work-summary-label">
+                    Average Completion Time
+                </div>
 
-                <p class="muted">
-                    Maintenance Technician
-                </p>
-
-                <p class="muted">
-                    {{ $from->format('M d, Y') }}
-                    —
-                    {{ $to->format('M d, Y') }}
-                </p>
+                <div class="work-summary-value">
+                    {{ $averageCompletionHours }} hrs
+                </div>
 
             </div>
 
         </div>
 
-    </div>
+    </section>
 
 
-    <div class="summary">
+    <section class="report-section">
 
-        <div class="summary-box">
+        <div class="report-section-heading-row">
 
-            <div class="summary-label">
+            <h3 class="report-section-title">
                 Accomplished Work
-            </div>
+            </h3>
 
-            <div class="summary-value">
-                {{ $total }}
-            </div>
+            <div class="report-record-count">
 
-        </div>
+                Total Records:
 
+                <strong>
+                    {{ $complaints->count() }}
+                </strong>
 
-        <div class="summary-box">
-
-            <div class="summary-label">
-                Average Completion Time
-            </div>
-
-            <div class="summary-value">
-                {{ $averageCompletionHours }} hrs
             </div>
 
         </div>
 
-    </div>
 
+        @if ($complaints->count())
 
-    <h2 class="section-title">
-        Accomplished Work
-    </h2>
+            <div class="report-table-wrapper">
 
-    <p class="section-description">
-        Maintenance work accomplished during the selected reporting period.
-    </p>
+                <table class="report-table technician-work-table">
 
+                    <thead>
 
-    <table>
+                        <tr>
 
-        <thead>
+                            <th>
+                                Complaint
+                            </th>
 
-            <tr>
+                            <th>
+                                Consumer
+                            </th>
 
-                <th>
-                    Complaint
-                </th>
+                            <th>
+                                Complaint Type
+                            </th>
 
-                <th>
-                    Consumer
-                </th>
+                            <th>
+                                AI Urgency
+                            </th>
 
-                <th>
-                    Complaint Type
-                </th>
+                            <th>
+                                Accomplished
+                            </th>
 
-                <th>
-                    AI Urgency
-                </th>
+                        </tr>
 
-                <th>
-                    Accomplished
-                </th>
+                    </thead>
 
-            </tr>
 
-        </thead>
+                    <tbody>
 
+                        @foreach ($complaints as $complaint)
 
-        <tbody>
+                            @php
 
-            @forelse ($complaints as $complaint)
+                                $urgency =
+                                    strtoupper(
+                                        trim(
+                                            $complaint
+                                                ->aiAnalysis
+                                                ?->urgency_level
+                                            ?? ''
+                                        )
+                                    );
 
-                @php
-                    $urgency = strtoupper(
-                        trim(
-                            $complaint->aiAnalysis?->urgency_level ?? ''
-                        )
-                    );
-                @endphp
+                            @endphp
 
-                <tr>
 
-                    <td>
+                            <tr>
 
-                        <div class="complaint-number">
-                            {{ $complaint->complaint_no }}
-                        </div>
+                                <td>
 
-                        <div class="small muted">
-                            Submitted:
-                            {{ $complaint->created_at?->format('M d, Y h:i A') ?? '—' }}
-                        </div>
+                                    <div class="complaint-number">
+                                        {{ $complaint->complaint_no }}
+                                    </div>
 
-                    </td>
+                                    <div class="table-secondary">
 
+                                        Submitted:
 
-                    <td>
+                                        {{ $complaint->created_at
+                                            ?->format('M d, Y h:i A')
+                                            ?? '—' }}
 
-                        @if ($complaint->consumer)
+                                    </div>
 
-                            <div>
-                                {{ $complaint->consumer->full_name }}
-                            </div>
+                                </td>
 
-                            @if ($complaint->consumer->account_number)
 
-                                <div class="small muted">
-                                    Account:
-                                    {{ $complaint->consumer->account_number }}
-                                </div>
+                                <td>
 
-                            @endif
+                                    @if ($complaint->consumer)
 
-                        @elseif ($complaint->complainant_name)
+                                        <div>
+                                            {{ $complaint->consumer->full_name }}
+                                        </div>
 
-                            <div>
-                                {{ $complaint->complainant_name }}
-                            </div>
+                                        @if ($complaint->consumer->account_number)
 
-                            @if ($complaint->complainant_phone)
+                                            <div class="table-secondary">
 
-                                <div class="small muted">
-                                    {{ $complaint->complainant_phone }}
-                                </div>
+                                                Account:
+                                                {{ $complaint->consumer->account_number }}
 
-                            @endif
+                                            </div>
 
-                        @else
+                                        @endif
 
-                            <span class="muted">
-                                No complainant information
-                            </span>
+                                    @elseif ($complaint->complainant_name)
 
-                        @endif
+                                        <div>
+                                            {{ $complaint->complainant_name }}
+                                        </div>
 
-                    </td>
+                                        @if ($complaint->complainant_phone)
 
+                                            <div class="table-secondary">
+                                                {{ $complaint->complainant_phone }}
+                                            </div>
 
-                    <td>
+                                        @endif
 
-                        {{ $complaint->category?->name ?? 'Uncategorized' }}
+                                    @else
 
-                    </td>
+                                        <span class="table-secondary">
+                                            No complainant information
+                                        </span>
 
+                                    @endif
 
-                    <td>
+                                </td>
 
-                        <span class="urgency">
 
-                            {{ $urgency !== ''
-                                ? $urgency
-                                : 'NOT ASSESSED' }}
+                                <td>
 
-                        </span>
+                                    {{ $complaint->category?->name
+                                        ?? 'Uncategorized' }}
 
-                    </td>
+                                </td>
 
 
-                    <td>
+                                <td>
 
-                        {{ $complaint->completed_at?->format('M d, Y h:i A') ?? '—' }}
+                                    <span class="urgency-value">
 
-                    </td>
+                                        {{ $urgency !== ''
+                                            ? $urgency
+                                            : 'NOT ASSESSED' }}
 
-                </tr>
+                                    </span>
 
-            @empty
+                                </td>
 
-                <tr>
 
-                    <td
-                        colspan="5"
-                        style="text-align: center; padding: 25px;"
-                    >
-                        No accomplished maintenance work found for this reporting period.
-                    </td>
+                                <td>
 
-                </tr>
+                                    {{ $complaint->completed_at
+                                        ?->format('M d, Y h:i A')
+                                        ?? '—' }}
 
-            @endforelse
+                                </td>
 
-        </tbody>
+                            </tr>
 
-    </table>
+                        @endforeach
 
+                    </tbody>
 
-    <div class="footer">
+                </table>
 
-        Generated by iSWD Technician Work Summary.
+            </div>
 
-        <br>
+        @else
 
-        Generated on:
-        {{ now()->format('M d, Y h:i A') }}
+            <div class="report-text-block text-center">
 
-    </div>
+                No accomplished maintenance work was found
+                for the selected reporting period.
 
+            </div>
 
-    <script>
-        window.onload = function () {
-            window.print();
-        };
-    </script>
+        @endif
 
-</body>
+    </section>
 
-</html>
+@endsection
+

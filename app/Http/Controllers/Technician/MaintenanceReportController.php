@@ -14,247 +14,389 @@ use Illuminate\Support\Facades\Storage;
 
 class MaintenanceReportController extends Controller
 {
-    public function index(Request $request)
-    {
-        $technicianId = Auth::id();
+public function index(Request $request)
+{
+    $technicianId = Auth::id();
 
-        $from = $request->filled('from')
-            ? Carbon::parse($request->from)->startOfDay()
-            : now()->startOfMonth();
+    $from = $request->filled('from')
+        ? Carbon::parse($request->from)->startOfDay()
+        : now()->startOfMonth();
 
-        $to = $request->filled('to')
-            ? Carbon::parse($request->to)->endOfDay()
-            : now()->endOfDay();
+    $to = $request->filled('to')
+        ? Carbon::parse($request->to)->endOfDay()
+        : now()->endOfDay();
 
-        $baseQuery = Complaint::query()
-            ->whereHas('technicians', function ($query) use ($technicianId) {
-                $query->where('users.id', $technicianId);
-            });
+    if ($from->gt($to)) {
+        [$from, $to] = [
+            $to->copy()->startOfDay(),
+            $from->copy()->endOfDay(),
+        ];
+    }
 
-        $totalAssigned = (clone $baseQuery)
-            ->whereBetween('created_at', [$from, $to])
-            ->count();
+    $baseQuery = Complaint::query()
+        ->whereHas('technicians', function ($query) use ($technicianId) {
+            $query->where('users.id', $technicianId);
+        });
 
-        $assignedCount = (clone $baseQuery)
-            ->where('status', 'Assigned')
-            ->whereBetween('created_at', [$from, $to])
-            ->count();
 
-        $inProgressCount = (clone $baseQuery)
-            ->where('status', 'In Progress')
-            ->whereBetween('created_at', [$from, $to])
-            ->count();
+    /*
+    |--------------------------------------------------------------------------
+    | CURRENT WORK COUNTS
+    |--------------------------------------------------------------------------
+    */
 
-        $completedCount = (clone $baseQuery)
-            ->where('status', 'Completed')
-            ->whereNotNull('completed_at')
-            ->whereBetween('completed_at', [$from, $to])
-            ->count();
+    $assignedCount = (clone $baseQuery)
+        ->where('status', 'Assigned')
+        ->count();
 
-        $closedCount = (clone $baseQuery)
-            ->where('status', 'Closed')
-            ->whereBetween('updated_at', [$from, $to])
-            ->count();
+    $inProgressCount = (clone $baseQuery)
+        ->where('status', 'In Progress')
+        ->count();
 
-        $urgentCount = (clone $baseQuery)
-            ->whereIn('status', [
-                'Assigned',
-                'In Progress',
-            ])
-            ->whereHas('aiAnalysis', function ($query) {
-                $query->whereRaw(
-                    'UPPER(urgency_level) = ?',
-                    ['HIGH']
+    $activeCount = $assignedCount + $inProgressCount;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMPLETED / CLOSED
+    |--------------------------------------------------------------------------
+    |
+    | Backend keeps the original database statuses.
+    |
+    | Completed = submitted maintenance accomplishment
+    | Closed    = accomplished and finalized by manager
+    |
+    */
+
+    $completedCount = (clone $baseQuery)
+        ->where('status', 'Completed')
+        ->whereNotNull('completed_at')
+        ->whereBetween('completed_at', [$from, $to])
+        ->count();
+
+    $closedCount = (clone $baseQuery)
+        ->where('status', 'Closed')
+        ->whereNotNull('completed_at')
+        ->whereBetween('completed_at', [$from, $to])
+        ->count();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACCOMPLISHED TOTAL
+    |--------------------------------------------------------------------------
+    |
+    | Accomplished is NOT a database status.
+    | It is only the UI/business total:
+    |
+    | Completed + Closed
+    |
+    */
+
+    $accomplishedCount =
+        $completedCount +
+        $closedCount;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL WORK
+    |--------------------------------------------------------------------------
+    */
+
+    $totalAssigned =
+        $assignedCount +
+        $inProgressCount +
+        $completedCount +
+        $closedCount;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMPLETION RATE
+    |--------------------------------------------------------------------------
+    */
+
+    $completionRate = $totalAssigned > 0
+        ? round(
+            ($accomplishedCount / $totalAssigned) * 100,
+            1
+        )
+        : 0;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AVERAGE COMPLETION TIME
+    |--------------------------------------------------------------------------
+    |
+    | Includes both Completed and Closed because Closed complaints were
+    | already completed before finalization.
+    |
+    */
+
+    $completedForAverage = (clone $baseQuery)
+        ->whereIn('status', [
+            'Completed',
+            'Closed',
+        ])
+        ->whereNotNull('completed_at')
+        ->whereBetween(
+            'completed_at',
+            [$from, $to]
+        )
+        ->get([
+            'id',
+            'created_at',
+            'completed_at',
+        ]);
+
+    $averageCompletionHours = 0;
+
+    if ($completedForAverage->isNotEmpty()) {
+
+        $totalMinutes = 0;
+        $validRecords = 0;
+
+        foreach ($completedForAverage as $complaint) {
+
+            if (
+                !$complaint->created_at ||
+                !$complaint->completed_at
+            ) {
+                continue;
+            }
+
+            $minutes = $complaint->created_at
+                ->diffInMinutes(
+                    $complaint->completed_at
                 );
-            })
-            ->count();
 
-        $activeCount = $assignedCount + $inProgressCount;
+            $totalMinutes += $minutes;
 
-        $completionRate = $totalAssigned > 0
-            ? round(($completedCount / $totalAssigned) * 100, 1)
-            : 0;
+            $validRecords++;
+        }
 
-        $completedForAverage = (clone $baseQuery)
-            ->where('status', 'Completed')
-            ->whereNotNull('completed_at')
-            ->whereBetween('completed_at', [$from, $to])
-            ->get([
-                'id',
-                'created_at',
-                'completed_at',
-            ]);
-
-        $averageCompletionHours = 0;
-
-        if ($completedForAverage->isNotEmpty()) {
-            $totalHours = $completedForAverage->sum(
-                function ($complaint) {
-                    if (
-                        !$complaint->created_at ||
-                        !$complaint->completed_at
-                    ) {
-                        return 0;
-                    }
-
-                    return $complaint->created_at
-                        ->diffInMinutes($complaint->completed_at) / 60;
-                }
-            );
+        if ($validRecords > 0) {
 
             $averageCompletionHours = round(
-                $totalHours / $completedForAverage->count(),
+                ($totalMinutes / $validRecords) / 60,
                 1
             );
         }
-
-        $urgencyBreakdown = collect([
-            'High',
-            'Moderate',
-            'Low',
-        ])->mapWithKeys(
-            function ($urgency) use (
-                $baseQuery,
-                $from,
-                $to
-            ) {
-                return [
-                    $urgency => (clone $baseQuery)
-                        ->whereBetween(
-                            'created_at',
-                            [$from, $to]
-                        )
-                        ->whereHas(
-                            'aiAnalysis',
-                            function ($query) use ($urgency) {
-                                $query->whereRaw(
-                                    'UPPER(urgency_level) = ?',
-                                    [strtoupper($urgency)]
-                                );
-                            }
-                        )
-                        ->count(),
-                ];
-            }
-        );
-
-        $notAssessedCount = (clone $baseQuery)
-            ->whereBetween('created_at', [$from, $to])
-            ->where(function ($query) {
-                $query
-                    ->whereDoesntHave('aiAnalysis')
-                    ->orWhereHas(
-                        'aiAnalysis',
-                        function ($aiQuery) {
-                            $aiQuery
-                                ->whereNull('urgency_level')
-                                ->orWhere(
-                                    'urgency_level',
-                                    ''
-                                );
-                        }
-                    );
-            })
-            ->count();
-
-        $urgencyBreakdown->put(
-            'Not Assessed',
-            $notAssessedCount
-        );
-
-        $statusBreakdown = collect([
-            'Assigned' => $assignedCount,
-            'In Progress' => $inProgressCount,
-            'Completed' => $completedCount,
-            'Closed' => $closedCount,
-        ]);
-
-        $currentComplaints = (clone $baseQuery)
-            ->with([
-                'consumer',
-                'consumer.address',
-                'category',
-                'division',
-                'technicians',
-                'maintenanceReport',
-                'aiAnalysis',
-                'commercialResolution',
-            ])
-            ->whereIn('status', [
-                'Assigned',
-                'In Progress',
-            ])
-            ->get()
-            ->sortBy(function ($complaint) {
-                $urgencyOrder = match (strtoupper(
-                    trim(
-                        $complaint->aiAnalysis?->urgency_level ?? ''
-                    )
-                )) {
-                    'HIGH' => 1,
-                    'MODERATE' => 2,
-                    'LOW' => 3,
-                    default => 4,
-                };
-
-                $statusOrder = match ($complaint->status) {
-                    'In Progress' => 1,
-                    'Assigned' => 2,
-                    default => 3,
-                };
-
-                return sprintf(
-                    '%d-%d-%020d',
-                    $urgencyOrder,
-                    $statusOrder,
-                    PHP_INT_MAX -
-                        ($complaint->updated_at?->timestamp ?? 0)
-                );
-            })
-            ->values();
-
-        $completedComplaintsList = (clone $baseQuery)
-            ->with([
-                'consumer',
-                'consumer.address',
-                'category',
-                'division',
-                'technicians',
-                'maintenanceReport',
-                'aiAnalysis',
-                'commercialResolution',
-            ])
-            ->where('status', 'Completed')
-            ->whereNotNull('completed_at')
-            ->whereBetween(
-                'completed_at',
-                [$from, $to]
-            )
-            ->latest('completed_at')
-            ->get();
-
-        return view(
-            'technician.reports.maintenance',
-            compact(
-                'from',
-                'to',
-                'totalAssigned',
-                'assignedCount',
-                'inProgressCount',
-                'completedCount',
-                'closedCount',
-                'urgentCount',
-                'activeCount',
-                'completionRate',
-                'averageCompletionHours',
-                'urgencyBreakdown',
-                'notAssessedCount',
-                'statusBreakdown',
-                'currentComplaints',
-                'completedComplaintsList'
-            )
-        );
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CURRENT WORK
+    |--------------------------------------------------------------------------
+    */
+
+    $currentComplaints = (clone $baseQuery)
+        ->with([
+            'consumer',
+            'consumer.address',
+            'category',
+            'division',
+            'technicians',
+            'maintenanceReport',
+            'aiAnalysis',
+            'commercialResolution',
+        ])
+        ->whereIn('status', [
+            'Assigned',
+            'In Progress',
+        ])
+        ->orderByRaw("
+            CASE status
+                WHEN 'In Progress' THEN 1
+                WHEN 'Assigned' THEN 2
+                ELSE 3
+            END
+        ")
+        ->orderByDesc('updated_at')
+        ->orderByDesc('id')
+        ->get();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI URGENCY
+    |--------------------------------------------------------------------------
+    |
+    | Urgency describes CURRENT WORK.
+    | It is not restricted by complaint creation date.
+    |
+    */
+
+    $highUrgencyCount = (clone $baseQuery)
+        ->whereIn('status', [
+            'Assigned',
+            'In Progress',
+        ])
+        ->whereHas('aiAnalysis', function ($query) {
+            $query->whereRaw(
+                'UPPER(TRIM(urgency_level)) = ?',
+                ['HIGH']
+            );
+        })
+        ->count();
+
+
+    $moderateUrgencyCount = (clone $baseQuery)
+        ->whereIn('status', [
+            'Assigned',
+            'In Progress',
+        ])
+        ->whereHas('aiAnalysis', function ($query) {
+            $query->whereRaw(
+                'UPPER(TRIM(urgency_level)) = ?',
+                ['MODERATE']
+            );
+        })
+        ->count();
+
+
+    $lowUrgencyCount = (clone $baseQuery)
+        ->whereIn('status', [
+            'Assigned',
+            'In Progress',
+        ])
+        ->whereHas('aiAnalysis', function ($query) {
+            $query->whereRaw(
+                'UPPER(TRIM(urgency_level)) = ?',
+                ['LOW']
+            );
+        })
+        ->count();
+
+
+    $notAssessedCount = (clone $baseQuery)
+        ->whereIn('status', [
+            'Assigned',
+            'In Progress',
+        ])
+        ->where(function ($query) {
+
+            $query->whereDoesntHave('aiAnalysis')
+
+                ->orWhereHas(
+                    'aiAnalysis',
+                    function ($aiQuery) {
+
+                        $aiQuery
+                            ->whereNull('urgency_level')
+                            ->orWhereRaw(
+                                "TRIM(urgency_level) = ''"
+                            );
+                    }
+                );
+        })
+        ->count();
+
+
+    $urgentCount = $highUrgencyCount;
+
+
+    $urgencyBreakdown = collect([
+        'High' => $highUrgencyCount,
+        'Moderate' => $moderateUrgencyCount,
+        'Low' => $lowUrgencyCount,
+        'Not Assessed' => $notAssessedCount,
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS BREAKDOWN
+    |--------------------------------------------------------------------------
+    |
+    | Keep ONLY real backend/database statuses here.
+    |
+    */
+
+    $statusBreakdown = collect([
+        'Assigned' => $assignedCount,
+        'In Progress' => $inProgressCount,
+        'Completed' => $completedCount,
+        'Closed' => $closedCount,
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACCOMPLISHED WORK LIST
+    |--------------------------------------------------------------------------
+    |
+    | Completed + Closed are displayed as accomplished work in the UI.
+    | No "Accomplished" database status is queried.
+    |
+    */
+
+    $completedComplaintsList = (clone $baseQuery)
+        ->with([
+            'consumer',
+            'consumer.address',
+            'category',
+            'division',
+            'technicians',
+            'maintenanceReport',
+            'maintenanceReport.technician',
+            'aiAnalysis',
+            'commercialResolution',
+        ])
+        ->whereIn('status', [
+            'Completed',
+            'Closed',
+        ])
+        ->whereNotNull('completed_at')
+        ->whereBetween(
+            'completed_at',
+            [$from, $to]
+        )
+        ->orderByDesc('completed_at')
+        ->orderByDesc('id')
+        ->get();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN VIEW
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
+        'technician.reports.maintenance',
+        compact(
+            'from',
+            'to',
+
+            'totalAssigned',
+
+            'assignedCount',
+            'inProgressCount',
+
+            'completedCount',
+            'closedCount',
+            'accomplishedCount',
+
+            'urgentCount',
+            'activeCount',
+
+            'completionRate',
+            'averageCompletionHours',
+
+            'urgencyBreakdown',
+            'notAssessedCount',
+
+            'statusBreakdown',
+
+            'currentComplaints',
+            'completedComplaintsList'
+        )
+    );
+}
 
     public function start(Complaint $complaint)
     {

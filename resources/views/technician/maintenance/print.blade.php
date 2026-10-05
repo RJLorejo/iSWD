@@ -1,565 +1,478 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.report')
 
-<head>
+@section(
+    'title',
+    'Maintenance Accomplishment Report - ' .
+    $complaint->complaint_no
+)
 
-    <meta charset="UTF-8">
+@section('report-title', 'Maintenance Accomplishment Report')
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>
-        Service Accomplishment Report - {{ $complaint->complaint_no }}
-    </title>
+@section('prepared-by-name')
+    {{ $complaint->maintenanceReport?->technician?->full_name
+        ?? auth()->user()->full_name
+        ?? auth()->user()->name
+        ?? 'N/A' }}
+@endsection
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+@section('prepared-by-role', 'Maintenance Technician')
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            color: #1f2937;
-            margin: 36px;
-            line-height: 1.5;
-            font-size: 14px;
-        }
 
-        .actions {
-            margin-bottom: 20px;
-        }
-
-        .print-button {
-            padding: 10px 18px;
-            background: #2563eb;
-            color: #ffffff;
-            border: 0;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #1f2937;
-            padding-bottom: 18px;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 23px;
-            letter-spacing: 0.5px;
-        }
-
-        .header p {
-            margin: 6px 0 0;
-            color: #6b7280;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            border-bottom: 1px solid #d1d5db;
-            padding-bottom: 7px;
-            margin-top: 26px;
-            margin-bottom: 15px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px 25px;
-        }
-
-        .field {
-            margin-bottom: 16px;
-        }
-
-        .label {
-            font-weight: 700;
-            font-size: 12px;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .value {
-            white-space: pre-line;
-            margin-top: 5px;
-            color: #111827;
-        }
-
-        .box {
-            margin-top: 6px;
-            padding: 12px 14px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            min-height: 55px;
-            white-space: pre-line;
-        }
-
-        .photos {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .photo-box {
-            break-inside: avoid;
-        }
-
-        .photos img {
-            width: 100%;
-            max-height: 320px;
-            object-fit: contain;
-            border: 1px solid #d1d5db;
-            margin-top: 8px;
-        }
-
-        .no-photo {
-            height: 180px;
-            margin-top: 8px;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9ca3af;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .footer {
-            margin-top: 35px;
-            border-top: 1px solid #d1d5db;
-            padding-top: 15px;
-            font-size: 12px;
-            color: #4b5563;
-        }
-
-        .footer p {
-            margin: 6px 0;
-        }
-
-        @media print {
-
-            body {
-                margin: 18px;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            .section-title,
-            .field,
-            .photo-box,
-            .footer {
-                break-inside: avoid;
-            }
-        }
-
-        @media (max-width: 700px) {
-
-            .grid,
-            .photos {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-
-</head>
-
-<body>
+@section('report-content')
 
     @php
-        $report = $complaint->maintenanceReport;
 
-        $displayStatus = $complaint->status === 'Completed' ? 'Accomplished' : $complaint->status;
+        $report =
+            $complaint->maintenanceReport;
+
+        $displayStatus =
+            $complaint->status === 'Completed'
+                ? 'Accomplished'
+                : $complaint->status;
+
+        $consumerName =
+            $complaint->consumer?->full_name
+            ?? (
+                $complaint->complainant_name
+                ?? 'N/A'
+            );
+
+        $maintenanceTeam =
+            $complaint
+                ->technicians
+                ->pluck('full_name')
+                ->filter()
+                ->join(', ');
+
+        $maintenanceTeam =
+            $maintenanceTeam ?: 'N/A';
+
+        $reviewerName =
+            $report?->reviewer?->full_name
+            ?? 'Maintenance Manager';
+
     @endphp
 
 
-    <div class="actions no-print">
+    <section class="report-section avoid-break">
 
-        <button type="button" onclick="window.print()" class="print-button">
-            Print Report
-        </button>
+        <h3 class="report-section-title">
+            Complaint Information
+        </h3>
 
-    </div>
+        <div class="report-grid">
 
+            <div class="report-field">
 
-    <div class="header">
+                <div class="report-field-label">
+                    Complaint Number
+                </div>
 
-        <h1>
-            SERVICE ACCOMPLISHMENT REPORT
-        </h1>
+                <div class="report-field-value">
+                    {{ $complaint->complaint_no }}
+                </div>
 
-        <p>
-            Sagay Water District
-        </p>
-
-    </div>
-
-
-    <div class="section-title">
-        Complaint Information
-    </div>
-
-
-    <div class="grid">
-
-        <div class="field">
-
-            <div class="label">
-                Complaint Number
             </div>
 
-            <div class="value">
-                {{ $complaint->complaint_no }}
-            </div>
 
-        </div>
+            <div class="report-field">
 
+                <div class="report-field-label">
+                    Status
+                </div>
 
-        <div class="field">
-
-            <div class="label">
-                Status
-            </div>
-
-            <div class="value">
-
-                <span class="status">
+                <div class="report-field-value">
                     {{ $displayStatus }}
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <div class="field">
-
-            <div class="label">
-                Division
-            </div>
-
-            <div class="value">
-                {{ $complaint->division?->name ?? 'N/A' }}
-            </div>
-
-        </div>
-
-
-        <div class="field">
-
-            <div class="label">
-                Complaint Type
-            </div>
-
-            <div class="value">
-                {{ $complaint->category?->name ?? 'N/A' }}
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="field">
-
-        <div class="label">
-            Consumer
-        </div>
-
-        <div class="value">
-            {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? 'N/A') }}
-        </div>
-
-    </div>
-
-
-    <div class="field">
-
-        <div class="label">
-            Service Location
-        </div>
-
-        <div class="value">
-            {{ $complaint->address ?: 'N/A' }}
-        </div>
-
-    </div>
-
-
-    @if ($complaint->landmark)
-        <div class="field">
-
-            <div class="label">
-                Landmark
-            </div>
-
-            <div class="value">
-                {{ $complaint->landmark }}
-            </div>
-
-        </div>
-    @endif
-
-
-    <div class="section-title">
-        Diagnosis / Findings
-    </div>
-
-
-    <div class="field">
-
-        <div class="box">
-            {{ $report->diagnosis ?: 'No diagnosis or findings recorded.' }}
-        </div>
-
-    </div>
-
-
-    <div class="section-title">
-        Root Cause
-    </div>
-
-
-    <div class="field">
-
-        <div class="box">
-            {{ $report->root_cause ?: 'No root cause recorded.' }}
-        </div>
-
-    </div>
-
-
-    <div class="section-title">
-        Materials / Parts
-    </div>
-
-
-    <div class="field">
-
-        <div class="box">
-            {{ $report->materials_parts ?: 'None recorded.' }}
-        </div>
-
-    </div>
-
-
-    <div class="section-title">
-        Plumber Notes
-    </div>
-
-
-    <div class="field">
-
-        <div class="box">
-            {{ $report->technician_notes ?: 'No additional notes.' }}
-        </div>
-
-    </div>
-
-
-    <div class="section-title">
-        Before & After Photos
-    </div>
-
-
-    <div class="photos">
-
-
-        <div class="photo-box">
-
-            <div class="label">
-                Before Maintenance
-            </div>
-
-            @if ($report->before_photo)
-                <img src="{{ asset('storage/' . $report->before_photo) }}" alt="Before maintenance photo">
-            @else
-                <div class="no-photo">
-                    No before photo available
                 </div>
-            @endif
 
-        </div>
-
-
-        <div class="photo-box">
-
-            <div class="label">
-                After Maintenance
             </div>
 
-            @if ($report->after_photo)
-                <img src="{{ asset('storage/' . $report->after_photo) }}" alt="After maintenance photo">
-            @else
-                <div class="no-photo">
-                    No after photo available
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Division
                 </div>
-            @endif
 
-        </div>
+                <div class="report-field-value">
+                    {{ $complaint->division?->name ?? 'N/A' }}
+                </div>
 
-
-    </div>
-
-
-    <div class="section-title">
-        Report Information
-    </div>
-
-
-    <div class="grid">
-
-        <div class="field">
-
-            <div class="label">
-                Report Submitted By
             </div>
 
-            <div class="value">
-                {{ $report->technician?->full_name ?? 'N/A' }}
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Complaint Type
+                </div>
+
+                <div class="report-field-value">
+                    {{ $complaint->category?->name ?? 'N/A' }}
+                </div>
+
             </div>
 
-        </div>
 
+            <div class="report-field">
 
-        <div class="field">
+                <div class="report-field-label">
+                    Consumer
+                </div>
 
-            <div class="label">
-                Review Status
+                <div class="report-field-value">
+                    {{ $consumerName }}
+                </div>
+
             </div>
 
-            <div class="value">
-                {{ $report->review_status ?? 'N/A' }}
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Account Number
+                </div>
+
+                <div class="report-field-value">
+                    {{ $complaint->consumer?->account_number ?? 'N/A' }}
+                </div>
+
             </div>
 
-        </div>
 
+            <div
+                class="report-field"
+                style="grid-column: 1 / -1;"
+            >
 
-        <div class="field">
+                <div class="report-field-label">
+                    Service Location
+                </div>
 
-            <div class="label">
-                Maintenance Started
+                <div class="report-field-value">
+                    {{ $complaint->address ?: 'N/A' }}
+                </div>
+
             </div>
 
-            <div class="value">
-                {{ $report->started_at?->format('M d, Y h:i A') ?? 'N/A' }}
-            </div>
 
-        </div>
+            @if ($complaint->landmark)
 
+                <div
+                    class="report-field"
+                    style="grid-column: 1 / -1;"
+                >
 
-        <div class="field">
-
-            <div class="label">
-                Report Submitted
-            </div>
-
-            <div class="value">
-                {{ $report->submitted_at?->format('M d, Y h:i A') ?? 'N/A' }}
-            </div>
-
-        </div>
-
-    </div>
-
-
-    @if ($report->reviewed_at || $report->review_remarks)
-
-        <div class="section-title">
-            Management Review
-        </div>
-
-
-        <div class="grid">
-
-            @if ($report->reviewed_at)
-                <div class="field">
-
-                    <div class="label">
-                        Reviewed
+                    <div class="report-field-label">
+                        Landmark
                     </div>
 
-                    <div class="value">
-                        {{ $report->reviewed_at->format('M d, Y h:i A') }}
+                    <div class="report-field-value">
+                        {{ $complaint->landmark }}
                     </div>
 
                 </div>
+
             @endif
 
+        </div>
 
-            @if ($report->review_status)
-                <div class="field">
+    </section>
 
-                    <div class="label">
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Maintenance Team
+        </h3>
+
+        <div class="report-field">
+
+            <div class="report-field-label">
+                Assigned Plumber(s)
+            </div>
+
+            <div class="report-field-value">
+                {{ $maintenanceTeam }}
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Diagnosis / Findings
+        </h3>
+
+        <div class="report-text-block">
+            {{ $report->diagnosis
+                ?: 'No diagnosis or findings recorded.' }}
+        </div>
+
+    </section>
+
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Root Cause
+        </h3>
+
+        <div class="report-text-block">
+            {{ $report->root_cause
+                ?: 'No root cause recorded.' }}
+        </div>
+
+    </section>
+
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Materials / Parts
+        </h3>
+
+        <div class="report-text-block">
+            {{ $report->materials_parts
+                ?: 'None recorded.' }}
+        </div>
+
+    </section>
+
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Plumber Notes
+        </h3>
+
+        <div class="report-text-block">
+            {{ $report->technician_notes
+                ?: 'No additional notes.' }}
+        </div>
+
+    </section>
+
+
+    <section class="report-section">
+
+        <h3 class="report-section-title">
+            Before & After Photos
+        </h3>
+
+        <div class="report-image-grid">
+
+            <div class="report-image-box avoid-break">
+
+                <div class="report-image-label">
+                    Before Maintenance
+                </div>
+
+                @if ($report->before_photo)
+
+                    <img
+                        src="{{ asset(
+                            'storage/' .
+                            $report->before_photo
+                        ) }}"
+                        alt="Before maintenance photo"
+                        class="report-image"
+                    >
+
+                @else
+
+                    <div class="report-empty-image">
+                        No before photo available
+                    </div>
+
+                @endif
+
+            </div>
+
+
+            <div class="report-image-box avoid-break">
+
+                <div class="report-image-label">
+                    After Maintenance
+                </div>
+
+                @if ($report->after_photo)
+
+                    <img
+                        src="{{ asset(
+                            'storage/' .
+                            $report->after_photo
+                        ) }}"
+                        alt="After maintenance photo"
+                        class="report-image"
+                    >
+
+                @else
+
+                    <div class="report-empty-image">
+                        No after photo available
+                    </div>
+
+                @endif
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Maintenance Record
+        </h3>
+
+        <div class="report-grid">
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Maintenance Started
+                </div>
+
+                <div class="report-field-value">
+
+                    {{ $report->started_at
+                        ?->format('F d, Y h:i A')
+                        ?? 'N/A' }}
+
+                </div>
+
+            </div>
+
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Accomplished
+                </div>
+
+                <div class="report-field-value">
+
+                    {{ $complaint->completed_at
+                        ?->format('F d, Y h:i A')
+                        ?? (
+                            $report->submitted_at
+                                ?->format('F d, Y h:i A')
+                            ?? 'N/A'
+                        ) }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    @if (
+        $report->submitted_at ||
+        $report->reviewed_at ||
+        $report->review_remarks
+    )
+
+        <section class="report-section avoid-break">
+
+            <h3 class="report-section-title">
+                Management Review
+            </h3>
+
+            <div class="report-grid">
+
+                <div class="report-field">
+
+                    <div class="report-field-label">
+                        Report Submitted
+                    </div>
+
+                    <div class="report-field-value">
+
+                        {{ $report->submitted_at
+                            ?->format('F d, Y h:i A')
+                            ?? 'N/A' }}
+
+                    </div>
+
+                </div>
+
+
+                <div class="report-field">
+
+                    <div class="report-field-label">
                         Review Result
                     </div>
 
-                    <div class="value">
-                        {{ $report->review_status }}
+                    <div class="report-field-value">
+
+                        @if ($report->review_status === 'Approved')
+
+                            Approved by
+                            {{ $reviewerName }}
+
+                        @elseif ($report->review_status === 'Returned')
+
+                            Returned by
+                            {{ $reviewerName }}
+
+                        @else
+
+                            {{ $report->review_status
+                                ?? 'Pending Review' }}
+
+                        @endif
+
                     </div>
 
-                </div>
-            @endif
 
-        </div>
+                    @if ($report->reviewed_at)
 
+                        <div
+                            class="report-meta-secondary"
+                            style="margin-top: 1mm;"
+                        >
+                            {{ $report->reviewed_at
+                                ->format('F d, Y h:i A') }}
+                        </div>
 
-        @if ($report->review_remarks)
-            <div class="field">
+                    @endif
 
-                <div class="label">
-                    Manager Remarks
-                </div>
-
-                <div class="box">
-                    {{ $report->review_remarks }}
                 </div>
 
             </div>
-        @endif
+
+
+            @if ($report->review_remarks)
+
+                <div
+                    class="report-field"
+                    style="margin-top: 3mm;"
+                >
+
+                    <div class="report-field-label">
+                        Manager Remarks
+                    </div>
+
+                    <div class="report-text-block">
+                        {{ $report->review_remarks }}
+                    </div>
+
+                </div>
+
+            @endif
+
+        </section>
 
     @endif
 
-
-    <div class="footer">
-
-        <p>
-            <strong>Maintenance Team:</strong>
-            {{ $complaint->technicians->pluck('full_name')->join(', ') ?: 'N/A' }}
-        </p>
-
-        <p>
-            <strong>Report Submitted By:</strong>
-            {{ $report->technician?->full_name ?? 'N/A' }}
-        </p>
-
-        <p>
-            <strong>Started:</strong>
-            {{ $report->started_at?->format('M d, Y h:i A') ?? 'N/A' }}
-        </p>
-
-        <p>
-            <strong>Submitted:</strong>
-            {{ $report->submitted_at?->format('M d, Y h:i A') ?? 'N/A' }}
-        </p>
-
-    </div>
-
-
-</body>
-
-</html>
+@endsection

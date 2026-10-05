@@ -5,96 +5,177 @@
 
     <meta charset="UTF-8">
 
-    <title>
-        Technician Maintenance Report
-    </title>
+    <title>Technician Work Summary</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             color: #111827;
-            margin: 40px;
-            font-size: 13px;
+            margin: 36px;
+            font-size: 12px;
+            line-height: 1.5;
         }
 
-        h1 {
-            margin: 0;
-            font-size: 24px;
+        h1,
+        h2,
+        p {
+            margin-top: 0;
         }
 
-        h2 {
-            margin-top: 30px;
-            font-size: 17px;
+        .no-print {
+            margin-bottom: 20px;
+        }
+
+        .print-button {
+            padding: 10px 18px;
+            background: #2563eb;
+            color: #ffffff;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
         }
 
         .header {
             border-bottom: 2px solid #111827;
-            padding-bottom: 15px;
+            padding-bottom: 16px;
             margin-bottom: 20px;
+        }
+
+        .header-top {
+            display: table;
+            width: 100%;
+        }
+
+        .header-left,
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .header h1 {
+            margin-bottom: 5px;
+            font-size: 23px;
+        }
+
+        .organization {
+            font-weight: 700;
+            margin-bottom: 2px;
         }
 
         .muted {
             color: #6b7280;
         }
 
+        .technician {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+
         .summary {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            border-spacing: 10px 0;
+            margin: 22px -10px;
         }
 
         .summary-box {
+            display: table-cell;
             border: 1px solid #d1d5db;
-            padding: 15px;
-            flex: 1;
+            padding: 14px;
+            vertical-align: top;
         }
 
         .summary-label {
             color: #6b7280;
-            font-size: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
         }
 
         .summary-value {
             font-size: 22px;
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 4px;
+        }
+
+        .section-title {
+            margin-top: 28px;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .section-description {
+            color: #6b7280;
+            margin-bottom: 12px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
         }
 
         th,
         td {
             border: 1px solid #d1d5db;
-            padding: 9px;
+            padding: 8px;
             text-align: left;
+            vertical-align: top;
         }
 
         th {
             background: #f3f4f6;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .complaint-number {
+            font-weight: 700;
+        }
+
+        .small {
+            font-size: 10px;
+        }
+
+        .urgency {
+            font-weight: 700;
         }
 
         .footer {
-            margin-top: 40px;
-            padding-top: 15px;
+            margin-top: 35px;
+            padding-top: 12px;
             border-top: 1px solid #d1d5db;
-            font-size: 11px;
+            font-size: 10px;
             color: #6b7280;
         }
 
         @media print {
-
             body {
-                margin: 20px;
+                margin: 18px;
             }
 
             .no-print {
                 display: none;
             }
 
+            thead {
+                display: table-header-group;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
         }
     </style>
 
@@ -102,44 +183,58 @@
 
 <body>
 
+    <div class="no-print">
 
-    <div class="no-print" style="margin-bottom:20px;">
-
-        <button onclick="window.print()"
-            style="
-            padding:10px 18px;
-            background:#2563eb;
-            color:white;
-            border:0;
-            border-radius:6px;
-            cursor:pointer;
-        ">
-            Print
+        <button
+            onclick="window.print()"
+            class="print-button"
+        >
+            Print Summary
         </button>
 
     </div>
 
+
     <div class="header">
 
-        <h1>
-            Technician Maintenance Report
-        </h1>
+        <div class="header-top">
 
-        <p class="font-semibold">
-            {{ auth()->user()->full_name }}
-        </p>
+            <div class="header-left">
+
+                <h1>
+                    Technician Work Summary
+                </h1>
+
+                <p class="organization">
+                    iSWD — Sagay Water District
+                </p>
+
+                <p class="muted">
+                    Field Maintenance Operations
+                </p>
+
+            </div>
 
 
-        <p class="muted">
-            iSWD — Sagay Water District
-        </p>
+            <div class="header-right">
 
-        <p class="muted">
-            Reporting Period:
-            {{ $from->format('M d, Y') }}
-            —
-            {{ $to->format('M d, Y') }}
-        </p>
+                <p class="technician">
+                    {{ auth()->user()->full_name }}
+                </p>
+
+                <p class="muted">
+                    Maintenance Technician
+                </p>
+
+                <p class="muted">
+                    {{ $from->format('M d, Y') }}
+                    —
+                    {{ $to->format('M d, Y') }}
+                </p>
+
+            </div>
+
+        </div>
 
     </div>
 
@@ -149,7 +244,7 @@
         <div class="summary-box">
 
             <div class="summary-label">
-                Completed Maintenance
+                Accomplished Work
             </div>
 
             <div class="summary-value">
@@ -174,9 +269,13 @@
     </div>
 
 
-    <h2>
-        Completed Maintenance Work
+    <h2 class="section-title">
+        Accomplished Work
     </h2>
+
+    <p class="section-description">
+        Maintenance work accomplished during the selected reporting period.
+    </p>
 
 
     <table>
@@ -186,15 +285,7 @@
             <tr>
 
                 <th>
-                    Complaint No.
-                </th>
-
-                <th>
-                    Subject
-                </th>
-
-                <th>
-                    Category
+                    Complaint
                 </th>
 
                 <th>
@@ -202,11 +293,15 @@
                 </th>
 
                 <th>
-                    Priority
+                    Complaint Type
                 </th>
 
                 <th>
-                    Completed
+                    AI Urgency
+                </th>
+
+                <th>
+                    Accomplished
                 </th>
 
             </tr>
@@ -216,68 +311,98 @@
 
         <tbody>
 
-            @forelse($complaints as $complaint)
+            @forelse ($complaints as $complaint)
+
+                @php
+                    $urgency = strtoupper(
+                        trim(
+                            $complaint->aiAnalysis?->urgency_level ?? ''
+                        )
+                    );
+                @endphp
+
                 <tr>
 
                     <td>
-                        {{ $complaint->complaint_no }}
 
-                        <div class="text-xs text-gray-400 mt-1">
-
-                            <i class="far fa-clock mr-1"></i>
-
-                            {{ $complaint->created_at?->format('M d, Y h:i A') }}
-
+                        <div class="complaint-number">
+                            {{ $complaint->complaint_no }}
                         </div>
+
+                        <div class="small muted">
+                            Submitted:
+                            {{ $complaint->created_at?->format('M d, Y h:i A') ?? '—' }}
+                        </div>
+
                     </td>
 
-                    <td>
-                        {{ $complaint->subject }}
-                    </td>
 
                     <td>
-                        {{ $complaint->category?->name ?? '—' }}
-                    </td>
 
-                    <td>
                         @if ($complaint->consumer)
-                            <div class="font-medium text-gray-900">
+
+                            <div>
                                 {{ $complaint->consumer->full_name }}
                             </div>
 
-                            <div class="text-xs text-gray-500">
-                                {{ $complaint->consumer->consumer_no }}
-                            </div>
+                            @if ($complaint->consumer->account_number)
+
+                                <div class="small muted">
+                                    Account:
+                                    {{ $complaint->consumer->account_number }}
+                                </div>
+
+                            @endif
+
                         @elseif ($complaint->complainant_name)
-                            <div class="font-medium text-gray-900">
+
+                            <div>
                                 {{ $complaint->complainant_name }}
                             </div>
 
                             @if ($complaint->complainant_phone)
-                                <div class="text-xs text-gray-500 mt-1">
-                                    <i class="fas fa-phone mr-1"></i>
+
+                                <div class="small muted">
                                     {{ $complaint->complainant_phone }}
                                 </div>
+
                             @endif
+
                         @else
-                            <span class="text-gray-400">
+
+                            <span class="muted">
                                 No complainant information
                             </span>
+
                         @endif
-                        <div class="text-xs text-gray-500 mt-1">
-
-                            {{ $complaint->address }}
-
-                        </div>
 
                     </td>
 
-                    <td>
-                        {{ $complaint->priority }}
-                    </td>
 
                     <td>
-                        {{ $complaint->completed_at?->format('M d, Y h:i A') }}
+
+                        {{ $complaint->category?->name ?? 'Uncategorized' }}
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="urgency">
+
+                            {{ $urgency !== ''
+                                ? $urgency
+                                : 'NOT ASSESSED' }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        {{ $complaint->completed_at?->format('M d, Y h:i A') ?? '—' }}
+
                     </td>
 
                 </tr>
@@ -286,11 +411,15 @@
 
                 <tr>
 
-                    <td colspan="6" style="text-align:center;">
-                        No completed maintenance work found.
+                    <td
+                        colspan="5"
+                        style="text-align: center; padding: 25px;"
+                    >
+                        No accomplished maintenance work found for this reporting period.
                     </td>
 
                 </tr>
+
             @endforelse
 
         </tbody>
@@ -300,13 +429,18 @@
 
     <div class="footer">
 
-        Generated by iSWD Technician Maintenance Reporting.
+        Generated by iSWD Technician Work Summary.
+
+        <br>
+
+        Generated on:
+        {{ now()->format('M d, Y h:i A') }}
 
     </div>
 
 
     <script>
-        window.onload = function() {
+        window.onload = function () {
             window.print();
         };
     </script>

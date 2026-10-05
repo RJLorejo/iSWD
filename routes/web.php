@@ -27,12 +27,12 @@ use App\Http\Controllers\CustomerService\ServiceAnnouncementController as Custom
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
 use App\Http\Controllers\Manager\ComplaintController as ManagerComplaintController;
 use App\Http\Controllers\Manager\MaintenanceReviewController;
+use App\Http\Controllers\Manager\ServiceAreaController;
 
 
 use App\Http\Controllers\Technician\DashboardController as TechnicianDashboard;
 use App\Http\Controllers\Technician\ComplaintController as TechnicianComplaintController;
 use App\Http\Controllers\Technician\MaintenanceReportController;
-use App\Http\Controllers\Technician\MaintenanceHistoryController;
 
 
 use App\Http\Controllers\Consumer\DashboardController as ConsumerDashboardController;
@@ -270,9 +270,8 @@ Route::middleware(['auth', 'role:Customer Service'])
                 CustomerServiceComplaintController::class,
                 'startCommercialProcessing',
             ]
-        )->name(
-            'complaints.commercial.start'
-        );
+        )->name('complaints.commercial.start');
+
 
         Route::put(
             '/complaints/{complaint}/commercial/resolution',
@@ -280,9 +279,8 @@ Route::middleware(['auth', 'role:Customer Service'])
                 CustomerServiceComplaintController::class,
                 'saveCommercialResolution',
             ]
-        )->name(
-            'complaints.commercial.resolution'
-        );
+        )->name('complaints.commercial.resolution');
+
 
         Route::post(
             '/complaints/{complaint}/commercial/complete',
@@ -290,9 +288,17 @@ Route::middleware(['auth', 'role:Customer Service'])
                 CustomerServiceComplaintController::class,
                 'completeCommercialComplaint',
             ]
-        )->name(
-            'complaints.commercial.complete'
-        );
+        )->name('complaints.commercial.complete');
+
+
+        Route::post(
+            '/complaints/{complaint}/commercial/forward-maintenance',
+            [
+                CustomerServiceComplaintController::class,
+                'forwardCommercialToMaintenance',
+            ]
+        )->name('complaints.commercial.forward-maintenance');
+
 
         Route::post(
             '/complaints/{complaint}/commercial/close',
@@ -300,9 +306,7 @@ Route::middleware(['auth', 'role:Customer Service'])
                 CustomerServiceComplaintController::class,
                 'closeCommercialComplaint',
             ]
-        )->name(
-            'complaints.commercial.close'
-        );
+        )->name('complaints.commercial.close');
 
 
 
@@ -414,12 +418,36 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
             [ManagerDashboard::class, 'index']
         )->name('dashboard');
 
-
         /*
-        |--------------------------------------------------------------------------
-        | Complaints
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| Plumber Service Areas
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/service-areas',
+            [ServiceAreaController::class, 'index']
+        )->name('service-areas.index');
+
+        Route::post(
+            '/service-areas',
+            [ServiceAreaController::class, 'store']
+        )->name('service-areas.store');
+
+        Route::put(
+            '/service-areas/{serviceArea}',
+            [ServiceAreaController::class, 'update']
+        )->name('service-areas.update');
+
+        Route::patch(
+            '/service-areas/{serviceArea}/toggle-status',
+            [ServiceAreaController::class, 'toggleStatus']
+        )->name('service-areas.toggle-status');
+
+        Route::patch(
+            '/service-areas/plumbers/{plumber}/assign',
+            [ServiceAreaController::class, 'assignPlumber']
+        )->name('service-areas.assign-plumber');
 
         Route::get(
             '/complaints',
@@ -480,6 +508,11 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
             '/maintenance-reviews/{maintenanceReport}/return',
             [MaintenanceReviewController::class, 'returnForCorrection']
         )->name('maintenance-reviews.return');
+
+        Route::post(
+            '/maintenance-reviews/{maintenanceReport}/close',
+            [MaintenanceReviewController::class, 'close']
+        )->name('maintenance-reviews.close');
     });
 
 
@@ -557,17 +590,6 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             '/reports/maintenance/print',
             [MaintenanceReportController::class, 'print']
         )->name('reports.maintenance.print');
-
-
-        Route::get(
-            '/maintenance-history',
-            [MaintenanceHistoryController::class, 'index']
-        )->name('maintenance-history.index');
-
-        Route::get(
-            '/maintenance-history/{complaint}',
-            [MaintenanceHistoryController::class, 'show']
-        )->name('maintenance-history.show');
     });
 
 

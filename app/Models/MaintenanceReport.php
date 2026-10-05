@@ -12,15 +12,8 @@ class MaintenanceReport extends Model
 
         'diagnosis',
         'root_cause',
-        'work_performed',
-        'repair_procedure',
-
-        'materials_used',
-        'parts_replaced',
-        'tools_used',
-
+        'materials_parts',
         'technician_notes',
-        'completion_remarks',
 
         'before_photo',
         'after_photo',
@@ -36,18 +29,12 @@ class MaintenanceReport extends Model
         'resubmitted_at',
     ];
 
-protected $casts = [
-    'started_at' => 'datetime',
-    'submitted_at' => 'datetime',
-    'reviewed_at' => 'datetime',
-    'resubmitted_at' => 'datetime',
-];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Complaint
-    |--------------------------------------------------------------------------
-    */
+    protected $casts = [
+        'started_at' => 'datetime',
+        'submitted_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'resubmitted_at' => 'datetime',
+    ];
 
     public function complaint()
     {
@@ -57,12 +44,6 @@ protected $casts = [
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Technician
-    |--------------------------------------------------------------------------
-    */
-
     public function technician()
     {
         return $this->belongsTo(
@@ -71,12 +52,6 @@ protected $casts = [
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Reviewer
-    |--------------------------------------------------------------------------
-    */
-
     public function reviewer()
     {
         return $this->belongsTo(
@@ -84,12 +59,6 @@ protected $casts = [
             'reviewed_by'
         );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Review Status Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function isPendingReview(): bool
     {
@@ -105,6 +74,4 @@ protected $casts = [
     {
         return $this->review_status === 'Approved';
     }
-
-
 }

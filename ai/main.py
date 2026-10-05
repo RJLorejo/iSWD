@@ -22,7 +22,7 @@ from ai.app.assignment.recommender import (
 
 app = FastAPI(
     title="iSWD AI Complaint Support Service",
-    version="2.0.0",
+    version="2.1.0",
     description=(
         "AI-assisted complaint analysis service "
         "for the Sagay Water District iSWD system."
@@ -39,6 +39,7 @@ complaint_analyzer = ComplaintAnalyzer()
 similar_complaint_detector = (
     SimilarComplaintDetector()
 )
+
 plumber_assignment_recommender = (
     PlumberAssignmentRecommender()
 )
@@ -96,10 +97,19 @@ class SimilarComplaintRequest(BaseModel):
         le=20,
     )
 
+
+class PlumberServiceArea(BaseModel):
+    id: int
+
+    name: str
+
+
 class PlumberActiveAssignment(BaseModel):
     complaint_id: int
 
     complaint_no: str
+
+    complaint_type: str | None = None
 
     status: str
 
@@ -108,10 +118,26 @@ class PlumberActiveAssignment(BaseModel):
     longitude: float | None = None
 
 
+class PlumberRecentAssignment(BaseModel):
+    complaint_id: int
+
+    complaint_no: str
+
+    complaint_type: str | None = None
+
+    latitude: float | None = None
+
+    longitude: float | None = None
+
+    completed_at: datetime | None = None
+
+
 class PlumberCandidate(BaseModel):
     id: int
 
     name: str
+
+    service_area: PlumberServiceArea | None = None
 
     active_workload: int = Field(
         default=0,
@@ -120,13 +146,25 @@ class PlumberCandidate(BaseModel):
 
     active_assignments: list[
         PlumberActiveAssignment
-    ] = []
+    ] = Field(
+        default_factory=list
+    )
+
+    recent_assignments: list[
+        PlumberRecentAssignment
+    ] = Field(
+        default_factory=list
+    )
 
 
 class AssignmentComplaint(BaseModel):
     id: int
 
     complaint_no: str
+
+    complaint_type: str | None = None
+
+    division: str | None = None
 
     latitude: float | None = None
 
@@ -146,6 +184,7 @@ class PlumberRecommendationRequest(
         le=20,
     )
 
+
 @app.get("/")
 def root():
     return {
@@ -153,7 +192,7 @@ def root():
             "iSWD AI Complaint Support "
             "Service is running."
         ),
-        "version": "2.0.0",
+        "version": "2.1.0",
     }
 
 
@@ -164,7 +203,7 @@ def health():
         "service": (
             "iSWD AI Complaint Support Service"
         ),
-        "version": "2.0.0",
+        "version": "2.1.0",
         "timestamp": datetime.now(
             timezone.utc
         ).isoformat(),
@@ -217,16 +256,20 @@ def detect_similar_complaints(
     request: SimilarComplaintRequest,
 ):
     try:
-        return similar_complaint_detector.detect(
-            complaint=(
-                request.complaint.model_dump()
-            ),
-            candidates=[
-                candidate.model_dump()
-                for candidate
-                in request.candidates
-            ],
-            limit=request.limit,
+        return (
+            similar_complaint_detector.detect(
+                complaint=(
+                    request
+                    .complaint
+                    .model_dump()
+                ),
+                candidates=[
+                    candidate.model_dump()
+                    for candidate
+                    in request.candidates
+                ],
+                limit=request.limit,
+            )
         )
 
     except ValueError as exception:
@@ -234,6 +277,7 @@ def detect_similar_complaints(
             status_code=422,
             detail=str(exception),
         ) from exception
+
 
 @app.post(
     "/assignments/recommend-plumbers"

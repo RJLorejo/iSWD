@@ -1,61 +1,61 @@
 @extends('technician.layouts.app')
 
+@section('title', 'Service Accomplishment Report')
+
 @section('content')
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {{-- HEADER --}}
-        <div class="mb-8">
+        <div class="mb-6">
 
-            <div class="flex items-center gap-3 mb-2">
+            <a href="{{ route('technician.complaints.show', $complaint) }}"
+                class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-4">
 
-                <a href="{{ route('technician.complaints.show', $complaint) }}" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
+                <i class="fas fa-arrow-left"></i>
+                Back to Complaint
 
-                <h1 class="text-2xl font-bold text-gray-900">
-                    Service Accomplishment Report
-                </h1>
+            </a>
 
-            </div>
+            <h1 class="text-2xl font-bold text-gray-900">
+                Service Accomplishment Report
+            </h1>
 
-            <p class="text-gray-500">
-                Document the service work performed for
-                <span class="font-semibold text-gray-700">
-                    {{ $complaint->complaint_no }}
-                </span>
+            <p class="text-sm text-gray-500 mt-1">
+                Record the findings and materials or parts involved in the completed maintenance.
             </p>
 
         </div>
 
 
-        {{-- ALERTS --}}
-
         @if (session('success'))
-            <div class="mb-6 rounded-xl bg-green-50 border border-green-200 p-4 text-green-700">
+            <div class="mb-6 rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">
+
                 <i class="fas fa-circle-check mr-2"></i>
                 {{ session('success') }}
+
             </div>
         @endif
+
 
         @if (session('error'))
-            <div class="mb-6 rounded-xl bg-red-50 border border-red-200 p-4 text-red-700">
+            <div class="mb-6 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+
                 <i class="fas fa-circle-exclamation mr-2"></i>
                 {{ session('error') }}
+
             </div>
         @endif
 
 
-        {{-- VALIDATION ERRORS --}}
-
         @if ($errors->any())
+
             <div class="mb-6 rounded-xl bg-red-50 border border-red-200 p-4">
 
                 <p class="font-semibold text-red-800 mb-2">
                     Please correct the following:
                 </p>
 
-                <ul class="list-disc ml-5 text-sm text-red-700">
+                <ul class="list-disc ml-5 text-sm text-red-700 space-y-1">
 
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -64,45 +64,99 @@
                 </ul>
 
             </div>
+
         @endif
 
 
-        {{-- COMPLAINT SUMMARY --}}
+        @if ($complaint->maintenanceReport?->review_status === 'Returned')
 
-        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+            <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
 
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                <div class="flex gap-3">
+
+                    <i class="fas fa-rotate-left text-amber-600 mt-1"></i>
+
+                    <div>
+
+                        <p class="font-semibold text-amber-900">
+                            Report Returned for Correction
+                        </p>
+
+                        <p class="text-sm text-amber-700 mt-1">
+                            Review the manager's remarks, make the necessary corrections,
+                            and resubmit the accomplishment report.
+                        </p>
+
+                        @if ($complaint->maintenanceReport->review_remarks)
+                            <div class="mt-3 p-3 rounded-xl bg-white border border-amber-200 text-sm text-gray-700">
+                                {{ $complaint->maintenanceReport->review_remarks }}
+                            </div>
+                        @endif
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        @endif
+
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                 <div>
 
-                    <div class="flex items-center gap-3 mb-2">
+                    <div class="flex flex-wrap items-center gap-2">
 
-                        <span class="font-bold text-gray-900">
+                        <span class="text-lg font-bold text-gray-900">
                             {{ $complaint->complaint_no }}
                         </span>
 
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                            {{ $complaint->status }}
+                        <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                            {{ $complaint->status === 'Completed' ? 'Accomplished' : $complaint->status }}
                         </span>
 
                     </div>
 
-                    <h2 class="text-lg font-semibold text-gray-900">
-                        {{ $complaint->subject }}
-                    </h2>
+                    <p class="text-sm font-medium text-gray-800 mt-2">
+                        {{ $complaint->type?->name ?? ($complaint->category?->name ?? 'Water Service Concern') }}
+                    </p>
 
                     <p class="text-sm text-gray-500 mt-1">
-                        {{ $complaint->address }}
+                        {{ $complaint->address ?: 'No location recorded.' }}
                     </p>
 
                 </div>
 
-                <div class="text-sm text-gray-500">
+                <div class="sm:text-right">
 
-                    <div class="mt-1">
-                        Complaint Type: <span class="font-semibold text-gray-700">
-                            {{ $complaint->type?->name ?? 'N/A' }}
-                        </span>
+                    <p class="text-xs text-gray-500">
+                        Maintenance Team
+                    </p>
+
+                    <div class="mt-2 flex flex-wrap gap-2 sm:justify-end">
+
+                        @foreach ($complaint->technicians as $technician)
+                            <span
+                                class="inline-flex items-center gap-1.5
+                       px-2.5 py-1.5 rounded-lg
+                       bg-sky-50 text-sky-700
+                       border border-sky-100
+                       text-xs font-semibold">
+                                <i class="fas fa-user-gear"></i>
+
+                                {{ $technician->full_name }}
+
+                                @if ($technician->id === auth()->id())
+                                    <span class="text-sky-500">
+                                        (You)
+                                    </span>
+                                @endif
+                            </span>
+                        @endforeach
+
                     </div>
 
                 </div>
@@ -111,70 +165,6 @@
 
         </div>
 
-        {{-- ASSIGNED MAINTENANCE TEAM --}}
-
-        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
-
-            <div class="flex items-center justify-between mb-5">
-
-                <div>
-                    <h2 class="text-lg font-bold text-gray-900">
-                        Assigned Maintenance Team
-                    </h2>
-
-                    <p class="text-sm text-gray-500 mt-1">
-                        Plumber assigned to this complaint.
-                    </p>
-                </div>
-
-                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <i class="fas fa-users text-blue-600"></i>
-                </div>
-
-            </div>
-
-            @if ($complaint->technicians->isNotEmpty())
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-                    @foreach ($complaint->technicians as $technician)
-                        <div class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-
-                            <img src="{{ $technician->avatar_url }}" alt="{{ $technician->full_name }}"
-                                class="w-11 h-11 rounded-full object-cover border border-gray-200">
-
-                            <div class="min-w-0">
-
-                                <p class="font-semibold text-gray-900 truncate">
-                                    {{ $technician->full_name }}
-
-                                    @if ($technician->id === auth()->id())
-                                        <span
-                                            class="ml-1 inline-flex px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs">
-                                            You
-                                        </span>
-                                    @endif
-                                </p>
-
-                                <p class="text-xs text-gray-500">
-                                    Plumber
-                                </p>
-
-                            </div>
-
-                        </div>
-                    @endforeach
-
-                </div>
-            @else
-                <p class="text-sm text-gray-500">
-                    No maintenance plumbers are currently assigned.
-                </p>
-            @endif
-
-        </div>
-
-
-        {{-- REPORT FORM --}}
 
         <form method="POST" action="{{ route('technician.maintenance-reports.store', $complaint) }}"
             enctype="multipart/form-data">
@@ -182,17 +172,19 @@
             @csrf
 
 
-            {{-- SECTION 1 --}}
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
 
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+                <div class="mb-6">
 
-                <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    1. Inspection Findings & Root Cause
-                </h2>
+                    <h2 class="text-lg font-bold text-gray-900">
+                        Inspection Findings
+                    </h2>
 
-                <p class="text-sm text-gray-500 mb-6">
-                    Document the actual condition observed during inspection and the identified cause.
-                </p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Record the condition found during inspection and its identified cause.
+                    </p>
+
+                </div>
 
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -200,12 +192,19 @@
                     <div>
 
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Diagnosis <span class="text-red-500">*</span>
+                            Diagnosis / Findings
+                            <span class="text-red-500">*</span>
                         </label>
 
-                        <textarea name="diagnosis" rows="5" required
+                        <textarea name="diagnosis" rows="6" required
                             class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Describe the identified problem or condition...">{{ old('diagnosis', $complaint->maintenanceReport?->diagnosis) }}</textarea>
+                            placeholder="Describe the actual problem or condition found during inspection...">{{ old('diagnosis', $complaint->maintenanceReport?->diagnosis) }}</textarea>
+
+                        @error('diagnosis')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
 
                     </div>
 
@@ -213,12 +212,19 @@
                     <div>
 
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Root Cause <span class="text-red-500">*</span>
+                            Root Cause
+                            <span class="text-red-500">*</span>
                         </label>
 
-                        <textarea name="root_cause" rows="5" required
+                        <textarea name="root_cause" rows="6" required
                             class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Describe the cause of the problem...">{{ old('root_cause', $complaint->maintenanceReport?->root_cause) }}</textarea>
+                            placeholder="Describe the identified cause of the problem...">{{ old('root_cause', $complaint->maintenanceReport?->root_cause) }}</textarea>
+
+                        @error('root_cause')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
 
                     </div>
 
@@ -227,85 +233,81 @@
             </div>
 
 
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
 
-            {{-- SECTION 3 --}}
+                <div class="mb-5">
 
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+                    <h2 class="text-lg font-bold text-gray-900">
+                        Materials / Parts
+                    </h2>
 
-                <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    2. Parts Removed
-                </h2>
-
-                <p class="text-sm text-gray-500 mb-6">
-                    List the resources used during maintenance.
-                </p>
-
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Parts Removed
-                        </label>
-
-                        <textarea name="parts_replaced" rows="5"
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="e.g. 2-inch valve, pipe section...">{{ old('parts_replaced', $complaint->maintenanceReport?->parts_replaced) }}</textarea>
-
-                    </div>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Record materials or parts that were removed, replaced, or installed.
+                    </p>
 
                 </div>
+
+
+                <textarea name="materials_parts" rows="6"
+                    class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Example: Removed damaged coupling, replaced 1/2-inch PVC coupling, installed 2 meters of PVC pipe...">{{ old('materials_parts', $complaint->maintenanceReport?->materials_parts) }}</textarea>
+
+                @error('materials_parts')
+                    <p class="mt-1 text-sm text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
 
             </div>
 
 
-            {{-- SECTION 4 --}}
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
 
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+                <div class="mb-5">
 
-                <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    4. Plumber Notes & Completion
-                </h2>
+                    <h2 class="text-lg font-bold text-gray-900">
+                        Plumber Notes
+                        <span class="text-sm font-normal text-gray-400">
+                            (Optional)
+                        </span>
+                    </h2>
 
-                <p class="text-sm text-gray-500 mb-6">
-                    Add final observations and completion remarks.
-                </p>
-
-
-                <div class="space-y-6">
-
-                    <div>
-
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Completion Remarks <span class="text-red-500">*</span>
-                        </label>
-
-                        <textarea name="completion_remarks" rows="5" required
-                            class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Describe the final condition of the maintenance...">{{ old('completion_remarks', $complaint->maintenanceReport?->completion_remarks) }}</textarea>
-
-                    </div>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Add any important observation that is not already covered above.
+                    </p>
 
                 </div>
+
+
+                <textarea name="technician_notes" rows="5"
+                    class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Additional observations, if any...">{{ old('technician_notes', $complaint->maintenanceReport?->technician_notes) }}</textarea>
+
+                @error('technician_notes')
+                    <p class="mt-1 text-sm text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
 
             </div>
 
 
-            {{-- SECTION 5 --}}
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
 
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+                <div class="mb-5">
 
-                <h2 class="text-lg font-bold text-gray-900 mb-1">
-                    5. Maintenance Photos
-                </h2>
+                    <h2 class="text-lg font-bold text-gray-900">
+                        Maintenance Photos
+                    </h2>
 
-                <p class="text-sm text-gray-500 mb-6">
-                    Upload before and after photos when available.
-                </p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Add before and after photos when available.
+                    </p>
+
+                </div>
 
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <div>
 
@@ -314,11 +316,27 @@
                         </label>
 
                         <input type="file" name="before_photo" accept="image/*"
-                            class="w-full rounded-xl border border-gray-300 p-3">
+                            class="block w-full text-sm text-gray-600 border border-gray-300 rounded-xl p-3">
+
+                        @error('before_photo')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
 
                         @if ($complaint->maintenanceReport?->before_photo)
-                            <img src="{{ asset('storage/' . $complaint->maintenanceReport->before_photo) }}"
-                                class="mt-4 w-full max-h-64 object-cover rounded-xl border">
+                            <div class="mt-4">
+
+                                <p class="text-xs font-medium text-gray-500 mb-2">
+                                    Current Photo
+                                </p>
+
+                                <img src="{{ asset('storage/' . $complaint->maintenanceReport->before_photo) }}"
+                                    alt="Before maintenance"
+                                    class="w-full max-h-72 object-cover rounded-xl border border-gray-200">
+
+                            </div>
                         @endif
 
                     </div>
@@ -331,11 +349,27 @@
                         </label>
 
                         <input type="file" name="after_photo" accept="image/*"
-                            class="w-full rounded-xl border border-gray-300 p-3">
+                            class="block w-full text-sm text-gray-600 border border-gray-300 rounded-xl p-3">
+
+                        @error('after_photo')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
 
                         @if ($complaint->maintenanceReport?->after_photo)
-                            <img src="{{ asset('storage/' . $complaint->maintenanceReport->after_photo) }}"
-                                class="mt-4 w-full max-h-64 object-cover rounded-xl border">
+                            <div class="mt-4">
+
+                                <p class="text-xs font-medium text-gray-500 mb-2">
+                                    Current Photo
+                                </p>
+
+                                <img src="{{ asset('storage/' . $complaint->maintenanceReport->after_photo) }}"
+                                    alt="After maintenance"
+                                    class="w-full max-h-72 object-cover rounded-xl border border-gray-200">
+
+                            </div>
                         @endif
 
                     </div>
@@ -345,14 +379,15 @@
             </div>
 
 
-            {{-- SUBMIT --}}
-
-            <div class="flex flex-col sm:flex-row justify-end gap-3">
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
 
                 <a href="{{ route('technician.complaints.show', $complaint) }}"
-                    class="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 text-center">
+                    class="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50">
+
                     Cancel
+
                 </a>
+
 
                 <button type="submit"
                     class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition">

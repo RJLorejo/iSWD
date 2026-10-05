@@ -32,25 +32,7 @@
                     class="absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-white/5">
                 </div>
 
-                <div class="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
-                    <div class="max-w-2xl">
-
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-sky-100">
-                            Customer Service Workspace
-                        </p>
-
-                        <h2 class="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                            Welcome back, {{ auth()->user()->first_name ?? auth()->user()->name }}
-                        </h2>
-
-                        <p class="mt-2 max-w-xl text-sm leading-6 text-sky-100 sm:text-base">
-                            Monitor consumer concerns, review incoming complaints,
-                            and keep service requests moving through the proper workflow.
-                        </p>
-
-                    </div>
-
+                <div >
                     <div class="flex flex-wrap gap-2">
 
                         <a

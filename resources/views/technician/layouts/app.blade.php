@@ -37,20 +37,6 @@ class="flex min-h-screen">
 
         <main class="flex-1 p-8">
 
-            @if(session('success'))
-
-                <div class="mb-6">
-
-                    <div class="rounded-xl bg-green-100 border border-green-300 text-green-700 p-4">
-
-                        {!! session('success') !!}
-
-                    </div>
-
-                </div>
-
-            @endif
-
             @yield('content')
 
         </main>

@@ -14,12 +14,6 @@ use Illuminate\Support\Facades\Storage;
 
 class MaintenanceReportController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Maintenance Reports
-    |--------------------------------------------------------------------------
-    */
-
     public function index(Request $request)
     {
         $technicianId = Auth::id();
@@ -32,23 +26,10 @@ class MaintenanceReportController extends Controller
             ? Carbon::parse($request->to)->endOfDay()
             : now()->endOfDay();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Base Query
-        |--------------------------------------------------------------------------
-        | A technician belongs to complaints through the pivot table.
-        */
-
         $baseQuery = Complaint::query()
             ->whereHas('technicians', function ($query) use ($technicianId) {
                 $query->where('users.id', $technicianId);
             });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Statistics
-        |--------------------------------------------------------------------------
-        */
 
         $totalAssigned = (clone $baseQuery)
             ->whereBetween('created_at', [$from, $to])
@@ -66,6 +47,7 @@ class MaintenanceReportController extends Controller
 
         $completedCount = (clone $baseQuery)
             ->where('status', 'Completed')
+            ->whereNotNull('completed_at')
             ->whereBetween('completed_at', [$from, $to])
             ->count();
 
@@ -75,36 +57,28 @@ class MaintenanceReportController extends Controller
             ->count();
 
         $urgentCount = (clone $baseQuery)
-            ->whereIn('priority', ['High', 'Critical'])
             ->whereIn('status', [
                 'Assigned',
                 'In Progress',
             ])
+            ->whereHas('aiAnalysis', function ($query) {
+                $query->whereRaw(
+                    'UPPER(urgency_level) = ?',
+                    ['HIGH']
+                );
+            })
             ->count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Completion Rate
-        |--------------------------------------------------------------------------
-        */
+        $activeCount = $assignedCount + $inProgressCount;
 
         $completionRate = $totalAssigned > 0
             ? round(($completedCount / $totalAssigned) * 100, 1)
             : 0;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Average Completion Time
-        |--------------------------------------------------------------------------
-        */
-
-        $completedComplaints = (clone $baseQuery)
+        $completedForAverage = (clone $baseQuery)
             ->where('status', 'Completed')
             ->whereNotNull('completed_at')
-            ->whereBetween(
-                'completed_at',
-                [$from, $to]
-            )
+            ->whereBetween('completed_at', [$from, $to])
             ->get([
                 'id',
                 'created_at',
@@ -113,115 +87,150 @@ class MaintenanceReportController extends Controller
 
         $averageCompletionHours = 0;
 
-        if ($completedComplaints->isNotEmpty()) {
-            $totalHours = $completedComplaints->sum(function ($complaint) {
-                return $complaint->created_at
-                    ->diffInMinutes($complaint->completed_at) / 60;
-            });
+        if ($completedForAverage->isNotEmpty()) {
+            $totalHours = $completedForAverage->sum(
+                function ($complaint) {
+                    if (
+                        !$complaint->created_at ||
+                        !$complaint->completed_at
+                    ) {
+                        return 0;
+                    }
+
+                    return $complaint->created_at
+                        ->diffInMinutes($complaint->completed_at) / 60;
+                }
+            );
 
             $averageCompletionHours = round(
-                $totalHours / $completedComplaints->count(),
+                $totalHours / $completedForAverage->count(),
                 1
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Priority Breakdown
-        |--------------------------------------------------------------------------
-        */
-
-        $priorityBreakdown = collect([
-            'Low',
-            'Medium',
+        $urgencyBreakdown = collect([
             'High',
-            'Critical',
-        ])->mapWithKeys(function ($priority) use (
-            $baseQuery,
-            $from,
-            $to
-        ) {
-            return [
-                $priority => (clone $baseQuery)
-                    ->where('priority', $priority)
-                    ->whereBetween('created_at', [$from, $to])
-                    ->count(),
-            ];
-        });
+            'Moderate',
+            'Low',
+        ])->mapWithKeys(
+            function ($urgency) use (
+                $baseQuery,
+                $from,
+                $to
+            ) {
+                return [
+                    $urgency => (clone $baseQuery)
+                        ->whereBetween(
+                            'created_at',
+                            [$from, $to]
+                        )
+                        ->whereHas(
+                            'aiAnalysis',
+                            function ($query) use ($urgency) {
+                                $query->whereRaw(
+                                    'UPPER(urgency_level) = ?',
+                                    [strtoupper($urgency)]
+                                );
+                            }
+                        )
+                        ->count(),
+                ];
+            }
+        );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Status Breakdown
-        |--------------------------------------------------------------------------
-        */
+        $notAssessedCount = (clone $baseQuery)
+            ->whereBetween('created_at', [$from, $to])
+            ->where(function ($query) {
+                $query
+                    ->whereDoesntHave('aiAnalysis')
+                    ->orWhereHas(
+                        'aiAnalysis',
+                        function ($aiQuery) {
+                            $aiQuery
+                                ->whereNull('urgency_level')
+                                ->orWhere(
+                                    'urgency_level',
+                                    ''
+                                );
+                        }
+                    );
+            })
+            ->count();
+
+        $urgencyBreakdown->put(
+            'Not Assessed',
+            $notAssessedCount
+        );
 
         $statusBreakdown = collect([
-            'Assigned',
-            'In Progress',
-            'Completed',
-            'Closed',
-            'Rejected',
-        ])->mapWithKeys(function ($status) use (
-            $baseQuery,
-            $from,
-            $to
-        ) {
-            $dateColumn = $status === 'Completed'
-                ? 'completed_at'
-                : 'updated_at';
-
-            return [
-                $status => (clone $baseQuery)
-                    ->where('status', $status)
-                    ->whereBetween($dateColumn, [$from, $to])
-                    ->count(),
-            ];
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Completed Maintenance
-        |--------------------------------------------------------------------------
-        */
-
-        $completedComplaintsList = (clone $baseQuery)
-            ->with([
-                'consumer',
-                'category',
-                'technicians',
-                'maintenanceReport',
-            ])
-            ->where('status', 'Completed')
-            ->whereBetween('completed_at', [$from, $to])
-            ->latest('completed_at')
-            ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Current Maintenance
-        |--------------------------------------------------------------------------
-        */
+            'Assigned' => $assignedCount,
+            'In Progress' => $inProgressCount,
+            'Completed' => $completedCount,
+            'Closed' => $closedCount,
+        ]);
 
         $currentComplaints = (clone $baseQuery)
             ->with([
                 'consumer',
+                'consumer.address',
                 'category',
+                'division',
                 'technicians',
                 'maintenanceReport',
+                'aiAnalysis',
+                'commercialResolution',
             ])
             ->whereIn('status', [
                 'Assigned',
                 'In Progress',
             ])
-            ->orderByRaw("
-                CASE
-                    WHEN priority = 'Critical' THEN 1
-                    WHEN priority = 'High' THEN 2
-                    WHEN priority = 'Medium' THEN 3
-                    ELSE 4
-                END
-            ")
-            ->latest('updated_at')
+            ->get()
+            ->sortBy(function ($complaint) {
+                $urgencyOrder = match (strtoupper(
+                    trim(
+                        $complaint->aiAnalysis?->urgency_level ?? ''
+                    )
+                )) {
+                    'HIGH' => 1,
+                    'MODERATE' => 2,
+                    'LOW' => 3,
+                    default => 4,
+                };
+
+                $statusOrder = match ($complaint->status) {
+                    'In Progress' => 1,
+                    'Assigned' => 2,
+                    default => 3,
+                };
+
+                return sprintf(
+                    '%d-%d-%020d',
+                    $urgencyOrder,
+                    $statusOrder,
+                    PHP_INT_MAX -
+                        ($complaint->updated_at?->timestamp ?? 0)
+                );
+            })
+            ->values();
+
+        $completedComplaintsList = (clone $baseQuery)
+            ->with([
+                'consumer',
+                'consumer.address',
+                'category',
+                'division',
+                'technicians',
+                'maintenanceReport',
+                'aiAnalysis',
+                'commercialResolution',
+            ])
+            ->where('status', 'Completed')
+            ->whereNotNull('completed_at')
+            ->whereBetween(
+                'completed_at',
+                [$from, $to]
+            )
+            ->latest('completed_at')
             ->get();
 
         return view(
@@ -235,20 +244,17 @@ class MaintenanceReportController extends Controller
                 'completedCount',
                 'closedCount',
                 'urgentCount',
+                'activeCount',
                 'completionRate',
                 'averageCompletionHours',
-                'priorityBreakdown',
+                'urgencyBreakdown',
+                'notAssessedCount',
                 'statusBreakdown',
-                'completedComplaintsList',
-                'currentComplaints'
+                'currentComplaints',
+                'completedComplaintsList'
             )
         );
     }
-    /*
-|--------------------------------------------------------------------------
-| Start Maintenance
-|--------------------------------------------------------------------------
-*/
 
     public function start(Complaint $complaint)
     {
@@ -257,33 +263,41 @@ class MaintenanceReportController extends Controller
         if ($complaint->status !== 'Assigned') {
             return back()->with(
                 'error',
-                'This service cannot be started from the current status.'
+                'This maintenance work cannot be started from its current status.'
             );
         }
 
         DB::transaction(function () use ($complaint) {
+            $startedAt = now();
+
             $complaint->update([
                 'status' => 'In Progress',
             ]);
 
-            MaintenanceReport::firstOrCreate(
+            $report = MaintenanceReport::firstOrCreate(
                 [
                     'complaint_id' => $complaint->id,
                 ],
                 [
                     'technician_id' => Auth::id(),
-                    'started_at' => now(),
+                    'started_at' => $startedAt,
                     'review_status' => 'Draft',
                 ]
             );
 
-            $complaint->technicians()->updateExistingPivot(
-                Auth::id(),
-                [
+            if (!$report->started_at) {
+                $report->update([
+                    'started_at' => $startedAt,
+                ]);
+            }
+
+            DB::table('complaint_technicians')
+                ->where('complaint_id', $complaint->id)
+                ->update([
                     'status' => 'In Progress',
-                    'started_at' => now(),
-                ]
-            );
+                    'started_at' => $startedAt,
+                    'updated_at' => $startedAt,
+                ]);
         });
 
         return redirect()
@@ -293,21 +307,9 @@ class MaintenanceReportController extends Controller
             )
             ->with(
                 'success',
-                'Service started. Complete the Service Accomplishment Report after performing the work.'
+                'Maintenance started for the assigned team. Complete the accomplishment report after performing the work.'
             );
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Create / Edit Maintenance Report
-    |--------------------------------------------------------------------------
-    */
-    /*
-|--------------------------------------------------------------------------
-| Create / Edit Maintenance Report
-|--------------------------------------------------------------------------
-*/
 
     public function create(Complaint $complaint)
     {
@@ -315,37 +317,31 @@ class MaintenanceReportController extends Controller
 
         $complaint->load([
             'consumer',
+            'consumer.address',
             'category',
+            'division',
             'technicians',
             'maintenanceReport.technician',
+            'aiAnalysis',
+            'commercialResolution',
         ]);
 
         $report = $complaint->maintenanceReport;
 
-        /*
-    |--------------------------------------------------------------------------
-    | APPROVED
-    |--------------------------------------------------------------------------
-    */
-
-        if ($report && $report->review_status === 'Approved') {
-            return redirect()
-                ->route(
-                    'technician.maintenance-reports.show',
-                    $complaint
-                );
+        if (
+            $report &&
+            $report->review_status === 'Approved'
+        ) {
+            return redirect()->route(
+                'technician.maintenance-reports.show',
+                $complaint
+            );
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | PENDING REVIEW
-    |--------------------------------------------------------------------------
-    |
-    | Report has already been submitted.
-    |
-    */
-
-        if ($report && $report->review_status === 'Pending Review') {
+        if (
+            $report &&
+            $report->review_status === 'Pending Review'
+        ) {
             return redirect()
                 ->route(
                     'technician.maintenance-reports.show',
@@ -353,20 +349,21 @@ class MaintenanceReportController extends Controller
                 )
                 ->with(
                     'info',
-                    'This maintenance report has already been submitted and is awaiting manager validation.'
+                    'This accomplishment report has already been submitted and is awaiting manager review.'
                 );
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | DRAFT
-    |--------------------------------------------------------------------------
-    |
-    | Technician can continue editing the report.
-    |
-    */
-
-        if ($report && $report->review_status === 'Draft') {
+        if (
+            $report &&
+            in_array(
+                $report->review_status,
+                [
+                    'Draft',
+                    'Returned',
+                ],
+                true
+            )
+        ) {
             return view(
                 'technician.maintenance.report',
                 compact(
@@ -376,36 +373,16 @@ class MaintenanceReportController extends Controller
             );
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | RETURNED
-    |--------------------------------------------------------------------------
-    |
-    | Manager returned the report for correction.
-    |
-    */
-
-        if ($report && $report->review_status === 'Returned') {
-            return view(
-                'technician.maintenance.report',
-                compact(
-                    'complaint',
-                    'report'
-                )
-            );
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | NEW REPORT
-    |--------------------------------------------------------------------------
-    */
-
-        if (! in_array(
-            $complaint->status,
-            ['Assigned', 'In Progress'],
-            true
-        )) {
+        if (
+            !in_array(
+                $complaint->status,
+                [
+                    'Assigned',
+                    'In Progress',
+                ],
+                true
+            )
+        ) {
             return redirect()
                 ->route(
                     'technician.complaints.show',
@@ -426,17 +403,15 @@ class MaintenanceReportController extends Controller
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Submit Maintenance Report
-    |--------------------------------------------------------------------------
-    */
-
     public function store(
         StoreMaintenanceReportRequest $request,
         Complaint $complaint
     ) {
         $this->authorizeTechnician($complaint);
+
+        $complaint->loadMissing(
+            'maintenanceReport'
+        );
 
         $report = $complaint->maintenanceReport;
 
@@ -465,7 +440,7 @@ class MaintenanceReportController extends Controller
                 $complaint->status,
                 [
                     'In Progress',
-                    'Accomplished',
+                    'Completed',
                 ],
                 true
             )
@@ -477,113 +452,132 @@ class MaintenanceReportController extends Controller
                 )
                 ->with(
                     'error',
-                    'Service must be started before submitting an accomplishment report.'
+                    'Maintenance must be started before submitting an accomplishment report.'
                 );
         }
 
         $validated = $request->validated();
 
-        DB::transaction(function () use (
-            $request,
-            $complaint,
-            &$report,
-            $validated
-        ) {
-            if (!$report) {
-                $report = MaintenanceReport::create([
-                    'complaint_id' => $complaint->id,
-                    'technician_id' => Auth::id(),
-                    'started_at' => now(),
-                    'review_status' => 'Draft',
+        DB::transaction(
+            function () use (
+                $request,
+                $complaint,
+                &$report,
+                $validated
+            ) {
+                if (!$report) {
+                    $report = MaintenanceReport::create([
+                        'complaint_id' => $complaint->id,
+                        'technician_id' => Auth::id(),
+                        'started_at' => now(),
+                        'review_status' => 'Draft',
+                    ]);
+                }
+
+                if (
+                    $request->hasFile(
+                        'before_photo'
+                    )
+                ) {
+                    if ($report->before_photo) {
+                        Storage::disk('public')
+                            ->delete(
+                                $report->before_photo
+                            );
+                    }
+
+                    $report->before_photo =
+                        $request
+                        ->file('before_photo')
+                        ->store(
+                            'maintenance-reports/before',
+                            'public'
+                        );
+                }
+
+                if (
+                    $request->hasFile(
+                        'after_photo'
+                    )
+                ) {
+                    if ($report->after_photo) {
+                        Storage::disk('public')
+                            ->delete(
+                                $report->after_photo
+                            );
+                    }
+
+                    $report->after_photo =
+                        $request
+                        ->file('after_photo')
+                        ->store(
+                            'maintenance-reports/after',
+                            'public'
+                        );
+                }
+
+                $isResubmission =
+                    $report->review_status ===
+                    'Returned';
+
+                $submittedAt = now();
+
+                $report->diagnosis =
+                    $validated['diagnosis'];
+
+                $report->root_cause =
+                    $validated['root_cause'];
+
+                $report->materials_parts =
+                    $validated['materials_parts']
+                    ?? null;
+
+                $report->technician_notes =
+                    $validated['technician_notes']
+                    ?? null;
+
+                if (!$report->started_at) {
+                    $report->started_at =
+                        $submittedAt;
+                }
+
+                $report->submitted_at =
+                    $submittedAt;
+
+                $report->technician_id = Auth::id();
+
+                if ($isResubmission) {
+                    $report->resubmitted_at =
+                        $submittedAt;
+
+                    $report->revision_number =
+                        ($report->revision_number ?? 0)
+                        + 1;
+                }
+
+                $report->review_status =
+                    'Pending Review';
+
+                $report->reviewed_by = null;
+                $report->reviewed_at = null;
+                $report->review_remarks = null;
+
+                $report->save();
+
+                $complaint->update([
+                    'status' => 'Completed',
+                    'completed_at' => $submittedAt,
                 ]);
+
+                DB::table('complaint_technicians')
+                    ->where('complaint_id', $complaint->id)
+                    ->update([
+                        'status' => 'Completed',
+                        'completed_at' => $submittedAt,
+                        'updated_at' => $submittedAt,
+                    ]);
             }
-
-            if ($request->hasFile('before_photo')) {
-                if ($report->before_photo) {
-                    Storage::disk('public')
-                        ->delete($report->before_photo);
-                }
-
-                $report->before_photo = $request
-                    ->file('before_photo')
-                    ->store(
-                        'maintenance-reports/before',
-                        'public'
-                    );
-            }
-
-            if ($request->hasFile('after_photo')) {
-                if ($report->after_photo) {
-                    Storage::disk('public')
-                        ->delete($report->after_photo);
-                }
-
-                $report->after_photo = $request
-                    ->file('after_photo')
-                    ->store(
-                        'maintenance-reports/after',
-                        'public'
-                    );
-            }
-
-            $isResubmission =
-                $report->review_status === 'Returned';
-
-            $report->diagnosis =
-                $validated['diagnosis'];
-
-            $report->root_cause =
-                $validated['root_cause'];
-
-
-
-            $report->parts_replaced =
-                $validated['parts_replaced'] ?? null;
-
-
-            $report->technician_notes =
-                $validated['technician_notes'] ?? null;
-
-            $report->completion_remarks =
-                $validated['completion_remarks'];
-
-            if (!$report->started_at) {
-                $report->started_at = now();
-            }
-
-            $report->submitted_at = now();
-
-            if ($isResubmission) {
-                $report->resubmitted_at = now();
-
-                $report->revision_number =
-                    ($report->revision_number ?? 0) + 1;
-            }
-
-            $report->review_status =
-                'Pending Review';
-
-            $report->reviewed_by = null;
-            $report->reviewed_at = null;
-            $report->review_remarks = null;
-
-            $report->save();
-
-            $complaint->update([
-                'status' => 'Accomplished',
-                'completed_at' => null,
-            ]);
-
-            $complaint
-                ->technicians()
-                ->updateExistingPivot(
-                    Auth::id(),
-                    [
-                        'status' => 'Accomplished',
-                        'completed_at' => now(),
-                    ]
-                );
-        });
+        );
 
         return redirect()
             ->route(
@@ -592,16 +586,9 @@ class MaintenanceReportController extends Controller
             )
             ->with(
                 'success',
-                'Service accomplished successfully. The accomplishment report has been submitted for management review.'
+                'Maintenance accomplished successfully. The accomplishment report has been submitted for manager review.'
             );
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Show Individual Report
-    |--------------------------------------------------------------------------
-    */
 
     public function show(Complaint $complaint)
     {
@@ -609,13 +596,18 @@ class MaintenanceReportController extends Controller
 
         $complaint->load([
             'consumer',
+            'consumer.address',
             'category',
+            'division',
             'technicians',
             'maintenanceReport.technician',
+            'aiAnalysis',
+            'commercialResolution',
         ]);
 
-        if (!$complaint->maintenanceReport) {
+        $report = $complaint->maintenanceReport;
 
+        if (!$report) {
             return redirect()
                 ->route(
                     'technician.maintenance-reports.create',
@@ -623,7 +615,29 @@ class MaintenanceReportController extends Controller
                 )
                 ->with(
                     'error',
-                    'No maintenance report has been submitted yet.'
+                    'No maintenance report is available yet.'
+                );
+        }
+
+        if (
+            !in_array(
+                $report->review_status,
+                [
+                    'Pending Review',
+                    'Returned',
+                    'Approved',
+                ],
+                true
+            )
+        ) {
+            return redirect()
+                ->route(
+                    'technician.maintenance-reports.create',
+                    $complaint
+                )
+                ->with(
+                    'info',
+                    'The accomplishment report has not been submitted yet.'
                 );
         }
 
@@ -633,26 +647,34 @@ class MaintenanceReportController extends Controller
         );
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Print Individual Report
-    |--------------------------------------------------------------------------
-    */
-
-    public function printReport(Complaint $complaint)
-    {
+    public function printReport(
+        Complaint $complaint
+    ) {
         $this->authorizeTechnician($complaint);
 
         $complaint->load([
             'consumer',
+            'consumer.address',
             'category',
+            'division',
             'technicians',
             'maintenanceReport.technician',
+            'aiAnalysis',
         ]);
 
+        $report = $complaint->maintenanceReport;
+
         abort_unless(
-            $complaint->maintenanceReport,
+            $report &&
+                in_array(
+                    $report->review_status,
+                    [
+                        'Pending Review',
+                        'Returned',
+                        'Approved',
+                    ],
+                    true
+                ),
             404
         );
 
@@ -662,35 +684,58 @@ class MaintenanceReportController extends Controller
         );
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Printable Maintenance Summary
-    |--------------------------------------------------------------------------
-    */
-
     public function print(Request $request)
     {
         $technicianId = Auth::id();
 
         $from = $request->filled('from')
-            ? Carbon::parse($request->from)->startOfDay()
+            ? Carbon::parse(
+                $request->from
+            )->startOfDay()
             : now()->startOfMonth();
 
         $to = $request->filled('to')
-            ? Carbon::parse($request->to)->endOfDay()
+            ? Carbon::parse(
+                $request->to
+            )->endOfDay()
             : now()->endOfDay();
 
-        $complaints = Complaint::with([
-            'consumer',
-            'category',
-            'technicians',
-            'maintenanceReport',
-        ])
-            ->whereHas('technicians', function ($query) use ($technicianId) {
-                $query->where('users.id', $technicianId);
-            })
+        $complaints = Complaint::query()
+            ->with([
+                'consumer',
+                'consumer.address',
+                'category',
+                'division',
+                'technicians',
+                'maintenanceReport',
+                'aiAnalysis',
+            ])
+            ->whereHas(
+                'technicians',
+                function ($query) use (
+                    $technicianId
+                ) {
+                    $query->where(
+                        'users.id',
+                        $technicianId
+                    );
+                }
+            )
             ->where('status', 'Completed')
+            ->whereNotNull('completed_at')
+            ->whereHas(
+                'maintenanceReport',
+                function ($query) {
+                    $query->whereIn(
+                        'review_status',
+                        [
+                            'Pending Review',
+                            'Returned',
+                            'Approved',
+                        ]
+                    );
+                }
+            )
             ->whereBetween(
                 'completed_at',
                 [$from, $to]
@@ -703,10 +748,17 @@ class MaintenanceReportController extends Controller
         $averageCompletionHours = 0;
 
         if ($total > 0) {
-
             $totalHours = $complaints->sum(
                 function ($complaint) {
-                    return $complaint->created_at
+                    if (
+                        !$complaint->created_at ||
+                        !$complaint->completed_at
+                    ) {
+                        return 0;
+                    }
+
+                    return $complaint
+                        ->created_at
                         ->diffInMinutes(
                             $complaint->completed_at
                         ) / 60;
@@ -731,20 +783,16 @@ class MaintenanceReportController extends Controller
         );
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Technician Authorization
-    |--------------------------------------------------------------------------
-    */
-
     private function authorizeTechnician(
         Complaint $complaint
     ): void {
-
         abort_unless(
-            $complaint->technicians()
-                ->where('users.id', Auth::id())
+            $complaint
+                ->technicians()
+                ->where(
+                    'users.id',
+                    Auth::id()
+                )
                 ->exists(),
             403,
             'You are not authorized to manage this maintenance report.'

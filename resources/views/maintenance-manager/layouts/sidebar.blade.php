@@ -1,22 +1,22 @@
 @php
 
-    /*
-    |--------------------------------------------------------------------------
-    | Manager Sidebar Counts
-    |--------------------------------------------------------------------------
-    */
-
-    // Engineering complaints that are ready for maintenance assignment.
     $forAssignmentCount = \App\Models\Complaint::query()
-        ->where('status', 'Verified')
         ->whereDoesntHave('technicians')
-        ->whereHas('division', function ($query) {
-            $query->where('name', 'Engineering');
+        ->where(function ($query) {
+            $query
+                ->where(function ($engineeringQuery) {
+                    $engineeringQuery->where('status', 'Verified')->whereHas('division', function ($divisionQuery) {
+                        $divisionQuery->where('name', 'like', '%Engineering%');
+                    });
+                })
+                ->orWhere('status', 'For Maintenance');
         })
         ->count();
 
-    // Maintenance reports waiting for Manager review.
-    $pendingReviews = \App\Models\MaintenanceReport::query()->where('review_status', 'Pending Review')->count();
+    $pendingReviews = \App\Models\MaintenanceReport::query()
+        ->whereNotNull('submitted_at')
+        ->where('review_status', 'Pending Review')
+        ->count();
 
 @endphp
 
@@ -392,23 +392,19 @@
                 </p>
 
             </div>
-
-
-
             {{-- ================================================= --}}
             {{-- MAINTENANCE REVIEWS --}}
             {{-- ================================================= --}}
 
-            <a href="{{ route('maintenance-manager.maintenance-reviews.index') }}"
-                title="Maintenance Reviews"
+            <a href="{{ route('maintenance-manager.maintenance-reviews.index') }}" title="Maintenance Reviews"
                 class="group flex items-center gap-3
-                       rounded-xl px-3 py-2.5
-                       text-sm font-semibold
-                       transition
+           rounded-xl px-3 py-2.5
+           text-sm font-semibold
+           transition
 
-                       {{ request()->routeIs('maintenance-manager.maintenance-reviews.*')
-                           ? 'bg-white text-sky-800 shadow-sm'
-                           : 'text-sky-100 hover:bg-white/10 hover:text-white' }}"
+           {{ request()->routeIs('maintenance-manager.maintenance-reviews.*')
+               ? 'bg-white text-sky-800 shadow-sm'
+               : 'text-sky-100 hover:bg-white/10 hover:text-white' }}"
                 :class="sidebarMini
                     ?
                     'lg:justify-center' :
@@ -417,12 +413,12 @@
 
                 <span
                     class="relative flex h-8 w-8
-                           shrink-0 items-center
-                           justify-center rounded-lg
+               shrink-0 items-center
+               justify-center rounded-lg
 
-                           {{ request()->routeIs('maintenance-manager.maintenance-reviews.*')
-                               ? 'bg-sky-50 text-sky-700'
-                               : 'text-sky-200 group-hover:text-white' }}">
+               {{ request()->routeIs('maintenance-manager.maintenance-reviews.*')
+                   ? 'bg-sky-50 text-sky-700'
+                   : 'text-sky-200 group-hover:text-white' }}">
 
                     <i class="fas fa-clipboard-check"></i>
 
@@ -432,13 +428,13 @@
                     @if ($pendingReviews > 0)
                         <span x-show="sidebarMini"
                             class="absolute -right-1 -top-1
-                                   hidden h-4 min-w-4
-                                   items-center justify-center
-                                   rounded-full bg-red-500
-                                   px-1 text-[8px]
-                                   font-bold text-white
-                                   ring-2 ring-sky-800
-                                   lg:flex">
+                       hidden h-4 min-w-4
+                       items-center justify-center
+                       rounded-full bg-red-500
+                       px-1 text-[8px]
+                       font-bold text-white
+                       ring-2 ring-sky-800
+                       lg:flex">
 
                             {{ $pendingReviews > 9 ? '9+' : $pendingReviews }}
 
@@ -460,11 +456,11 @@
                 @if ($pendingReviews > 0)
                     <span x-show="!sidebarMini" x-transition.opacity
                         class="ml-auto flex h-5
-                               min-w-5 items-center
-                               justify-center rounded-full
-                               bg-red-500 px-1.5
-                               text-[9px] font-bold
-                               text-white">
+                   min-w-5 items-center
+                   justify-center rounded-full
+                   bg-red-500 px-1.5
+                   text-[9px] font-bold
+                   text-white">
 
                         {{ $pendingReviews > 99 ? '99+' : $pendingReviews }}
 
@@ -473,35 +469,19 @@
 
             </a>
 
+            {{-- ========================================================= --}}
+            {{-- PLUMBER SERVICE AREAS --}}
+            {{-- ========================================================= --}}
 
-
-            {{-- ================================================= --}}
-            {{-- RESOURCES --}}
-            {{-- ================================================= --}}
-
-            <div x-show="!sidebarMini" x-transition.opacity class="px-3 pb-2 pt-5">
-
-                <p
-                    class="text-[10px] font-bold
-                           uppercase tracking-[0.18em]
-                           text-sky-300">
-
-                    Resources
-
-                </p>
-
-            </div>
-
-
-
-            {{-- EQUIPMENT --}}
-
-            <a href="#" title="Equipment"
+            <a href="{{ route('maintenance-manager.service-areas.index') }}" title="Plumber Service Areas"
                 class="group flex items-center gap-3
-                       rounded-xl px-3 py-2.5
-                       text-sm font-semibold
-                       text-sky-100 transition
-                       hover:bg-white/10 hover:text-white"
+           rounded-xl px-3 py-2.5
+           text-sm font-semibold
+           transition
+
+           {{ request()->routeIs('maintenance-manager.service-areas.*')
+               ? 'bg-white text-sky-800 shadow-sm'
+               : 'text-sky-100 hover:bg-white/10 hover:text-white' }}"
                 :class="sidebarMini
                     ?
                     'lg:justify-center' :
@@ -509,102 +489,20 @@
 
                 <span
                     class="flex h-8 w-8 shrink-0
-                           items-center justify-center
-                           rounded-lg text-sky-200
-                           group-hover:text-white">
+               items-center justify-center
+               rounded-lg
 
-                    <i class="fas fa-screwdriver-wrench"></i>
+               {{ request()->routeIs('maintenance-manager.service-areas.*')
+                   ? 'bg-sky-50 text-sky-700'
+                   : 'text-sky-200 group-hover:text-white' }}">
 
-                </span>
-
-                <span x-show="!sidebarMini" x-transition.opacity>
-
-                    Equipment
-
-                </span>
-
-            </a>
-
-
-
-            {{-- ================================================= --}}
-            {{-- INSIGHTS --}}
-            {{-- ================================================= --}}
-
-            <div x-show="!sidebarMini" x-transition.opacity class="px-3 pb-2 pt-5">
-
-                <p
-                    class="text-[10px] font-bold
-                           uppercase tracking-[0.18em]
-                           text-sky-300">
-
-                    Insights
-
-                </p>
-
-            </div>
-
-
-
-            {{-- REPORTS --}}
-
-            <a href="#" title="Reports"
-                class="group flex items-center gap-3
-                       rounded-xl px-3 py-2.5
-                       text-sm font-semibold
-                       text-sky-100 transition
-                       hover:bg-white/10 hover:text-white"
-                :class="sidebarMini
-                    ?
-                    'lg:justify-center' :
-                    ''">
-
-                <span
-                    class="flex h-8 w-8 shrink-0
-                           items-center justify-center
-                           rounded-lg text-sky-200
-                           group-hover:text-white">
-
-                    <i class="fas fa-chart-column"></i>
+                    <i class="fas fa-map-location-dot"></i>
 
                 </span>
 
                 <span x-show="!sidebarMini" x-transition.opacity>
 
-                    Reports
-
-                </span>
-
-            </a>
-
-
-
-            {{-- SETTINGS --}}
-
-            <a href="#" title="Settings"
-                class="group flex items-center gap-3
-                       rounded-xl px-3 py-2.5
-                       text-sm font-semibold
-                       text-sky-100 transition
-                       hover:bg-white/10 hover:text-white"
-                :class="sidebarMini
-                    ?
-                    'lg:justify-center' :
-                    ''">
-
-                <span
-                    class="flex h-8 w-8 shrink-0
-                           items-center justify-center
-                           rounded-lg text-sky-200
-                           group-hover:text-white">
-
-                    <i class="fas fa-gear"></i>
-
-                </span>
-
-                <span x-show="!sidebarMini" x-transition.opacity>
-
-                    Settings
+                    Plumber Service Areas
 
                 </span>
 

@@ -27,43 +27,13 @@ class StoreMaintenanceReportRequest extends FormRequest
                 'max:5000',
             ],
 
-            'work_performed' => [
+            'materials_parts' => [
                 'nullable',
                 'string',
                 'max:10000',
-            ],
-
-            'repair_procedure' => [
-                'nullable',
-                'string',
-                'max:10000',
-            ],
-
-            'materials_used' => [
-                'nullable',
-                'string',
-                'max:5000',
-            ],
-
-            'parts_replaced' => [
-                'nullable',
-                'string',
-                'max:5000',
-            ],
-
-            'tools_used' => [
-                'nullable',
-                'string',
-                'max:5000',
             ],
 
             'technician_notes' => [
-                'nullable',
-                'string',
-                'max:10000',
-            ],
-
-            'completion_remarks' => [
                 'nullable',
                 'string',
                 'max:10000',
@@ -82,6 +52,18 @@ class StoreMaintenanceReportRequest extends FormRequest
                 'mimes:jpg,jpeg,png,webp',
                 'max:5120',
             ],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'diagnosis' => 'diagnosis / findings',
+            'root_cause' => 'root cause',
+            'materials_parts' => 'materials / parts',
+            'technician_notes' => 'plumber notes',
+            'before_photo' => 'before photo',
+            'after_photo' => 'after photo',
         ];
     }
 }

@@ -20,7 +20,6 @@ class Complaint extends Model
         'division_id',
         'assigned_to',
         'customer_service_id',
-        'priority',
         'status',
         'description',
         'address',
@@ -122,9 +121,12 @@ class Complaint extends Model
             MaintenanceHistory::class
         )->latest('event_at');
     }
+
     public function feedback(): HasOne
     {
-        return $this->hasOne(ComplaintFeedback::class);
+        return $this->hasOne(
+            ComplaintFeedback::class
+        );
     }
 
     public static function generateComplaintNo(): string
@@ -181,6 +183,16 @@ class Complaint extends Model
         return $this->status === 'Verified';
     }
 
+    public function isCsProcessing(): bool
+    {
+        return $this->status === 'CS Processing';
+    }
+
+    public function isForMaintenance(): bool
+    {
+        return $this->status === 'For Maintenance';
+    }
+
     public function isAssigned(): bool
     {
         return $this->status === 'Assigned';
@@ -189,11 +201,6 @@ class Complaint extends Model
     public function isInProgress(): bool
     {
         return $this->status === 'In Progress';
-    }
-
-    public function isAccomplished(): bool
-    {
-        return $this->status === 'Accomplished';
     }
 
     public function isCompleted(): bool

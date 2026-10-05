@@ -311,7 +311,7 @@
 
 
                         <input type="text" name="search" value="{{ request('search') }}"
-                           placeholder="Search complaint, consumer, type, division..."
+                            placeholder="Search complaint, consumer, type, division..."
                             class="w-full pl-10 pr-4 py-2.5
                                    rounded-xl border border-gray-200
                                    text-sm
@@ -319,15 +319,13 @@
                                    focus:border-blue-500">
 
                     </div>
-
                     <div>
-
                         <select name="status"
                             class="w-full px-3 py-2.5 rounded-xl
-                                   border border-gray-200
-                                   text-sm text-gray-700
-                                   focus:ring-2 focus:ring-blue-500
-                                   focus:border-blue-500">
+               border border-gray-200
+               text-sm text-gray-700
+               focus:ring-2 focus:ring-blue-500
+               focus:border-blue-500">
 
                             <option value="">
                                 All Statuses
@@ -335,6 +333,11 @@
 
                             <option value="For Assignment" {{ request('status') === 'For Assignment' ? 'selected' : '' }}>
                                 For Assignment
+                            </option>
+
+                            <option value="For Maintenance"
+                                {{ request('status') === 'For Maintenance' ? 'selected' : '' }}>
+                                For Maintenance
                             </option>
 
                             <option value="Assigned" {{ request('status') === 'Assigned' ? 'selected' : '' }}>
@@ -346,7 +349,7 @@
                             </option>
 
                             <option value="Completed" {{ request('status') === 'Completed' ? 'selected' : '' }}>
-                                Completed
+                                Accomplished
                             </option>
 
                             <option value="Closed" {{ request('status') === 'Closed' ? 'selected' : '' }}>
@@ -354,10 +357,7 @@
                             </option>
 
                         </select>
-
                     </div>
-
-
 
                     {{-- URGENCY --}}
 
@@ -587,15 +587,10 @@
 
                             @foreach ($complaints as $complaint)
                                 @php
-
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | Status
-                                    |--------------------------------------------------------------------------
-                                    */
-
                                     $statusClasses = match ($complaint->status) {
                                         'Verified' => 'bg-blue-50 text-blue-700 border-blue-100',
+
+                                        'For Maintenance' => 'bg-violet-50 text-violet-700 border-violet-100',
 
                                         'Assigned' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
 
@@ -608,11 +603,10 @@
                                         default => 'bg-gray-50 text-gray-600 border-gray-100',
                                     };
 
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | Urgency
-                                    |--------------------------------------------------------------------------
-                                    */
+                                    $statusLabel = match ($complaint->status) {
+                                        'Completed' => 'Accomplished',
+                                        default => $complaint->status,
+                                    };
 
                                     $urgency = $complaint->aiAnalysis?->urgency_level;
 
@@ -838,16 +832,29 @@
                                                          rounded-full bg-current">
                                             </span>
 
-                                            {{ $complaint->status }}
-
+                                            {{ $statusLabel }}
                                         </span>
 
                                     </td>
 
                                     <td class="px-5 py-4">
 
-                                        {{-- COMMERCIAL COMPLAINT --}}
-                                        @if ($isCommercial)
+                                        @php
+                                            $hasPlumbers = $complaint->technicians->isNotEmpty();
+
+                                            $isForwardedToMaintenance =
+                                                in_array(
+                                                    $complaint->status,
+                                                    ['For Maintenance', 'Assigned', 'In Progress', 'Completed'],
+                                                    true,
+                                                ) ||
+                                                ($complaint->status === 'Closed' && $hasPlumbers);
+
+                                            $isCommercialOnly =
+                                                $isCommercial && !$isForwardedToMaintenance && !$hasPlumbers;
+                                        @endphp
+
+                                        @if ($isCommercialOnly)
                                             <div class="flex items-center gap-2">
 
                                                 <div
@@ -873,10 +880,7 @@
                                                 </div>
 
                                             </div>
-
-
-                                            {{-- ENGINEERING WITH ASSIGNED PLUMBERS --}}
-                                        @elseif ($complaint->technicians->count())
+                                        @elseif ($hasPlumbers)
                                             <div class="space-y-2">
 
                                                 @foreach ($complaint->technicians as $technician)
@@ -916,9 +920,6 @@
                                                 @endforeach
 
                                             </div>
-
-
-                                            {{-- ENGINEERING WITHOUT ASSIGNED PLUMBER --}}
                                         @else
                                             <div class="flex items-center gap-2">
 
@@ -1010,9 +1011,10 @@
 
                     @foreach ($complaints as $complaint)
                         @php
-
                             $statusClasses = match ($complaint->status) {
                                 'Verified' => 'bg-blue-50 text-blue-700 border-blue-100',
+
+                                'For Maintenance' => 'bg-violet-50 text-violet-700 border-violet-100',
 
                                 'Assigned' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
 
@@ -1023,6 +1025,11 @@
                                 'Closed' => 'bg-gray-100 text-gray-700 border-gray-200',
 
                                 default => 'bg-gray-50 text-gray-600 border-gray-100',
+                            };
+
+                            $statusLabel = match ($complaint->status) {
+                                'Completed' => 'Accomplished',
+                                default => $complaint->status,
                             };
 
                             $urgency = $complaint->aiAnalysis?->urgency_level;
@@ -1044,7 +1051,6 @@
                             $isCommercial = str_contains($normalizedDivision, 'commercial');
 
                             $isEngineering = str_contains($normalizedDivision, 'engineering');
-
                         @endphp
 
 
@@ -1109,8 +1115,7 @@
                                                  rounded-full bg-current">
                                     </span>
 
-                                    {{ $complaint->status }}
-
+                                    {{ $statusLabel }}
                                 </span>
 
                             </div>
@@ -1189,7 +1194,21 @@
                                 </p>
 
 
-                                @if ($isCommercial)
+                                @php
+                                    $hasPlumbers = $complaint->technicians->isNotEmpty();
+
+                                    $isForwardedToMaintenance =
+                                        in_array(
+                                            $complaint->status,
+                                            ['For Maintenance', 'Assigned', 'In Progress', 'Completed'],
+                                            true,
+                                        ) ||
+                                        ($complaint->status === 'Closed' && $hasPlumbers);
+
+                                    $isCommercialOnly = $isCommercial && !$isForwardedToMaintenance && !$hasPlumbers;
+                                @endphp
+
+                                @if ($isCommercialOnly)
                                     <div class="mt-2 flex items-center gap-2">
 
                                         <div
@@ -1214,7 +1233,7 @@
                                         </div>
 
                                     </div>
-                                @elseif ($complaint->technicians->count())
+                                @elseif ($hasPlumbers)
                                     <div class="mt-2 space-y-2">
 
                                         @foreach ($complaint->technicians as $technician)
@@ -1222,30 +1241,23 @@
 
                                                 <div
                                                     class="w-7 h-7 rounded-full
-                                                           bg-blue-100 text-blue-700
-                                                           flex items-center
-                                                           justify-center
-                                                           text-[10px] font-bold">
+                           bg-blue-100 text-blue-700
+                           flex items-center justify-center
+                           text-[10px] font-bold">
 
                                                     {{ strtoupper(substr($technician->first_name ?? '', 0, 1) . substr($technician->last_name ?? '', 0, 1)) }}
 
                                                 </div>
 
-
                                                 <div>
 
                                                     <p class="text-sm font-medium text-gray-800">
-
                                                         {{ $technician->full_name }}
-
                                                     </p>
-
 
                                                     @if ($technician->pivot?->assignment_role)
                                                         <p class="text-[10px] text-gray-400">
-
                                                             {{ $technician->pivot->assignment_role }}
-
                                                         </p>
                                                     @endif
 

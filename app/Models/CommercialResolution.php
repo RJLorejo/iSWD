@@ -13,11 +13,16 @@ class CommercialResolution extends Model
         'started_at',
         'findings',
         'resolution_remarks',
+        'initial_processing_completed_at',
+        'forwarded_to_maintenance_at',
+        'forwarded_by',
         'completed_at',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
+        'initial_processing_completed_at' => 'datetime',
+        'forwarded_to_maintenance_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
 
@@ -34,6 +39,14 @@ class CommercialResolution extends Model
         return $this->belongsTo(
             User::class,
             'processed_by'
+        );
+    }
+
+    public function forwarder(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'forwarded_by'
         );
     }
 }

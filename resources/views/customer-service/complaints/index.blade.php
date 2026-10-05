@@ -243,26 +243,56 @@
 
                     </div>
 
-
-                    {{-- STATUS --}}
-
+                    {{-- STATUS / WORKFLOW STAGE --}}
                     <select name="status"
                         class="w-full px-3 py-2.5
-                               rounded-xl border border-gray-200
-                               text-sm text-gray-700
-                               focus:ring-2 focus:ring-blue-500">
+           rounded-xl border border-gray-200
+           text-sm text-gray-700
+           focus:ring-2 focus:ring-blue-500">
 
                         <option value="">
                             All Statuses
                         </option>
 
-                        @foreach (['Pending', 'Verified', 'Assigned', 'In Progress', 'Completed', 'Closed', 'Rejected'] as $status)
-                            <option value="{{ $status }}" @selected(request('status') === $status)>
+                        <option value="Pending" @selected(request('status') === 'Pending')>
+                            Pending
+                        </option>
 
-                                {{ $status }}
+                        <option value="Verified" @selected(request('status') === 'Verified')>
+                            Verified
+                        </option>
 
-                            </option>
-                        @endforeach
+                        <option value="CS Processing" @selected(request('status') === 'CS Processing')>
+                            CS Processing
+                        </option>
+
+                        <option value="Initial Processing Completed" @selected(request('status') === 'Initial Processing Completed')>
+                            Initial Processing Completed
+                        </option>
+
+                        <option value="For Maintenance" @selected(request('status') === 'For Maintenance')>
+                            For Maintenance
+                        </option>
+
+                        <option value="Assigned" @selected(request('status') === 'Assigned')>
+                            Assigned
+                        </option>
+
+                        <option value="In Progress" @selected(request('status') === 'In Progress')>
+                            In Progress
+                        </option>
+
+                        <option value="Completed" @selected(request('status') === 'Completed')>
+                            Accomplished
+                        </option>
+
+                        <option value="Closed" @selected(request('status') === 'Closed')>
+                            Closed
+                        </option>
+
+                        <option value="Rejected" @selected(request('status') === 'Rejected')>
+                            Rejected
+                        </option>
 
                     </select>
 
@@ -493,6 +523,10 @@
 
                                     'Verified' => 'bg-blue-50 text-blue-700 border-blue-100',
 
+                                    'CS Processing' => 'bg-cyan-50 text-cyan-700 border-cyan-100',
+
+                                    'For Maintenance' => 'bg-violet-50 text-violet-700 border-violet-100',
+
                                     'Assigned' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
 
                                     'In Progress' => 'bg-orange-50 text-orange-700 border-orange-100',
@@ -504,6 +538,11 @@
                                     'Rejected' => 'bg-red-50 text-red-700 border-red-100',
 
                                     default => 'bg-gray-50 text-gray-600 border-gray-100',
+                                };
+
+                                $statusLabel = match ($complaint->status) {
+                                    'Completed' => 'Accomplished',
+                                    default => $complaint->status,
                                 };
 
                                 $urgency = $complaint->aiAnalysis?->urgency_level;
@@ -681,8 +720,7 @@
                                                      rounded-full bg-current">
                                         </span>
 
-                                        {{ $complaint->status }}
-
+                                        {{ $statusLabel }}
                                     </span>
 
                                 </td>
@@ -811,6 +849,10 @@
 
                             'Verified' => 'bg-blue-50 text-blue-700 border-blue-100',
 
+                            'CS Processing' => 'bg-cyan-50 text-cyan-700 border-cyan-100',
+
+                            'For Maintenance' => 'bg-violet-50 text-violet-700 border-violet-100',
+
                             'Assigned' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
 
                             'In Progress' => 'bg-orange-50 text-orange-700 border-orange-100',
@@ -822,6 +864,11 @@
                             'Rejected' => 'bg-red-50 text-red-700 border-red-100',
 
                             default => 'bg-gray-50 text-gray-600 border-gray-100',
+                        };
+
+                        $statusLabel = match ($complaint->status) {
+                            'Completed' => 'Accomplished',
+                            default => $complaint->status,
                         };
 
                         $urgency = $complaint->aiAnalysis?->urgency_level;
@@ -919,8 +966,7 @@
                                              rounded-full bg-current">
                                 </span>
 
-                                {{ $complaint->status }}
-
+                                {{ $statusLabel }}
                             </span>
 
                         </div>

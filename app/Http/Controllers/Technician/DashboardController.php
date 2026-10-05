@@ -4,85 +4,65 @@ namespace App\Http\Controllers\Technician;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display the Maintenance Technician dashboard.
-     */
     public function index()
     {
-        $technician = Auth::user();
+        $technicianId = Auth::id();
 
-        $assignedComplaints = $technician->assignedComplaints();
-
-        /*
-        |--------------------------------------------------------------------------
-        | STATISTICS
-        |--------------------------------------------------------------------------
-        */
-
-        $assignedCount = (clone $assignedComplaints)
+        $assignedCount = $this
+            ->assignedComplaintsQuery($technicianId)
             ->where('complaints.status', 'Assigned')
             ->count();
 
-        $inProgressCount = (clone $assignedComplaints)
+        $inProgressCount = $this
+            ->assignedComplaintsQuery($technicianId)
             ->where('complaints.status', 'In Progress')
             ->count();
 
-        $completedCount = (clone $assignedComplaints)
+        $urgentCount = $this
+            ->assignedComplaintsQuery($technicianId)
+            ->whereIn('complaints.status', [
+                'Assigned',
+                'In Progress',
+            ])
+            ->whereHas('aiAnalysis', function (Builder $query) {
+                $query->whereRaw(
+                    'UPPER(urgency_level) = ?',
+                    ['HIGH']
+                );
+            })
+            ->count();
+
+        $activeCount = $assignedCount + $inProgressCount;
+
+        $completedCount = $this
+            ->assignedComplaintsQuery($technicianId)
             ->where('complaints.status', 'Completed')
             ->count();
 
-        $urgentCount = (clone $assignedComplaints)
-            ->whereIn('complaints.priority', [
-                'High',
-                'Critical',
-            ])
+        $totalCount = $this
+            ->assignedComplaintsQuery($technicianId)
             ->whereIn('complaints.status', [
                 'Assigned',
                 'In Progress',
+                'Completed',
+                'Closed',
             ])
             ->count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | TOTAL ASSIGNED
-        |--------------------------------------------------------------------------
-        */
-
-        $totalCount = (clone $assignedComplaints)
-            ->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVE WORK
-        |--------------------------------------------------------------------------
-        */
-
-        $activeCount = (clone $assignedComplaints)
-            ->whereIn('complaints.status', [
-                'Assigned',
-                'In Progress',
-            ])
-            ->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | CURRENT WORK
-        |--------------------------------------------------------------------------
-        |
-        | Highest priority complaints appear first.
-        |
-        */
-
-        $currentComplaints = (clone $assignedComplaints)
+        $currentComplaints = $this
+            ->assignedComplaintsQuery($technicianId)
             ->with([
-                'consumer',
+                'consumer.address',
+                'division',
                 'category',
                 'technicians',
-                'verifier',
+                'aiAnalysis',
+                'commercialResolution',
             ])
             ->whereIn('complaints.status', [
                 'Assigned',
@@ -90,73 +70,104 @@ class DashboardController extends Controller
             ])
             ->orderByRaw("
                 CASE
-                    WHEN complaints.priority = 'Critical' THEN 1
-                    WHEN complaints.priority = 'High' THEN 2
-                    WHEN complaints.priority = 'Medium' THEN 3
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM complaint_ai_analyses
+                        WHERE complaint_ai_analyses.complaint_id = complaints.id
+                        AND UPPER(complaint_ai_analyses.urgency_level) = 'HIGH'
+                    ) THEN 1
+
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM complaint_ai_analyses
+                        WHERE complaint_ai_analyses.complaint_id = complaints.id
+                        AND UPPER(complaint_ai_analyses.urgency_level) = 'MODERATE'
+                    ) THEN 2
+
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM complaint_ai_analyses
+                        WHERE complaint_ai_analyses.complaint_id = complaints.id
+                        AND UPPER(complaint_ai_analyses.urgency_level) = 'LOW'
+                    ) THEN 3
+
                     ELSE 4
+                END
+            ")
+            ->orderByRaw("
+                CASE
+                    WHEN complaints.status = 'In Progress' THEN 1
+                    WHEN complaints.status = 'Assigned' THEN 2
+                    ELSE 3
                 END
             ")
             ->latest('complaints.updated_at')
             ->take(6)
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | RECENTLY COMPLETED
-        |--------------------------------------------------------------------------
-        */
-
-        $recentCompleted = (clone $assignedComplaints)
+        $recentCompleted = $this
+            ->assignedComplaintsQuery($technicianId)
             ->with([
                 'consumer',
+                'division',
                 'category',
                 'technicians',
+                'aiAnalysis',
+                'maintenanceReport',
             ])
             ->where('complaints.status', 'Completed')
-            ->whereNotNull('complaints.completed_at')
             ->latest('complaints.completed_at')
-            ->take(5)
-            ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | RECENT ACTIVITY
-        |--------------------------------------------------------------------------
-        |
-        | This shows the technician's latest assigned complaints regardless
-        | of current status.
-        |
-        */
-
-        $recentActivity = (clone $assignedComplaints)
-            ->with([
-                'consumer',
-                'category',
-                'technicians',
-            ])
             ->latest('complaints.updated_at')
             ->take(5)
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN VIEW
-        |--------------------------------------------------------------------------
-        */
+        $recentActivity = $this
+            ->assignedComplaintsQuery($technicianId)
+            ->with([
+                'consumer',
+                'division',
+                'category',
+                'technicians',
+                'aiAnalysis',
+            ])
+            ->whereIn('complaints.status', [
+                'Assigned',
+                'In Progress',
+                'Completed',
+                'Closed',
+            ])
+            ->latest('complaints.updated_at')
+            ->take(5)
+            ->get();
 
         return view(
             'technician.dashboard',
             compact(
                 'assignedCount',
                 'inProgressCount',
-                'completedCount',
                 'urgentCount',
-                'totalCount',
                 'activeCount',
+                'completedCount',
+                'totalCount',
                 'currentComplaints',
                 'recentCompleted',
                 'recentActivity'
             )
         );
+    }
+
+    private function assignedComplaintsQuery(
+        int $technicianId
+    ): Builder {
+        return Complaint::query()
+            ->whereHas(
+                'technicians',
+                function (Builder $query) use ($technicianId) {
+                    $query->where(
+                        'users.id',
+                        $technicianId
+                    );
+                }
+            );
     }
 }

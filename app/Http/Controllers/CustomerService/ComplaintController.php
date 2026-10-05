@@ -3,138 +3,212 @@
 namespace App\Http\Controllers\CustomerService;
 
 use App\Http\Controllers\Controller;
+
 use App\Http\Requests\CustomerService\StoreComplaintRequest;
+
 use App\Http\Requests\CustomerService\UpdateComplaintRequest;
+
 use App\Http\Requests\CustomerService\VerifyComplaintRequest;
+
 use App\Http\Requests\CustomerService\RejectComplaintRequest;
+
 use App\Models\Complaint;
+
 use App\Models\ComplaintCategory;
+
 use App\Models\Consumer;
+
 use App\Models\Division;
+
 use App\Models\CommercialResolution;
+
 use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\DB;
+
 use Illuminate\Support\Facades\Storage;
-use App\Notifications\ComplaintCompleted;
+
 use Illuminate\Support\Facades\Log;
+
 use App\Services\AI\AIService;
+
 use Throwable;
+
 use Illuminate\Database\Eloquent\Builder;
 
 class ComplaintController extends Controller
 
 {
 
-
     public function index(Request $request)
+
     {
 
-
         $query = Complaint::query()
+
             ->with([
+
                 'consumer.address',
+
                 'division',
+
                 'category',
+
                 'technicians',
+
                 'customerService',
+
                 'verifier',
+
                 'aiAnalysis',
+
             ]);
 
-
         $this->applyComplaintIndexFilters(
+
             $query,
+
             $request
+
         );
 
-
         $complaints = $query
+
             ->orderByDesc('created_at')
+
             ->orderByDesc('id')
+
             ->paginate(10)
+
             ->withQueryString();
 
-
         $totalComplaints = Complaint::query()
-            ->count();
 
+            ->count();
 
         $pendingCount = Complaint::query()
-            ->where(
-                'status',
-                'Pending'
-            )
-            ->count();
 
+            ->where(
+
+                'status',
+
+                'Pending'
+
+            )
+
+            ->count();
 
         $activeCount = Complaint::query()
+
             ->whereIn(
+
                 'status',
+
                 [
+
                     'Assigned',
+
                     'In Progress',
+
                 ]
+
             )
+
             ->count();
 
-
         return view(
+
             'customer-service.complaints.index',
+
             compact(
+
                 'complaints',
+
                 'totalComplaints',
+
                 'pendingCount',
+
                 'activeCount',
 
             )
+
         );
     }
 
     /**
+
      * Print the currently filtered Customer Service complaint list.
+
      */
+
     public function printReport(Request $request)
+
     {
+
         $query = Complaint::query()
+
             ->with([
+
                 'consumer.address',
+
                 'division',
+
                 'category',
+
                 'technicians',
+
                 'customerService',
+
                 'verifier',
+
                 'aiAnalysis',
+
             ]);
 
         /*
+
     |--------------------------------------------------------------------------
+
     | Same Filters As Index
+
     |--------------------------------------------------------------------------
+
     */
 
         $this->applyComplaintIndexFilters(
+
             $query,
+
             $request
+
         );
 
         /*
+
     |--------------------------------------------------------------------------
+
     | Results
+
     |--------------------------------------------------------------------------
+
     */
 
         $complaints = $query
+
             ->orderByDesc('created_at')
+
             ->orderByDesc('id')
+
             ->get();
 
-
         return view(
+
             'customer-service.complaints.print-report',
+
             compact('complaints')
+
         );
     }
-
 
     public function create()
 
@@ -151,8 +225,6 @@ class ComplaintController extends Controller
             ->orderBy('first_name')
 
             ->get();
-
-
 
         $divisions = Division::query()
 
@@ -175,8 +247,6 @@ class ComplaintController extends Controller
 
             ->get();
 
-
-
         return view(
 
             'customer-service.complaints.create',
@@ -192,357 +262,580 @@ class ComplaintController extends Controller
         );
     }
 
-
-
     public function store(
+
         StoreComplaintRequest $request,
+
         AIService $aiService
+
     ) {
+
         $validated = $request->validated();
 
         $division = Division::query()
+
             ->where(
+
                 'id',
+
                 $validated['division_id']
+
             )
+
             ->where(
+
                 'is_active',
+
                 true
+
             )
+
             ->firstOrFail();
 
         ComplaintCategory::query()
+
             ->where(
+
                 'id',
+
                 $validated['complaint_category_id']
+
             )
+
             ->where(
+
                 'division_id',
+
                 $division->id
+
             )
+
             ->where(
+
                 'is_active',
+
                 true
+
             )
+
             ->firstOrFail();
 
         /*
+
         |--------------------------------------------------------------------------
+
         | Create Complaint
+
         |--------------------------------------------------------------------------
+
         */
 
         $complaint = DB::transaction(
+
             function () use (
+
                 $request,
+
                 $validated,
+
                 $division
+
             ) {
+
                 $photoPath = null;
 
                 if ($request->hasFile('photo')) {
+
                     $photoPath = $request
+
                         ->file('photo')
+
                         ->store(
+
                             'complaints',
+
                             'public'
+
                         );
                 }
 
                 $divisionName = strtolower(
+
                     trim((string) $division->name)
+
                 );
 
                 $isCommercial = str_contains(
+
                     $divisionName,
+
                     'commercial'
+
                 );
 
                 $hasLinkedConsumer =
+
                     !empty($validated['consumer_id']);
 
                 if ($isCommercial) {
+
                     $address = $hasLinkedConsumer
+
                         ? null
+
                         : ($validated['address'] ?? null);
 
                     $landmark = null;
+
                     $latitude = null;
+
                     $longitude = null;
                 } else {
+
                     $address =
+
                         $validated['address'] ?? null;
 
                     $landmark =
+
                         $validated['landmark'] ?? null;
 
                     $latitude =
+
                         $validated['latitude'] ?? null;
 
                     $longitude =
+
                         $validated['longitude'] ?? null;
                 }
 
                 return Complaint::create([
+
                     'complaint_no' =>
+
                     Complaint::generateComplaintNo(),
 
                     'consumer_id' =>
+
                     $validated['consumer_id']
+
                         ?? null,
 
                     'complainant_name' =>
+
                     $validated['complainant_name'],
 
                     'complainant_phone' =>
+
                     $validated['complainant_phone']
+
                         ?? null,
 
                     'division_id' =>
+
                     $division->id,
 
                     'complaint_category_id' =>
+
                     $validated['complaint_category_id'],
 
                     'status' =>
+
                     'Pending',
 
                     'customer_service_id' =>
+
                     auth()->id(),
 
                     'description' =>
+
                     $validated['description'],
 
                     'address' =>
+
                     $address,
 
                     'landmark' =>
+
                     $landmark,
 
                     'latitude' =>
+
                     $latitude,
 
                     'longitude' =>
+
                     $longitude,
 
                     'photo' =>
+
                     $photoPath,
+
                 ]);
             }
+
         );
 
         /*
+
         |--------------------------------------------------------------------------
+
         | Automatic AI Analysis
+
         |--------------------------------------------------------------------------
+
         |
+
         | Customer Service-created complaints do not use the consumer-facing
+
         | "Analyze My Concern" button. We therefore analyze the description
+
         | automatically after the complaint has been safely created.
+
         |
+
         | This gives every new complaint an urgency assessment regardless of
+
         | whether it came from the Consumer Portal or Customer Service.
+
         |
+
         | AI failure must NEVER prevent complaint submission.
+
         |
+
         */
 
         try {
+
             $analysis = $aiService->analyzeComplaint(
+
                 $validated['description']
+
             );
 
             $predictedType = trim(
+
                 (string) (
+
                     data_get(
+
                         $analysis,
+
                         'classification.complaint_type'
+
                     )
+
                     ??
+
                     data_get(
+
                         $analysis,
+
                         'complaint_type'
+
                     )
+
                     ??
+
                     ''
+
                 )
+
             );
 
             /*
+
             |--------------------------------------------------------------------------
+
             | Match AI Prediction To Real Complaint Category
+
             |--------------------------------------------------------------------------
+
             */
 
             $predictedCategory = null;
 
             if ($predictedType !== '') {
+
                 $predictedCategory =
+
                     ComplaintCategory::query()
+
                     ->with('division')
+
                     ->where('is_active', true)
+
                     ->whereHas(
+
                         'division',
+
                         function ($query) {
+
                             $query->where(
+
                                 'is_active',
+
                                 true
+
                             );
                         }
+
                     )
+
                     ->whereRaw(
+
                         'LOWER(TRIM(name)) = ?',
+
                         [
+
                             strtolower(
+
                                 $predictedType
+
                             ),
+
                         ]
+
                     )
+
                     ->first();
             }
 
             /*
+
             |--------------------------------------------------------------------------
+
             | Save AI Audit + Urgency
+
             |--------------------------------------------------------------------------
+
             |
+
             | consumer_accepted = NULL is intentional here.
+
             |
+
             | It means the complaint was analyzed automatically and the person
+
             | submitting it did not interact with a consumer-facing AI
+
             | recommendation.
+
             |
+
             */
 
             $complaint->aiAnalysis()->create([
+
                 'predicted_category_id' =>
+
                 $predictedCategory?->id,
 
                 'predicted_type' =>
+
                 $predictedType !== ''
+
                     ? $predictedType
+
                     : null,
 
                 'confidence' =>
+
                 data_get(
+
                     $analysis,
+
                     'classification.confidence'
+
                 ),
 
                 'confidence_level' =>
+
                 data_get(
+
                     $analysis,
+
                     'classification.confidence_level'
+
                 ),
 
                 'confidence_gap' =>
+
                 data_get(
+
                     $analysis,
+
                     'classification.confidence_gap'
+
                 ),
 
                 'ambiguous' =>
+
                 (bool) data_get(
+
                     $analysis,
+
                     'classification.ambiguous',
+
                     false
+
                 ),
 
                 'urgency_level' =>
+
                 data_get(
+
                     $analysis,
+
                     'urgency.level'
+
                 ),
 
                 'urgency_score' =>
+
                 data_get(
+
                     $analysis,
+
                     'urgency.score'
+
                 ),
 
                 'signals' =>
+
                 data_get(
+
                     $analysis,
+
                     'operational_analysis.signals',
+
                     []
+
                 ),
 
                 'evidence' =>
+
                 data_get(
+
                     $analysis,
+
                     'operational_analysis.evidence',
+
                     []
+
                 ),
 
                 'review_reasons' =>
+
                 data_get(
+
                     $analysis,
-                    'review.reasons',
+
+                    'review\.reasons',
+
                     []
+
                 ),
 
                 'verification_questions' =>
+
                 data_get(
+
                     $analysis,
-                    'review.verification_questions',
+
+                    'review\.verification_questions',
+
                     []
+
                 ),
 
                 'consumer_accepted' =>
+
                 null,
 
                 'consumer_category_id' =>
+
                 $validated['complaint_category_id'],
 
                 'verified_category_id' =>
+
                 null,
 
                 'final_category_id' =>
+
                 $validated['complaint_category_id'],
 
                 'raw_analysis' =>
+
                 $analysis,
 
                 'analyzed_at' =>
+
                 now(),
+
             ]);
         } catch (Throwable $exception) {
+
             /*
+
             |--------------------------------------------------------------------------
+
             | Fail Gracefully
+
             |--------------------------------------------------------------------------
+
             |
+
             | The complaint is already valid and saved. If FastAPI is offline
+
             | or analysis fails, keep the complaint and show "Not Assessed"
+
             | until analysis can be performed later.
+
             |
+
             */
 
             Log::warning(
+
                 'Automatic AI analysis failed for Customer Service complaint.',
+
                 [
+
                     'complaint_id' =>
+
                     $complaint->id,
 
                     'complaint_no' =>
+
                     $complaint->complaint_no,
 
                     'error' =>
+
                     $exception->getMessage(),
+
                 ]
+
             );
         }
 
         return redirect()
+
             ->route(
+
                 'customer-service.complaints.index'
+
             )
+
             ->with(
+
                 'success',
+
                 'Complaint submitted successfully.'
+
             );
     }
-
 
     public function show(
 
@@ -569,8 +862,7 @@ class ComplaintController extends Controller
             'maintenanceReport',
 
             'commercialResolution.processor',
-
-
+            'commercialResolution.forwarder',
 
             'aiAnalysis.predictedCategory',
 
@@ -581,8 +873,6 @@ class ComplaintController extends Controller
             'aiAnalysis.verifier',
 
         ]);
-
-
 
         $divisions = Division::query()
 
@@ -605,8 +895,6 @@ class ComplaintController extends Controller
 
             ->get();
 
-
-
         $similarComplaints = [
 
             'has_possible_related_complaints' => false,
@@ -617,11 +905,7 @@ class ComplaintController extends Controller
 
         ];
 
-
-
         $similarComplaintError = null;
-
-
 
         try {
 
@@ -638,14 +922,10 @@ class ComplaintController extends Controller
 
             report($exception);
 
-
-
             $similarComplaintError =
 
                 'Related complaint analysis is temporarily unavailable.';
         }
-
-
 
         return view(
 
@@ -666,8 +946,6 @@ class ComplaintController extends Controller
         );
     }
 
-
-
     public function edit(Complaint $complaint)
 
     {
@@ -677,8 +955,6 @@ class ComplaintController extends Controller
             $complaint
 
         );
-
-
 
         $consumers = Consumer::query()
 
@@ -691,8 +967,6 @@ class ComplaintController extends Controller
             ->orderBy('first_name')
 
             ->get();
-
-
 
         $divisions = Division::query()
 
@@ -715,8 +989,6 @@ class ComplaintController extends Controller
 
             ->get();
 
-
-
         $complaint->load([
 
             'consumer.address',
@@ -732,8 +1004,6 @@ class ComplaintController extends Controller
             'verifier',
 
         ]);
-
-
 
         return view(
 
@@ -752,8 +1022,6 @@ class ComplaintController extends Controller
         );
     }
 
-
-
     public function update(
 
         UpdateComplaintRequest $request,
@@ -768,11 +1036,7 @@ class ComplaintController extends Controller
 
         );
 
-
-
         $validated = $request->validated();
-
-
 
         $division = Division::query()
 
@@ -793,8 +1057,6 @@ class ComplaintController extends Controller
             )
 
             ->firstOrFail();
-
-
 
         ComplaintCategory::query()
 
@@ -824,8 +1086,6 @@ class ComplaintController extends Controller
 
             ->firstOrFail();
 
-
-
         DB::transaction(
 
             function () use (
@@ -846,8 +1106,6 @@ class ComplaintController extends Controller
 
                 );
 
-
-
                 $isCommercial = str_contains(
 
                     $divisionName,
@@ -856,11 +1114,7 @@ class ComplaintController extends Controller
 
                 );
 
-
-
                 $hasLinkedConsumer = !empty($validated['consumer_id']);
-
-
 
                 if ($isCommercial) {
 
@@ -869,8 +1123,6 @@ class ComplaintController extends Controller
                         ? null
 
                         : ($validated['address'] ?? null);
-
-
 
                     $landmark = null;
 
@@ -883,26 +1135,18 @@ class ComplaintController extends Controller
 
                         $validated['address'] ?? null;
 
-
-
                     $landmark =
 
                         $validated['landmark'] ?? null;
-
-
 
                     $latitude =
 
                         $validated['latitude'] ?? null;
 
-
-
                     $longitude =
 
                         $validated['longitude'] ?? null;
                 }
-
-
 
                 $data = [
 
@@ -912,13 +1156,9 @@ class ComplaintController extends Controller
 
                         ?? null,
 
-
-
                     'complainant_name' =>
 
                     $validated['complainant_name'],
-
-
 
                     'complainant_phone' =>
 
@@ -926,51 +1166,35 @@ class ComplaintController extends Controller
 
                         ?? null,
 
-
-
                     'division_id' =>
 
                     $division->id,
-
-
 
                     'complaint_category_id' =>
 
                     $validated['complaint_category_id'],
 
-
-
                     'description' =>
 
                     $validated['description'],
-
-
 
                     'address' =>
 
                     $address,
 
-
-
                     'landmark' =>
 
                     $landmark,
 
-
-
                     'latitude' =>
 
                     $latitude,
-
-
 
                     'longitude' =>
 
                     $longitude,
 
                 ];
-
-
 
                 if ($request->hasFile('photo')) {
 
@@ -989,8 +1213,6 @@ class ComplaintController extends Controller
                             ->delete($complaint->photo);
                     }
 
-
-
                     $data['photo'] = $request
 
                         ->file('photo')
@@ -1004,14 +1226,10 @@ class ComplaintController extends Controller
                         );
                 }
 
-
-
                 $complaint->update($data);
             }
 
         );
-
-
 
         return redirect()
 
@@ -1031,8 +1249,6 @@ class ComplaintController extends Controller
 
             );
     }
-
-
 
     public function destroy(Complaint $complaint)
 
@@ -1057,8 +1273,6 @@ class ComplaintController extends Controller
             );
         }
 
-
-
         DB::transaction(
 
             function () use ($complaint) {
@@ -1078,14 +1292,10 @@ class ComplaintController extends Controller
                         ->delete($complaint->photo);
                 }
 
-
-
                 $complaint->delete();
             }
 
         );
-
-
 
         return redirect()
 
@@ -1103,8 +1313,6 @@ class ComplaintController extends Controller
 
             );
     }
-
-
 
     public function verify(
 
@@ -1125,11 +1333,7 @@ class ComplaintController extends Controller
             );
         }
 
-
-
         $validated = $request->validated();
-
-
 
         /*
 
@@ -1140,8 +1344,6 @@ class ComplaintController extends Controller
     |--------------------------------------------------------------------------
 
     */
-
-
 
         $division = Division::query()
 
@@ -1163,10 +1365,6 @@ class ComplaintController extends Controller
 
             ->firstOrFail();
 
-
-
-
-
         /*
 
     |--------------------------------------------------------------------------
@@ -1184,8 +1382,6 @@ class ComplaintController extends Controller
     |
 
     */
-
-
 
         $category = ComplaintCategory::query()
 
@@ -1215,10 +1411,6 @@ class ComplaintController extends Controller
 
             ->firstOrFail();
 
-
-
-
-
         /*
 
     |--------------------------------------------------------------------------
@@ -1228,8 +1420,6 @@ class ComplaintController extends Controller
     |--------------------------------------------------------------------------
 
     */
-
-
 
         DB::transaction(
 
@@ -1245,15 +1435,9 @@ class ComplaintController extends Controller
 
             ) {
 
-
-
                 $verifiedAt = now();
 
                 $verifiedBy = auth()->id();
-
-
-
-
 
                 /*
 
@@ -1273,53 +1457,33 @@ class ComplaintController extends Controller
 
             */
 
-
-
                 $complaint->update([
-
-
 
                     'division_id' =>
 
                     $division->id,
 
-
-
                     'complaint_category_id' =>
 
                     $category->id,
-
-
 
                     'status' =>
 
                     'Verified',
 
-
-
                     'verified_by' =>
 
                     $verifiedBy,
-
-
 
                     'verified_at' =>
 
                     $verifiedAt,
 
-
-
                     'verification_reason' =>
 
                     $validated['verification_reason'] ?? null,
 
-
-
                 ]);
-
-
-
-
 
                 /*
 
@@ -1347,43 +1511,27 @@ class ComplaintController extends Controller
 
             */
 
-
-
                 if ($complaint->aiAnalysis) {
 
-
-
                     $complaint->aiAnalysis->update([
-
-
 
                         'verified_category_id' =>
 
                         $category->id,
 
-
-
                         'verified_by' =>
 
                         $verifiedBy,
 
-
-
                         'verified_at' =>
 
                         $verifiedAt,
-
-
 
                     ]);
                 }
             }
 
         );
-
-
-
-
 
         /*
 
@@ -1395,15 +1543,9 @@ class ComplaintController extends Controller
 
     */
 
-
-
         $complaint->refresh();
 
         $complaint->load('division');
-
-
-
-
 
         /*
 
@@ -1414,8 +1556,6 @@ class ComplaintController extends Controller
     |--------------------------------------------------------------------------
 
     */
-
-
 
         $divisionName = strtolower(
 
@@ -1429,8 +1569,6 @@ class ComplaintController extends Controller
 
         );
 
-
-
         $isCommercial = str_contains(
 
             $divisionName,
@@ -1438,10 +1576,6 @@ class ComplaintController extends Controller
             'commercial'
 
         );
-
-
-
-
 
         return redirect()
 
@@ -1466,8 +1600,6 @@ class ComplaintController extends Controller
             );
     }
 
-
-
     public function reject(
 
         RejectComplaintRequest $request,
@@ -1487,35 +1619,25 @@ class ComplaintController extends Controller
             );
         }
 
-
-
         $complaint->update([
 
             'status' =>
 
             'Rejected',
 
-
-
             'verified_by' =>
 
             auth()->id(),
 
-
-
             'verified_at' =>
 
             now(),
-
-
 
             'verification_reason' =>
 
             $request->validated()['verification_reason'],
 
         ]);
-
-
 
         return redirect()
 
@@ -1536,496 +1658,263 @@ class ComplaintController extends Controller
             );
     }
 
-
-
-    public function startCommercialProcessing(
-
-        Complaint $complaint
-
-    ) {
-
+    public function startCommercialProcessing(Complaint $complaint)
+    {
         if (!$this->isCommercialComplaint($complaint)) {
-
             return back()->with(
-
                 'error',
-
                 'Only Commercial Services complaints can use this action.'
-
             );
         }
-
-
 
         if ($complaint->status !== 'Verified') {
-
             return back()->with(
-
                 'error',
-
-                'Only verified Commercial Services complaints can be started.'
-
+                'Only verified Commercial Services complaints can begin initial processing.'
             );
         }
-
-
 
         DB::transaction(function () use ($complaint) {
-
-            CommercialResolution::firstOrCreate(
-
+            $resolution = CommercialResolution::firstOrCreate(
+                ['complaint_id' => $complaint->id],
                 [
-
-                    'complaint_id' => $complaint->id,
-
-                ],
-
-                [
-
                     'processed_by' => auth()->id(),
-
                     'started_at' => now(),
-
                 ]
-
             );
 
+            $updates = [];
 
+            if (!$resolution->processed_by) {
+                $updates['processed_by'] = auth()->id();
+            }
+
+            if (!$resolution->started_at) {
+                $updates['started_at'] = now();
+            }
+
+            if (!empty($updates)) {
+                $resolution->update($updates);
+            }
 
             $complaint->update([
-
-                'status' => 'In Progress',
-
+                'status' => 'CS Processing',
+                'completed_at' => null,
             ]);
         });
 
-
-
         return redirect()
-
-            ->route(
-
-                'customer-service.complaints.show',
-
-                $complaint
-
-            )
-
+            ->route('customer-service.complaints.show', $complaint)
             ->with(
-
                 'success',
-
-                'Commercial complaint processing started successfully.'
-
+                'Initial processing started successfully.'
             );
     }
-
-
 
     public function saveCommercialResolution(
-
         Request $request,
-
         Complaint $complaint
-
     ) {
-
         if (!$this->isCommercialComplaint($complaint)) {
-
             return back()->with(
-
                 'error',
-
-                'Only Commercial Services complaints can have a commercial resolution.'
-
+                'Only Commercial Services complaints can have initial processing findings.'
             );
         }
 
-
-
-        if ($complaint->status !== 'In Progress') {
-
+        if ($complaint->status !== 'CS Processing') {
             return back()->with(
-
                 'error',
-
-                'The complaint must be in progress before its resolution can be updated.'
-
+                'The request must be under initial processing before findings can be updated.'
             );
         }
-
-
 
         $validated = $request->validate([
-
-            'findings' => [
-
-                'nullable',
-
-                'string',
-
-                'max:5000',
-
-            ],
-
-
-
-            'resolution_remarks' => [
-
-                'nullable',
-
-                'string',
-
-                'max:5000',
-
-            ],
-
+            'findings' => ['nullable', 'string', 'max:5000'],
+            'resolution_remarks' => ['nullable', 'string', 'max:5000'],
         ]);
-
-
 
         $resolution = CommercialResolution::firstOrCreate(
-
+            ['complaint_id' => $complaint->id],
             [
-
-                'complaint_id' => $complaint->id,
-
-            ],
-
-            [
-
                 'processed_by' => auth()->id(),
-
                 'started_at' => now(),
-
             ]
-
         );
 
-
-
         $resolution->update([
-
             'findings' => $validated['findings'] ?? null,
-
             'resolution_remarks' => $validated['resolution_remarks'] ?? null,
-
         ]);
 
-
-
         return redirect()
-
-            ->route(
-
-                'customer-service.complaints.show',
-
-                $complaint
-
-            )
-
+            ->route('customer-service.complaints.show', $complaint)
             ->with(
-
                 'success',
-
-                'Commercial resolution saved successfully.'
-
+                'Findings and resolution/recommendation saved successfully.'
             );
     }
 
-
-
     public function completeCommercialComplaint(
-
         Request $request,
-
         Complaint $complaint
-
     ) {
-
         if (!$this->isCommercialComplaint($complaint)) {
-
             return back()->with(
-
                 'error',
-
                 'Only Commercial Services complaints can use this action.'
-
             );
         }
 
-
-
-        if ($complaint->status !== 'In Progress') {
-
+        if ($complaint->status !== 'CS Processing') {
             return back()->with(
-
                 'error',
-
-                'Only Commercial complaints that are in progress can be completed.'
-
+                'Only requests under initial processing can be completed.'
             );
         }
-
-
 
         $validated = $request->validate([
-
-            'findings' => [
-
-                'required',
-
-                'string',
-
-                'max:5000',
-
-            ],
-
-            'resolution_remarks' => [
-
-                'required',
-
-                'string',
-
-                'max:5000',
-
-            ],
-
+            'findings' => ['required', 'string', 'max:5000'],
+            'resolution_remarks' => ['required', 'string', 'max:5000'],
         ]);
 
-
-
-        DB::transaction(function () use (
-
-            $validated,
-
-            $complaint
-
-        ) {
-
+        DB::transaction(function () use ($validated, $complaint) {
             $resolution = CommercialResolution::firstOrCreate(
-
+                ['complaint_id' => $complaint->id],
                 [
-
-                    'complaint_id' => $complaint->id,
-
-                ],
-
-                [
-
                     'processed_by' => auth()->id(),
-
                     'started_at' => now(),
-
                 ]
-
             );
 
-
-
             $resolution->update([
-
                 'findings' => $validated['findings'],
-
                 'resolution_remarks' => $validated['resolution_remarks'],
-
-                'completed_at' => now(),
-
-            ]);
-
-
-
-            $complaint->update([
-
-                'status' => 'Completed',
-
-                'completed_at' => now(),
-
+                'initial_processing_completed_at' => now(),
             ]);
         });
 
+        return redirect()
+            ->route('customer-service.complaints.show', $complaint)
+            ->with(
+                'success',
+                'Initial processing completed. You can now close the request or forward it to Maintenance.'
+            );
+    }
 
+    public function forwardCommercialToMaintenance(Complaint $complaint)
+    {
+        if (!$this->isCommercialComplaint($complaint)) {
+            return back()->with(
+                'error',
+                'Only Commercial Services complaints can use this action.'
+            );
+        }
 
-        $complaint->load([
+        if ($complaint->status !== 'CS Processing') {
+            return back()->with(
+                'error',
+                'Only requests under initial processing can be forwarded to Maintenance.'
+            );
+        }
 
-            'consumer',
+        $complaint->loadMissing('commercialResolution');
 
-            'category',
+        $resolution = $complaint->commercialResolution;
 
-        ]);
-
-
-
-        $emailNotificationSent = false;
-
-
+        if (!$resolution || !$resolution->initial_processing_completed_at) {
+            return back()->with(
+                'error',
+                'Complete the initial processing and save the required findings and resolution/recommendation before forwarding this request.'
+            );
+        }
 
         if (
-
-            $complaint->consumer &&
-
-            $complaint->consumer->email
-
+            blank($resolution->findings) ||
+            blank($resolution->resolution_remarks)
         ) {
-
-            try {
-
-                $complaint->consumer->notify(
-
-                    new ComplaintCompleted(
-
-                        $complaint
-
-                    )
-
-                );
-
-
-
-                $emailNotificationSent = true;
-            } catch (\Throwable $exception) {
-
-                Log::error(
-
-                    'Commercial complaint completion email failed.',
-
-                    [
-
-                        'complaint_id' => $complaint->id,
-
-                        'complaint_no' => $complaint->complaint_no,
-
-                        'consumer_id' => $complaint->consumer_id,
-
-                        'consumer_email' => $complaint->consumer->email,
-
-                        'error' => $exception->getMessage(),
-
-                    ]
-
-                );
-            }
+            return back()->with(
+                'error',
+                'Findings and resolution/recommendation are required before forwarding this request.'
+            );
         }
 
+        DB::transaction(function () use ($complaint, $resolution) {
+            $resolution->update([
+                'forwarded_to_maintenance_at' => now(),
+                'forwarded_by' => auth()->id(),
+                'completed_at' => now(),
+            ]);
 
-
-        if ($emailNotificationSent) {
-
-            return redirect()
-
-                ->route(
-
-                    'customer-service.complaints.show',
-
-                    $complaint
-
-                )
-
-                ->with(
-
-                    'success',
-
-                    'Commercial complaint completed successfully. The consumer has been notified by email and can view the resolution in iSWD.'
-
-                );
-        }
-
-
+            $complaint->update([
+                'status' => 'For Maintenance',
+                'completed_at' => null,
+            ]);
+        });
 
         return redirect()
-
-            ->route(
-
-                'customer-service.complaints.show',
-
-                $complaint
-
-            )
-
+            ->route('customer-service.complaints.show', $complaint)
             ->with(
-
                 'success',
-
-                'Commercial complaint completed successfully. The resolution is now available in iSWD.'
-
+                'Request forwarded to Maintenance successfully and is ready for plumber assignment.'
             );
     }
 
-
-
-    public function closeCommercialComplaint(
-
-        Complaint $complaint
-
-    ) {
-
+    public function closeCommercialComplaint(Complaint $complaint)
+    {
         if (!$this->isCommercialComplaint($complaint)) {
-
             return back()->with(
-
                 'error',
-
                 'Only Commercial Services complaints can use this action.'
-
             );
         }
 
-
-
-        if ($complaint->status !== 'Completed') {
-
+        if ($complaint->status !== 'CS Processing') {
             return back()->with(
-
                 'error',
-
-                'Only completed Commercial Services complaints can be closed.'
-
+                'Only requests under initial processing can be closed by Customer Service.'
             );
         }
 
+        $complaint->loadMissing('commercialResolution');
 
+        $resolution = $complaint->commercialResolution;
 
-        if (!$complaint->commercialResolution) {
-
+        if (!$resolution || !$resolution->initial_processing_completed_at) {
             return back()->with(
-
                 'error',
-
-                'This complaint does not have a completed commercial resolution.'
-
+                'Complete the initial processing before closing this request.'
             );
         }
 
+        if (
+            blank($resolution->findings) ||
+            blank($resolution->resolution_remarks)
+        ) {
+            return back()->with(
+                'error',
+                'Findings and resolution/recommendation are required before closing this request.'
+            );
+        }
 
+        DB::transaction(function () use ($complaint, $resolution) {
+            $resolution->update([
+                'completed_at' => now(),
+            ]);
 
-        $complaint->update([
-
-            'status' => 'Closed',
-
-        ]);
-
-
+            $complaint->update([
+                'status' => 'Closed',
+                'completed_at' => now(),
+            ]);
+        });
 
         return redirect()
-
-            ->route(
-
-                'customer-service.complaints.show',
-
-                $complaint
-
-            )
-
+            ->route('customer-service.complaints.show', $complaint)
             ->with(
-
                 'success',
-
-                'Commercial complaint closed successfully.'
-
+                'Request closed successfully. No maintenance assignment is required.'
             );
     }
-
-
 
     private function isCommercialComplaint(
 
@@ -2034,8 +1923,6 @@ class ComplaintController extends Controller
     ): bool {
 
         $complaint->loadMissing('division');
-
-
 
         $divisionName = strtolower(
 
@@ -2047,8 +1934,6 @@ class ComplaintController extends Controller
 
         );
 
-
-
         return str_contains(
 
             $divisionName,
@@ -2057,8 +1942,6 @@ class ComplaintController extends Controller
 
         );
     }
-
-
 
     private function ensureCustomerServiceCanEdit(
 
@@ -2076,8 +1959,6 @@ class ComplaintController extends Controller
 
             );
         }
-
-
 
         if (
 
@@ -2098,8 +1979,6 @@ class ComplaintController extends Controller
             );
         }
     }
-
-
 
     private function getSimilarComplaints(
 
@@ -2128,18 +2007,26 @@ class ComplaintController extends Controller
             ];
         }
 
-
-
         $candidateComplaints =
+
             Complaint::query()
+
             ->with([
+
                 'consumer.address',
+
                 'division',
+
             ])
+
             ->where(
+
                 'id',
+
                 '!=',
+
                 $complaint->id
+
             )
 
             ->where(
@@ -2178,8 +2065,6 @@ class ComplaintController extends Controller
 
                         ->subDays(7),
 
-
-
                     $complaint
 
                         ->created_at
@@ -2201,19 +2086,28 @@ class ComplaintController extends Controller
             ->limit(50)
 
             ->get([
+
                 'id',
+
                 'complaint_no',
+
                 'consumer_id',
+
                 'description',
+
                 'division_id',
+
                 'complaint_category_id',
+
                 'status',
+
                 'latitude',
+
                 'longitude',
+
                 'created_at',
+
             ]);
-
-
 
         if (
 
@@ -2232,8 +2126,6 @@ class ComplaintController extends Controller
             ];
         }
 
-
-
         $complaintPayload =
 
             $this->buildSimilarityPayload(
@@ -2243,8 +2135,6 @@ class ComplaintController extends Controller
                 0
 
             );
-
-
 
         $candidatePayloads =
 
@@ -2278,8 +2168,6 @@ class ComplaintController extends Controller
 
                         ) / 60;
 
-
-
                     return $this
 
                         ->buildSimilarityPayload(
@@ -2297,8 +2185,6 @@ class ComplaintController extends Controller
 
             ->all();
 
-
-
         return $aiService
 
             ->findSimilarComplaints(
@@ -2312,289 +2198,367 @@ class ComplaintController extends Controller
             );
     }
 
-
-
-
-
     private function buildSimilarityPayload(
+
         Complaint $complaint,
+
         float $hoursDifference
+
     ): array {
 
         $coordinates =
+
             $this->resolveComplaintCoordinates(
+
                 $complaint
+
             );
 
         return [
 
             'id' =>
+
             (int) $complaint->id,
 
-
             'complaint_no' =>
+
             (string) $complaint->complaint_no,
 
-
             'description' =>
+
             (string) $complaint->description,
 
-
             'division_id' =>
-            $complaint->division_id !== null
-                ? (int) $complaint->division_id
-                : null,
 
+            $complaint->division_id !== null
+
+                ? (int) $complaint->division_id
+
+                : null,
 
             'complaint_category_id' =>
-            $complaint->complaint_category_id !== null
-                ? (int) $complaint
-                    ->complaint_category_id
-                : null,
 
+            $complaint->complaint_category_id !== null
+
+                ? (int) $complaint
+
+                    ->complaint_category_id
+
+                : null,
 
             'status' =>
+
             $complaint->status !== null
+
                 ? (string) $complaint->status
+
                 : null,
 
-
             'latitude' =>
+
             $coordinates['latitude'],
 
-
             'longitude' =>
+
             $coordinates['longitude'],
 
-
             'hours_difference' =>
+
             round(
+
                 $hoursDifference,
+
                 2
+
             ),
 
         ];
     }
 
     private function resolveComplaintCoordinates(
+
         Complaint $complaint
+
     ): array {
 
-
         $complaint->loadMissing([
+
             'division',
+
             'consumer.address',
+
         ]);
 
-
-
         $divisionName = strtolower(
+
             trim(
+
                 (string) $complaint
+
                     ->division?->name
+
             )
+
         );
 
         $isCommercial = str_contains(
-            $divisionName,
-            'commercial'
-        );
 
+            $divisionName,
+
+            'commercial'
+
+        );
 
         if ($isCommercial) {
 
             $consumerAddress =
+
                 $complaint
+
                 ->consumer?->address;
 
             if (
+
                 $consumerAddress &&
+
                 $consumerAddress->latitude !== null &&
+
                 $consumerAddress->longitude !== null
+
             ) {
+
                 return [
+
                     'latitude' =>
+
                     (float) $consumerAddress->latitude,
 
                     'longitude' =>
+
                     (float) $consumerAddress->longitude,
+
                 ];
             }
 
             return [
+
                 'latitude' => null,
+
                 'longitude' => null,
+
             ];
         }
 
         return [
+
             'latitude' =>
+
             $complaint->latitude !== null
+
                 ? (float) $complaint->latitude
+
                 : null,
 
             'longitude' =>
+
             $complaint->longitude !== null
+
                 ? (float) $complaint->longitude
+
                 : null,
+
         ];
     }
 
     /**
-     * Apply Customer Service complaint list filters.
-     */
-    private function applyComplaintIndexFilters(
-        Builder $query,
-        Request $request
-    ): void {
 
+     * Apply Customer Service complaint list filters.
+
+     */
+
+    private function applyComplaintIndexFilters(
+
+        Builder $query,
+
+        Request $request
+
+    ): void {
 
         if ($request->filled('search')) {
 
-            $search = trim(
-                $request->search
+            $search = trim($request->search);
+
+            $normalizedSearch = strtolower($search);
+
+            $workflowSearchStatus = match ($normalizedSearch) {
+                'pending',
+                'submitted' => 'Pending',
+
+                'verified' => 'Verified',
+
+                'cs processing',
+                'customer service processing',
+                'under initial processing',
+                'initial processing' => 'CS Processing',
+
+                'for maintenance',
+                'forwarded to maintenance',
+                'maintenance' => 'For Maintenance',
+
+                'assigned',
+                'plumber assigned',
+                'assigned for maintenance' => 'Assigned',
+
+                'in progress',
+                'maintenance in progress' => 'In Progress',
+
+                'completed',
+                'accomplished',
+                'maintenance completed' => 'Completed',
+
+                'closed',
+                'request closed' => 'Closed',
+
+                'rejected' => 'Rejected',
+
+                default => null,
+            };
+
+            $isInitialProcessingCompletedSearch = in_array(
+                $normalizedSearch,
+                [
+                    'initial processing completed',
+                    'processing completed',
+                    'initial complete',
+                ],
+                true
             );
 
-            $query->where(
-                function (Builder $query) use ($search) {
+            $query->where(function (Builder $query) use (
+                $search,
+                $workflowSearchStatus,
+                $isInitialProcessingCompletedSearch
+            ) {
 
-                    $query
-                        ->where(
-                            'complaint_no',
-                            'like',
-                            "%{$search}%"
-                        )
-
-                        ->orWhere(
-                            'description',
-                            'like',
-                            "%{$search}%"
-                        )
-
-                        ->orWhere(
-                            'address',
-                            'like',
-                            "%{$search}%"
-                        )
-
-                        ->orWhere(
-                            'landmark',
-                            'like',
-                            "%{$search}%"
-                        )
-
-                        ->orWhere(
-                            'complainant_name',
-                            'like',
-                            "%{$search}%"
-                        )
-
-                        ->orWhere(
-                            'complainant_phone',
-                            'like',
-                            "%{$search}%"
-                        )
-
-                        /*
-                    |--------------------------------------------------------------------------
-                    | Consumer
-                    |--------------------------------------------------------------------------
-                    */
-
-                        ->orWhereHas(
-                            'consumer',
-                            function (Builder $consumer) use ($search) {
-
-                                $consumer
-                                    ->where(
-                                        'first_name',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-
-                                    ->orWhere(
-                                        'middle_name',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-
-                                    ->orWhere(
-                                        'last_name',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-
-                                    ->orWhere(
-                                        'account_number',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-
-                                    ->orWhere(
-                                        'phone',
-                                        'like',
-                                        "%{$search}%"
-                                    );
-                            }
-                        )
-
-                        /*
-                    |--------------------------------------------------------------------------
-                    | Complaint Type
-                    |--------------------------------------------------------------------------
-                    */
-
-                        ->orWhereHas(
-                            'category',
-                            function (Builder $category) use ($search) {
-
-                                $category
-                                    ->where(
-                                        'name',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-
-                                    ->orWhere(
-                                        'code',
-                                        'like',
-                                        "%{$search}%"
-                                    );
-                            }
-                        )
-
-                        /*
-                    |--------------------------------------------------------------------------
-                    | Division
-                    |--------------------------------------------------------------------------
-                    */
-
-                        ->orWhereHas(
-                            'division',
-                            function (Builder $division) use ($search) {
-
-                                $division->where(
-                                    'name',
+                $query
+                    ->where(
+                        'complaint_no',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'description',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'address',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'landmark',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'complainant_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'complainant_phone',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhereHas(
+                        'consumer',
+                        function (Builder $consumer) use ($search) {
+                            $consumer
+                                ->where(
+                                    'first_name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'middle_name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'last_name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'account_number',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'phone',
                                     'like',
                                     "%{$search}%"
                                 );
-                            }
-                        );
+                        }
+                    )
+                    ->orWhereHas(
+                        'category',
+                        function (Builder $category) use ($search) {
+                            $category
+                                ->where(
+                                    'name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'code',
+                                    'like',
+                                    "%{$search}%"
+                                );
+                        }
+                    )
+                    ->orWhereHas(
+                        'division',
+                        function (Builder $division) use ($search) {
+                            $division->where(
+                                'name',
+                                'like',
+                                "%{$search}%"
+                            );
+                        }
+                    );
+
+                if ($workflowSearchStatus !== null) {
+                    $query->orWhere(
+                        'status',
+                        $workflowSearchStatus
+                    );
                 }
-            );
+
+                if ($isInitialProcessingCompletedSearch) {
+                    $query->orWhereHas(
+                        'commercialResolution',
+                        function (Builder $resolutionQuery) {
+                            $resolutionQuery->whereNotNull(
+                                'initial_processing_completed_at'
+                            );
+                        }
+                    );
+                }
+            });
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Status
-    |--------------------------------------------------------------------------
-    */
 
         if ($request->filled('status')) {
+
+            $status = $request->status;
 
             $allowedStatuses = [
                 'Pending',
                 'Verified',
+                'CS Processing',
+                'For Maintenance',
                 'Assigned',
                 'In Progress',
                 'Completed',
@@ -2602,9 +2566,19 @@ class ComplaintController extends Controller
                 'Rejected',
             ];
 
-            if (
+            if ($status === 'Initial Processing Completed') {
+
+                $query->whereHas(
+                    'commercialResolution',
+                    function (Builder $resolutionQuery) {
+                        $resolutionQuery->whereNotNull(
+                            'initial_processing_completed_at'
+                        );
+                    }
+                );
+            } elseif (
                 in_array(
-                    $request->status,
+                    $status,
                     $allowedStatuses,
                     true
                 )
@@ -2612,15 +2586,18 @@ class ComplaintController extends Controller
 
                 $query->where(
                     'status',
-                    $request->status
+                    $status
                 );
             }
         }
-
         /*
+
     |--------------------------------------------------------------------------
+
     | AI Urgency
+
     |--------------------------------------------------------------------------
+
     */
 
         if ($request->filled('urgency')) {
@@ -2628,81 +2605,124 @@ class ComplaintController extends Controller
             $urgency = $request->urgency;
 
             if (
+
                 in_array(
+
                     $urgency,
+
                     [
+
                         'High',
+
                         'Moderate',
+
                         'Low',
+
                     ],
+
                     true
+
                 )
+
             ) {
 
                 $query->whereHas(
+
                     'aiAnalysis',
+
                     function (Builder $aiQuery) use ($urgency) {
 
                         $aiQuery->where(
+
                             'urgency_level',
+
                             $urgency
+
                         );
                     }
+
                 );
             } elseif (
+
                 $urgency === 'not_assessed'
+
             ) {
 
                 $query->where(
+
                     function (Builder $urgencyQuery) {
 
                         $urgencyQuery
+
                             ->whereDoesntHave(
+
                                 'aiAnalysis'
+
                             )
 
                             ->orWhereHas(
+
                                 'aiAnalysis',
+
                                 function (Builder $aiQuery) {
 
                                     $aiQuery
+
                                         ->whereNull(
+
                                             'urgency_level'
+
                                         )
 
                                         ->orWhere(
+
                                             'urgency_level',
+
                                             ''
+
                                         );
                                 }
+
                             );
                     }
+
                 );
             }
         }
 
-
         if ($request->filled('date_from')) {
 
             $query->whereDate(
+
                 'created_at',
+
                 '>=',
+
                 $request->date_from
+
             );
         }
 
         /*
+
     |--------------------------------------------------------------------------
+
     | Date To
+
     |--------------------------------------------------------------------------
+
     */
 
         if ($request->filled('date_to')) {
 
             $query->whereDate(
+
                 'created_at',
+
                 '<=',
+
                 $request->date_to
+
             );
         }
     }

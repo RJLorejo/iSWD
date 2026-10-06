@@ -15,6 +15,9 @@ from ai.app.triage.analyzer import (
 from ai.app.similarity.detector import (
     SimilarComplaintDetector,
 )
+from ai.app.incidents.analyzer import (
+    AreaIncidentAnalyzer,
+)
 from ai.app.assignment.recommender import (
     PlumberAssignmentRecommender,
 )
@@ -22,7 +25,7 @@ from ai.app.assignment.recommender import (
 
 app = FastAPI(
     title="iSWD AI Complaint Support Service",
-    version="2.1.0",
+    version="2.2.0",
     description=(
         "AI-assisted complaint analysis service "
         "for the Sagay Water District iSWD system."
@@ -38,6 +41,10 @@ complaint_analyzer = ComplaintAnalyzer()
 
 similar_complaint_detector = (
     SimilarComplaintDetector()
+)
+
+area_incident_analyzer = (
+    AreaIncidentAnalyzer()
 )
 
 plumber_assignment_recommender = (
@@ -71,6 +78,8 @@ class SimilarComplaintItem(BaseModel):
 
     complaint_no: str
 
+    consumer_id: int | None = None
+
     description: str
 
     division_id: int | None = None
@@ -95,6 +104,33 @@ class SimilarComplaintRequest(BaseModel):
         default=5,
         ge=1,
         le=20,
+    )
+
+
+class AreaIncidentComplaint(BaseModel):
+    id: int
+
+    complaint_no: str
+
+    consumer_id: int | None = None
+
+    complaint_type: str | None = None
+
+    status: str | None = None
+
+    latitude: float | None = None
+
+    longitude: float | None = None
+
+    hours_difference: float | None = None
+
+
+class AreaIncidentRequest(BaseModel):
+    complaints: list[
+        AreaIncidentComplaint
+    ] = Field(
+        min_length=1,
+        max_length=100,
     )
 
 
@@ -192,7 +228,7 @@ def root():
             "iSWD AI Complaint Support "
             "Service is running."
         ),
-        "version": "2.1.0",
+        "version": "2.2.0",
     }
 
 
@@ -203,7 +239,7 @@ def health():
         "service": (
             "iSWD AI Complaint Support Service"
         ),
-        "version": "2.1.0",
+        "version": "2.2.0",
         "timestamp": datetime.now(
             timezone.utc
         ).isoformat(),
@@ -269,6 +305,28 @@ def detect_similar_complaints(
                     in request.candidates
                 ],
                 limit=request.limit,
+            )
+        )
+
+    except ValueError as exception:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exception),
+        ) from exception
+
+
+@app.post("/complaints/area-incident")
+def analyze_area_incident(
+    request: AreaIncidentRequest,
+):
+    try:
+        return (
+            area_incident_analyzer.analyze(
+                complaints=[
+                    complaint.model_dump()
+                    for complaint
+                    in request.complaints
+                ]
             )
         )
 

@@ -77,19 +77,12 @@
         @endif
 
 
-        <form method="POST"
-            action="{{ route('consumer.complaints.store') }}"
-            enctype="multipart/form-data"
-            class="space-y-5"
-            x-data="{ submitting: false }"
-            @submit="submitting = true">
+        <form method="POST" action="{{ route('consumer.complaints.store') }}" enctype="multipart/form-data"
+            class="space-y-5" x-data="{ submitting: false }" @submit="submitting = true">
 
             @csrf
 
-            <input type="hidden"
-                name="ai_analysis_token"
-                id="ai_analysis_token"
-                value="">
+            <input type="hidden" name="ai_analysis_token" id="ai_analysis_token" value="">
 
 
             {{-- ===================================================== --}}
@@ -128,8 +121,7 @@
 
                     <div class="mb-2 flex items-center justify-between gap-4">
 
-                        <label for="description"
-                            class="text-sm font-semibold text-slate-700">
+                        <label for="description" class="text-sm font-semibold text-slate-700">
 
                             Your Concern
 
@@ -137,19 +129,14 @@
 
                         </label>
 
-                        <span id="descriptionCount"
-                            class="text-xs text-slate-400">
+                        <span id="descriptionCount" class="text-xs text-slate-400">
                             0 / 5000
                         </span>
 
                     </div>
 
 
-                    <textarea id="description"
-                        name="description"
-                        rows="3"
-                        maxlength="5000"
-                        required
+                    <textarea id="description" name="description" rows="3" maxlength="5000" required
                         placeholder="Example: Wala kami tubig halin pa sang aga.&#10;&#10;Simply tell us what you noticed and when it started."
                         class="w-full resize-y rounded-xl border-slate-300 px-4 py-3 text-sm leading-6 text-slate-700 placeholder:text-slate-400 focus:border-sky-500 focus:ring-sky-500">{{ old('description') }}</textarea>
 
@@ -167,11 +154,9 @@
 
 
                     @error('description')
-
                         <p class="mt-2 text-sm font-medium text-red-600">
                             {{ $message }}
                         </p>
-
                     @enderror
 
 
@@ -208,8 +193,7 @@
                             </div>
 
 
-                            <button type="button"
-                                id="analyzeConcern"
+                            <button type="button" id="analyzeConcern"
                                 class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60">
 
                                 <i class="fas fa-wand-magic-sparkles"></i>
@@ -236,15 +220,13 @@
                     {{-- SIMPLE AI RESULT --}}
                     {{-- ============================================= --}}
 
-                    <div id="aiAnalysisCard"
-                        class="mt-4 hidden overflow-hidden rounded-xl border border-sky-200 bg-white">
+                    <div id="aiAnalysisCard" class="mt-4 hidden overflow-hidden rounded-xl border border-sky-200 bg-white">
 
                         <div class="border-b border-sky-100 bg-sky-50 px-4 py-3">
 
                             <div class="flex items-center gap-3">
 
-                                <div
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-sky-700">
+                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-sky-700">
 
                                     <i class="fas fa-wand-magic-sparkles text-sm"></i>
 
@@ -275,8 +257,7 @@
                                     Suggested SWD Complaint Type
                                 </p>
 
-                                <p id="aiComplaintType"
-                                    class="mt-1 text-lg font-bold text-slate-900">
+                                <p id="aiComplaintType" class="mt-1 text-lg font-bold text-slate-900">
                                     —
                                 </p>
 
@@ -291,8 +272,7 @@
                                         Handled By
                                     </p>
 
-                                    <p id="aiDivision"
-                                        class="mt-1 text-sm font-semibold text-slate-800">
+                                    <p id="aiDivision" class="mt-1 text-sm font-semibold text-slate-800">
                                         —
                                     </p>
 
@@ -310,15 +290,12 @@
                                     Why this was suggested
                                 </p>
 
-                                <p id="aiSupportingSummary"
-                                    class="mt-2 text-sm leading-6 text-slate-600">
+                                <p id="aiSupportingSummary" class="mt-2 text-sm leading-6 text-slate-600">
                                 </p>
 
-                                <div id="aiSupportingIndicatorsSection"
-                                    class="mt-3 hidden">
+                                <div id="aiSupportingIndicatorsSection" class="mt-3 hidden">
 
-                                    <ul id="aiSupportingIndicators"
-                                        class="space-y-1.5 text-xs leading-5 text-slate-600">
+                                    <ul id="aiSupportingIndicators" class="space-y-1.5 text-xs leading-5 text-slate-600">
                                     </ul>
 
                                 </div>
@@ -353,14 +330,14 @@
                             </div>
 
 
-                            <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div
+                                class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
 
                                 <p class="text-xs leading-5 text-slate-500">
                                     Check the suggestion before continuing.
                                 </p>
 
-                                <button type="button"
-                                    id="useAiClassification"
+                                <button type="button" id="useAiClassification"
                                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-50">
 
                                     <i class="fas fa-check"></i>
@@ -384,8 +361,7 @@
             {{-- STEP 2 — OFFICIAL SWD TYPE --}}
             {{-- ===================================================== --}}
 
-            <section id="classificationSection"
-                class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <section id="classificationSection" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
 
                 <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
 
@@ -421,8 +397,7 @@
 
                         <div>
 
-                            <label for="division_id"
-                                class="mb-2 block text-sm font-semibold text-slate-700">
+                            <label for="division_id" class="mb-2 block text-sm font-semibold text-slate-700">
 
                                 Service Division
 
@@ -430,9 +405,7 @@
 
                             </label>
 
-                            <select id="division_id"
-                                name="division_id"
-                                required
+                            <select id="division_id" name="division_id" required
                                 class="w-full rounded-xl border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 focus:border-sky-500 focus:ring-sky-500">
 
                                 <option value="">
@@ -440,24 +413,20 @@
                                 </option>
 
                                 @foreach ($divisions as $division)
-
                                     <option value="{{ $division->id }}"
                                         {{ old('division_id') == $division->id ? 'selected' : '' }}>
 
                                         {{ $division->name }}
 
                                     </option>
-
                                 @endforeach
 
                             </select>
 
                             @error('division_id')
-
                                 <p class="mt-2 text-sm font-medium text-red-600">
                                     {{ $message }}
                                 </p>
-
                             @enderror
 
                         </div>
@@ -467,8 +436,7 @@
 
                         <div>
 
-                            <label for="complaint_category_id"
-                                class="mb-2 block text-sm font-semibold text-slate-700">
+                            <label for="complaint_category_id" class="mb-2 block text-sm font-semibold text-slate-700">
 
                                 Complaint Type
 
@@ -476,10 +444,7 @@
 
                             </label>
 
-                            <select id="complaint_category_id"
-                                name="complaint_category_id"
-                                required
-                                disabled
+                            <select id="complaint_category_id" name="complaint_category_id" required disabled
                                 class="w-full rounded-xl border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 focus:border-sky-500 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
 
                                 <option value="">
@@ -489,11 +454,9 @@
                             </select>
 
                             @error('complaint_category_id')
-
                                 <p class="mt-2 text-sm font-medium text-red-600">
                                     {{ $message }}
                                 </p>
-
                             @enderror
 
                         </div>
@@ -576,8 +539,7 @@
             {{-- STEP 3 — LOCATION --}}
             {{-- ===================================================== --}}
 
-            <section id="engineeringLocationSection"
-                class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <section id="engineeringLocationSection" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
 
                 <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
 
@@ -625,8 +587,7 @@
                         </div>
 
 
-                        <button type="button"
-                            id="locateMe"
+                        <button type="button" id="locateMe"
                             class="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100">
 
                             <i class="fas fa-location-crosshairs"></i>
@@ -640,15 +601,13 @@
 
                     <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
 
-                        <div id="complaintMap"
-                            class="h-72 w-full sm:h-80">
+                        <div id="complaintMap" class="h-72 w-full sm:h-80">
                         </div>
 
                     </div>
 
 
-                    <p id="mapAddressStatus"
-                        class="text-xs leading-5 text-slate-500">
+                    <p id="mapAddressStatus" class="text-xs leading-5 text-slate-500">
 
                         Select a point on the map or enter the address below.
 
@@ -657,8 +616,7 @@
 
                     <div>
 
-                        <label for="address"
-                            class="mb-2 block text-sm font-semibold text-slate-700">
+                        <label for="address" class="mb-2 block text-sm font-semibold text-slate-700">
 
                             Service Address
 
@@ -666,19 +624,14 @@
 
                         </label>
 
-                        <input type="text"
-                            name="address"
-                            id="address"
-                            value="{{ old('address') }}"
+                        <input type="text" name="address" id="address" value="{{ old('address') }}"
                             placeholder="Enter the address where the problem is located"
                             class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm focus:border-sky-500 focus:ring-sky-500">
 
                         @error('address')
-
                             <p class="mt-2 text-sm font-medium text-red-600">
                                 {{ $message }}
                             </p>
-
                         @enderror
 
                     </div>
@@ -686,8 +639,7 @@
 
                     <div>
 
-                        <label for="landmark"
-                            class="mb-2 block text-sm font-semibold text-slate-700">
+                        <label for="landmark" class="mb-2 block text-sm font-semibold text-slate-700">
 
                             Nearby Landmark
 
@@ -697,34 +649,22 @@
 
                         </label>
 
-                        <input type="text"
-                            id="landmark"
-                            name="landmark"
-                            value="{{ old('landmark') }}"
-                            maxlength="255"
-                            placeholder="Example: Near Sagay Public Market"
+                        <input type="text" id="landmark" name="landmark" value="{{ old('landmark') }}"
+                            maxlength="255" placeholder="Example: Near Sagay Public Market"
                             class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm focus:border-sky-500 focus:ring-sky-500">
 
                         @error('landmark')
-
                             <p class="mt-2 text-sm font-medium text-red-600">
                                 {{ $message }}
                             </p>
-
                         @enderror
 
                     </div>
 
 
-                    <input type="hidden"
-                        id="latitude"
-                        name="latitude"
-                        value="{{ old('latitude') }}">
+                    <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude') }}">
 
-                    <input type="hidden"
-                        id="longitude"
-                        name="longitude"
-                        value="{{ old('longitude') }}">
+                    <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude') }}">
 
                 </div>
 
@@ -752,13 +692,11 @@
 
                         <div>
 
-                            <h2 id="evidenceTitle"
-                                class="font-semibold text-slate-900">
+                            <h2 id="evidenceTitle" class="font-semibold text-slate-900">
                                 Add a Photo
                             </h2>
 
-                            <p id="evidenceSubtitle"
-                                class="mt-1 text-sm text-slate-500">
+                            <p id="evidenceSubtitle" class="mt-1 text-sm text-slate-500">
                                 A photo can help SWD personnel understand the concern.
                             </p>
 
@@ -771,39 +709,30 @@
 
                 <div class="p-5 sm:p-6">
 
-                    <label for="photo"
-                        id="photoDropArea"
+                    <label for="photo" id="photoDropArea"
                         class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-7 text-center transition hover:border-sky-300 hover:bg-sky-50">
 
-                        <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600">
 
-                            <i id="evidenceIcon"
-                                class="fas fa-camera"></i>
+                            <i id="evidenceIcon" class="fas fa-camera"></i>
 
                         </div>
 
-                        <p id="evidenceUploadTitle"
-                            class="mt-3 text-sm font-semibold text-slate-700">
+                        <p id="evidenceUploadTitle" class="mt-3 text-sm font-semibold text-slate-700">
                             Upload Photo
                         </p>
 
-                        <p id="evidenceUploadHelp"
-                            class="mt-1 text-xs text-slate-500">
+                        <p id="evidenceUploadHelp" class="mt-1 text-xs text-slate-500">
                             JPG, PNG or WEBP · Maximum 5 MB
                         </p>
 
-                        <input type="file"
-                            id="photo"
-                            name="photo"
-                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                            class="sr-only">
+                        <input type="file" id="photo" name="photo"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="sr-only">
 
                     </label>
 
 
-                    <div id="photoPreviewContainer"
-                        class="mt-4 hidden">
+                    <div id="photoPreviewContainer" class="mt-4 hidden">
 
                         <div
                             class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center">
@@ -811,25 +740,20 @@
                             <div
                                 class="h-24 w-full shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white sm:w-24">
 
-                                <img id="photoPreview"
-                                    src=""
-                                    alt="Selected photo"
+                                <img id="photoPreview" src="" alt="Selected photo"
                                     class="h-full w-full object-cover">
 
                             </div>
 
                             <div class="min-w-0 flex-1">
 
-                                <p id="photoName"
-                                    class="truncate text-sm font-semibold text-slate-700">
+                                <p id="photoName" class="truncate text-sm font-semibold text-slate-700">
                                 </p>
 
-                                <p id="photoSize"
-                                    class="mt-1 text-xs text-slate-500">
+                                <p id="photoSize" class="mt-1 text-xs text-slate-500">
                                 </p>
 
-                                <button type="button"
-                                    id="removePhoto"
+                                <button type="button" id="removePhoto"
                                     class="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-red-600">
 
                                     <i class="fas fa-trash-can"></i>
@@ -846,11 +770,9 @@
 
 
                     @error('photo')
-
                         <p class="mt-2 text-sm font-medium text-red-600">
                             {{ $message }}
                         </p>
-
                     @enderror
 
                 </div>
@@ -874,8 +796,7 @@
                             Before You Submit
                         </p>
 
-                        <p id="beforeSubmitText"
-                            class="mt-1 text-xs leading-5 text-sky-800">
+                        <p id="beforeSubmitText" class="mt-1 text-xs leading-5 text-sky-800">
 
                             Check your concern, complaint type, location, and photo.
                             SWD personnel will review your submission.
@@ -899,12 +820,10 @@
                 </a>
 
 
-                <button type="submit"
-                    :disabled="submitting"
+                <button type="submit" :disabled="submitting"
                     class="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-xl bg-sky-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-70">
 
-                    <span x-show="!submitting"
-                        class="inline-flex items-center gap-2">
+                    <span x-show="!submitting" class="inline-flex items-center gap-2">
 
                         <i class="fas fa-paper-plane"></i>
 
@@ -912,9 +831,7 @@
 
                     </span>
 
-                    <span x-show="submitting"
-                        x-cloak
-                        class="inline-flex items-center gap-2">
+                    <span x-show="submitting" x-cloak class="inline-flex items-center gap-2">
 
                         <i class="fas fa-spinner animate-spin"></i>
 
@@ -932,9 +849,7 @@
 
 
     @push('scripts')
-
-        <link rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -1048,9 +963,6 @@
 
                 const aiDivision =
                     document.getElementById('aiDivision');
-
-                const aiUrgency =
-                    document.getElementById('aiUrgency');
 
                 const aiAnalysisStatus =
                     document.getElementById('aiAnalysisStatus');
@@ -1190,8 +1102,7 @@
                     }
 
                     return division.complaint_types ??
-                        division.complaintTypes ??
-                        [];
+                        division.complaintTypes ?? [];
 
                 }
 
@@ -1605,27 +1516,22 @@
                             ]
                         );
 
+                    if (aiComplaintType) {
+                        aiComplaintType.textContent =
+                            String(predictedType);
+                    }
 
-                    aiComplaintType.textContent =
-                        String(predictedType);
-
-                    aiDivision.textContent =
-                        matchedCategory?.division_name ||
-                        'No active division matched';
-
-                    aiUrgency.textContent =
-                        String(urgency);
-
-
-                    /*
-                     * Keep technical fields updated for compatibility,
-                     * but they are hidden from the consumer.
-                     */
+                    if (aiDivision) {
+                        aiDivision.textContent =
+                            matchedCategory?.division_name ||
+                            'No active division matched';
+                    }
 
                     if (aiAnalysisStatus) {
                         aiAnalysisStatus.textContent =
                             'SWD personnel will review this submission.';
                     }
+
 
 
                     /*
@@ -1640,9 +1546,9 @@
 
 
                     const indicators =
-                        Array.isArray(supportingIndicators)
-                            ? supportingIndicators
-                            : [];
+                        Array.isArray(supportingIndicators) ?
+                        supportingIndicators :
+                        [];
 
 
                     if (
@@ -1845,25 +1751,22 @@
 
                             const response =
                                 await fetch(
-                                    @json(route('consumer.complaints.analyze')),
-                                    {
+                                    @json(route('consumer.complaints.analyze')), {
                                         method: 'POST',
 
                                         headers: {
                                             'Accept': 'application/json',
                                             'Content-Type': 'application/json',
-                                            'X-CSRF-TOKEN':
-                                                document
-                                                    .querySelector(
-                                                        'meta[name="csrf-token"]'
-                                                    )
-                                                    ?.getAttribute('content') ||
+                                            'X-CSRF-TOKEN': document
+                                                .querySelector(
+                                                    'meta[name="csrf-token"]'
+                                                )
+                                                ?.getAttribute('content') ||
                                                 @json(csrf_token())
                                         },
 
                                         body: JSON.stringify({
-                                            description:
-                                                complaintDescription
+                                            description: complaintDescription
                                         })
                                     }
                                 );
@@ -2222,8 +2125,7 @@
 
                     map =
                         L.map(
-                            'complaintMap',
-                            {
+                            'complaintMap', {
                                 scrollWheelZoom: false
                             }
                         ).setView(
@@ -2236,11 +2138,9 @@
 
 
                     L.tileLayer(
-                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        {
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             maxZoom: 19,
-                            attribution:
-                                '&copy; OpenStreetMap contributors'
+                            attribution: '&copy; OpenStreetMap contributors'
                         }
                     ).addTo(map);
 
@@ -2343,11 +2243,9 @@
 
                         const response =
                             await fetch(
-                                url,
-                                {
+                                url, {
                                     headers: {
-                                        'Accept':
-                                            'application/json'
+                                        'Accept': 'application/json'
                                     }
                                 }
                             );
@@ -2445,8 +2343,7 @@
                                 [
                                     lat,
                                     lng
-                                ],
-                                {
+                                ], {
                                     draggable: true
                                 }
                             ).addTo(map);
@@ -2615,8 +2512,8 @@
                             map &&
                             engineeringLocationSection &&
                             !engineeringLocationSection
-                                .classList
-                                .contains('hidden')
+                            .classList
+                            .contains('hidden')
                         ) {
 
                             map.invalidateSize();
@@ -2651,7 +2548,6 @@
 
             });
         </script>
-
     @endpush
 
 @endsection

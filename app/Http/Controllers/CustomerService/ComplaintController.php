@@ -1988,22 +1988,11 @@ class ComplaintController extends Controller
 
     ): array {
 
-        if (
-
-            empty($complaint->description)
-
-            || empty($complaint->division_id)
-
-        ) {
-
+        if (empty($complaint->description)) {
             return [
-
                 'has_possible_related_complaints' => false,
-
                 'count' => 0,
-
                 'matches' => [],
-
             ];
         }
 
@@ -2026,14 +2015,6 @@ class ComplaintController extends Controller
                 '!=',
 
                 $complaint->id
-
-            )
-
-            ->where(
-
-                'division_id',
-
-                $complaint->division_id
 
             )
 
@@ -2199,79 +2180,55 @@ class ComplaintController extends Controller
     }
 
     private function buildSimilarityPayload(
-
         Complaint $complaint,
-
         float $hoursDifference
-
     ): array {
-
         $coordinates =
-
             $this->resolveComplaintCoordinates(
-
                 $complaint
-
             );
 
         return [
-
             'id' =>
-
             (int) $complaint->id,
 
             'complaint_no' =>
-
             (string) $complaint->complaint_no,
 
-            'description' =>
+            'consumer_id' =>
+            $complaint->consumer_id !== null
+                ? (int) $complaint->consumer_id
+                : null,
 
+            'description' =>
             (string) $complaint->description,
 
             'division_id' =>
-
             $complaint->division_id !== null
-
                 ? (int) $complaint->division_id
-
                 : null,
 
             'complaint_category_id' =>
-
             $complaint->complaint_category_id !== null
-
-                ? (int) $complaint
-
-                    ->complaint_category_id
-
+                ? (int) $complaint->complaint_category_id
                 : null,
 
             'status' =>
-
             $complaint->status !== null
-
                 ? (string) $complaint->status
-
                 : null,
 
             'latitude' =>
-
             $coordinates['latitude'],
 
             'longitude' =>
-
             $coordinates['longitude'],
 
             'hours_difference' =>
-
             round(
-
                 $hoursDifference,
-
                 2
-
             ),
-
         ];
     }
 

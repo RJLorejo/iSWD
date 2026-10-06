@@ -12,7 +12,7 @@
         "category": "Mainline Leakage"
     },
     {
-        "text": "There is a strong water leak on the public road and several houses nearby have low pressure.",
+        "text": "There is a strong water leak on the public road.",
         "category": "Mainline Leakage"
     },
     {
@@ -20,82 +20,84 @@
         "category": "Mainline Leakage"
     },
     {
-        "text": "There is a possible broken water line along the barangay road affecting several households.",
+        "text": "The main water line near our barangay road is leaking.",
         "category": "Mainline Leakage"
     },
     {
-        "text": "May dako nga tagas sang tubig sa tubo sa kilid sang dalan kag madamo nga balay ang apektado.",
+        "text": "There is a broken distribution pipe and water is flowing onto the road.",
+        "category": "Mainline Leakage"
+    },
+    {
+        "text": "The big water pipe outside our property is leaking heavily.",
+        "category": "Mainline Leakage"
+    },
+    {
+        "text": "May malaking tagas ng tubig sa main pipe sa kalsada.",
+        "category": "Mainline Leakage"
+    },
+    {
+        "text": "May tumatagas na malaking tubo sa daan at maraming tubig ang nasasayang.",
+        "category": "Mainline Leakage"
+    },
+    {
+        "text": "May dako nga tagas sang tubig sa tubo sa kilid sang dalan.",
         "category": "Mainline Leakage"
     },
     {
         "text": "May tubig nga padayon nga nagaguwa sa dalan kag daw halin sa main pipe.",
         "category": "Mainline Leakage"
     },
-
     {
-        "text": "The water coming from our faucet is brown and has visible particles.",
-        "category": "Dirty Water"
+        "text": "Nagabaha ang dalan tungod daw sa guba nga mainline.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "Our tap water became cloudy after the water service returned.",
-        "category": "Dirty Water"
+        "text": "May gaawas nga tubig sa dako nga tubo sa barangay road.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "The water has a muddy color and does not look clean.",
-        "category": "Dirty Water"
+        "text": "Naay dakong leak sa main water line sa dalan.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "There are sediments coming out together with the water from our faucet.",
-        "category": "Dirty Water"
+        "text": "Nagawas ang tubig gikan sa dakong tubo daplin sa kalsada.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "Our water is available but it looks brown and dirty.",
-        "category": "Dirty Water"
+        "text": "Murag nabuslot ang main pipe kay daghan kaayong tubig sa dalan.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "The water from the tap has dirt and small particles in it.",
-        "category": "Dirty Water"
+        "text": "Naay mainline leakage diri sa among barangay.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "May tubig kami pero brown kag may mga particles ang nagaguwa sa gripo.",
-        "category": "Dirty Water"
+        "text": "May leak sa main pipe near our street.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "Malabo kag daw may lapok ang tubig nga nagaguwa sa amon gripo.",
-        "category": "Dirty Water"
-    },
-
-    {
-        "text": "There has been no water coming from any faucet in our house since this morning.",
-        "category": "No Water"
+        "text": "Gaawas gid ang water sa mainline sa road.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "Our household completely lost water service yesterday.",
-        "category": "No Water"
+        "text": "Naay water leak sa mainline near sa among balay.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "None of our faucets have water.",
-        "category": "No Water"
+        "text": "Main pipe sa road murag burst kay kusog ang water nga nagawas.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "We have not received any water for several hours.",
-        "category": "No Water"
+        "text": "Several houses are affected because a large pipe on the road is leaking.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "Water service suddenly stopped in our house.",
-        "category": "No Water"
+        "text": "The distribution water line appears damaged and is leaking onto the street.",
+        "category": "Mainline Leakage"
     },
     {
-        "text": "Our house has no water but some nearby households still have weak water pressure.",
-        "category": "No Water"
-    },
-    {
-        "text": "Wala gid kami tubig halin pa sang aga.",
-        "category": "No Water"
-    },
-    {
-        "text": "Wala na nagaguwa nga tubig sa tanan namon nga gripo halin kagab-i.",
-        "category": "No Water"
+        "text": "Please check the mainline because water is coming out of the pavement.",
+        "category": "Mainline Leakage"
     },
 
     {
@@ -123,6 +125,22 @@
         "category": "Service Connection Leakage"
     },
     {
+        "text": "The small pipe after our water meter is leaking.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "There is a leak in the service connection before the meter.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "May tagas sa tubo na nakakonekta papunta sa bahay namin.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "May tumutulong tubig sa maliit na tubo malapit sa aming property.",
+        "category": "Service Connection Leakage"
+    },
+    {
         "text": "May tagas sa gamay nga tubo nga nakakonekta halin sa metro pakadto sa amon balay.",
         "category": "Service Connection Leakage"
     },
@@ -130,160 +148,1369 @@
         "text": "Ang tubo nga naga supply tubig sa amon balay may tagas malapit sa property.",
         "category": "Service Connection Leakage"
     },
+    {
+        "text": "May leakage sa service connection namon.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "May ga tulo sa tubo after sang meter pakadto sa balay.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Naay leak sa service connection padulong sa among balay.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Nagatulo ang gamay nga tubo gikan sa meter padulong sa balay.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Naay leakage sa pipe before sa among meter.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Murag naay buslot ang service pipe sa among property.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "May leak sa connection pipe near our house.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Service connection namon may ga leak near sa meter.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Naay water leak sa small pipe going to our house.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "The tailpiece near our service connection appears to be leaking.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "Water is leaking around the coupling of our service connection.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "The nipple connected to our household water line is leaking.",
+        "category": "Service Connection Leakage"
+    },
+    {
+        "text": "There is leakage within our household service connection.",
+        "category": "Service Connection Leakage"
+    },
+
+    {
+        "text": "There is water leaking directly around our water meter.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Our water meter area is leaking.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Water is coming out around the meter stand.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "There is a leak where the meter is installed.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "The meter stand has a visible water leak.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "The connection beside our water meter is leaking.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Water keeps dripping around the meter assembly.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "The ball valve and meter stand area appear to be leaking.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "May tagas mismo sa metro ng tubig namin.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "May tumutulong tubig sa meter stand.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "May ga tagas mismo sa water meter namon.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "May leakage sa meter stand namon.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Nagaguwa ang tubig sa palibot sang metro.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "May ga tulo sa ballvalve kag meter stand.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Naay leak mismo sa among water meter.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Nagatulo ang tubig sa meter stand.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Naay leakage sa palibot sa among metro.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Ang meter stand namo nag leak.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "May water leak sa meter stand namon.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Naay water nga nagawas near sa meter assembly.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Our meter itself is not broken but water is leaking around it.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "Please check the meter stand because water keeps leaking there.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "There is a continuous leak beside the water meter.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "The valve beside the meter is leaking water.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+    {
+        "text": "The meter connection is wet and water keeps flowing from it.",
+        "category": "Meter / Meter Stand Leakage"
+    },
+
+    {
+        "text": "There has been no water coming from any faucet in our house since this morning.",
+        "category": "No Water"
+    },
+    {
+        "text": "Our household completely lost water service yesterday.",
+        "category": "No Water"
+    },
+    {
+        "text": "None of our faucets have water.",
+        "category": "No Water"
+    },
+    {
+        "text": "We have not received any water for several hours.",
+        "category": "No Water"
+    },
+    {
+        "text": "Water service suddenly stopped in our house.",
+        "category": "No Water"
+    },
+    {
+        "text": "There is completely no water coming from our taps.",
+        "category": "No Water"
+    },
+    {
+        "text": "Our house has had no water since last night.",
+        "category": "No Water"
+    },
+    {
+        "text": "We have zero water supply today.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala kaming tubig simula kaninang umaga.",
+        "category": "No Water"
+    },
+    {
+        "text": "Walang lumalabas na tubig sa lahat ng gripo namin.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala gid kami tubig halin pa sang aga.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala na nagaguwa nga tubig sa tanan namon nga gripo halin kagab-i.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala gid water supply sa amon balay.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala tubig sa tanan nga gripo namon.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala mi tubig sukad buntag.",
+        "category": "No Water"
+    },
+    {
+        "text": "Walay tubig nga mogawas sa among gripo.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala mi water supply sukad gahapon.",
+        "category": "No Water"
+    },
+    {
+        "text": "Walay agas ang tubig sa among balay.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala mi water since this morning.",
+        "category": "No Water"
+    },
+    {
+        "text": "Wala gid kami water since kagab-i.",
+        "category": "No Water"
+    },
+    {
+        "text": "No water gid sa tanan namon nga faucet.",
+        "category": "No Water"
+    },
+    {
+        "text": "Walay water sa among house karon.",
+        "category": "No Water"
+    },
+    {
+        "text": "The water stopped completely and still has not returned.",
+        "category": "No Water"
+    },
+    {
+        "text": "Our neighbors have water but nothing comes out of our faucets.",
+        "category": "No Water"
+    },
+    {
+        "text": "Please check why our property has no water supply.",
+        "category": "No Water"
+    },
+
+    {
+        "text": "The water pressure in our house is very weak.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Only a small amount of water comes out of our faucets.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Our water supply is available but the pressure is very low.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Water comes out very slowly from every faucet.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "The water pressure became weak this week.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "We still have water but the flow is much weaker than normal.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "There is barely any pressure from our tap.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Our shower and faucets have very weak water flow.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Mahina ang pressure ng tubig sa bahay namin.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "May tubig pero sobrang hina ng lumalabas sa gripo.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Hinay gid ang tubig nga nagaguwa sa gripo.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "May tubig kami pero gamay gid ang pressure.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Hinay ang agas sang tubig sa amon balay.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Gamay lang gid ang tubig nga nagaguwa.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Hinay kaayo ang agas sa tubig.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Naay tubig pero gamay kaayo ang pressure.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Hina kaayo ang tubig nga mogawas sa gripo.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Naa mi tubig pero hinay kaayo ang flow.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Hinay gid ang water pressure sa amon.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "May water pero very low ang pressure.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Hinay kaayo among water pressure since yesterday.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Gamay lang ang water nga nagawas sa faucet.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "The pressure is too weak to use the shower properly.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Water reaches our house but the flow is extremely weak.",
+        "category": "Low Water Pressure"
+    },
+    {
+        "text": "Please check why our water pressure suddenly became low.",
+        "category": "Low Water Pressure"
+    },
+
+    {
+        "text": "The water coming from our faucet is brown and has visible particles.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Our tap water became cloudy after the water service returned.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water has a muddy color and does not look clean.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "There are sediments coming out together with the water from our faucet.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Our water is available but it looks brown and dirty.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water from the tap has dirt and small particles in it.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "There appears to be sand coming out with our water.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The tap water is yellowish and cloudy.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Marumi at kulay brown ang tubig na lumalabas sa gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "May buhangin at maliliit na dumi sa tubig namin.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "May tubig kami pero brown kag may mga particles ang nagaguwa sa gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Malabo kag daw may lapok ang tubig nga nagaguwa sa amon gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "May balas nga naga-upod sa tubig halin sa gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Daw hugaw kag brown ang tubig namon.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Hugaw ug brown ang tubig nga mogawas sa among gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Naay murag balas sa among tubig.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Labo kaayo ang tubig gikan sa gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Naay gagmay nga particles sa water namo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Brown ang water nga nagaguwa sa faucet.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Naay sand and dirt sa water gikan sa gripo.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Malabo ang water namon after nagbalik ang supply.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Our water looks dirty after the interruption.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water contains visible sand and sediment.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "The water coming from our tap is not clear.",
+        "category": "Dirty Water"
+    },
+    {
+        "text": "Please check our water because it is brown and dirty.",
+        "category": "Dirty Water"
+    },
+
+    {
+        "text": "Our service connection pipe became detached.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The pipe connecting our property to the water service has come apart.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Our household service connection appears broken.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The service pipe connected to our house was damaged.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Our water connection pipe has been disconnected physically.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The service connection near our property is broken and separated.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Our service line appears to have snapped.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The household connection has become detached from the pipe.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Natanggal ang service connection pipe papunta sa bahay namin.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Nasira ang tubo ng service connection namin.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Nabulag ang service connection nga tubo pakadto sa amon balay.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Daw nabali ang service connection namon.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Natanggal ang tubo nga naga-connect sa amon water service.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Guba ang service connection namon kag daw nabulag.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Natangtang ang service connection pipe padulong sa among balay.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Nabuak ang among service connection.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Murag naputol ang tubo sa service connection.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Nabulag ang connection pipe sa among water service.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Our service connection is detached and needs checking.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Nabuak among service connection pipe near sa meter.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The service connection was damaged during nearby construction.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The connection pipe serving our property is physically damaged.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Our water service pipe is loose and appears detached.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "Please inspect our detached service connection.",
+        "category": "Damaged / Detached Service Connection"
+    },
+    {
+        "text": "The pipe from the water system to our property has broken apart.",
+        "category": "Damaged / Detached Service Connection"
+    },
+
+    {
+        "text": "Our water meter has become detached from its connection.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The water meter was physically damaged.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Our meter is broken and partly detached from the pipe.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The meter housing is cracked and damaged.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Our water meter was accidentally hit and is now damaged.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The meter is loose and has separated from its connection.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Our water meter appears physically broken.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The water meter was detached during construction.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Natanggal ang water meter namin sa koneksyon.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Nasira ang mismong water meter namin.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Natanggal ang metro namon sa iya koneksyon.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Daw nabali kag naguba ang water meter namon.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Loose kag daw matanggal na ang metro namon.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Physical nga guba ang water meter namon.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Natangtang ang among water meter sa tubo.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Nabuak ang among metro ug kinahanglan ipa-check.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Luag kaayo ang meter ug murag matangtang.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Na-damage among water meter physically.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Our water meter got detached from the pipe.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Murag broken ang meter kag detached na sa connection.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The meter body is damaged even though water still passes through it.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Please inspect our water meter because it is physically loose.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The water meter is hanging from the connection after being hit.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "The meter has separated from its normal mounting.",
+        "category": "Damaged / Detached Water Meter"
+    },
+    {
+        "text": "Our meter is visibly damaged and needs repair or replacement.",
+        "category": "Damaged / Detached Water Meter"
+    },
+
+    {
+        "text": "Our water meter continues moving even when all faucets in the house are closed.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The meter appears stuck and the reading is not changing even while we use water.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Our water meter is not recording usage properly.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The meter display appears damaged and cannot be read correctly.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The water meter seems defective because its reading changes abnormally.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Our meter is behaving unusually and may not be measuring our consumption correctly.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The meter does not move even when we are using water.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The meter dial keeps spinning even when no water is being used.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Patuloy gumagalaw ang metro kahit sarado lahat ng gripo.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Hindi gumagalaw ang reading ng metro kahit gumagamit kami ng tubig.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Padayon gihapon ang lihok sang metro bisan sirado ang tanan nga gripo.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Daw guba ang metro kay wala naga-change ang reading bisan naga gamit kami tubig.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Daw malfunction ang water meter namon.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Nagadalagan ang metro bisan wala kami naga gamit tubig.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Padayon gihapon ug tuyok ang metro bisan sirado tanan gripo.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Dili molihok ang meter reading bisan nagagamit mi ug tubig.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Murag guba among water meter kay abnormal ang reading.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Ang metro murag stuck ug dili mo-change.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Our meter is acting weird and keeps moving.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Murag malfunction among meter because dili mo-change ang reading.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The meter seems to be running backward.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Our meter reading decreases instead of increasing.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The water meter is stuck at the same number.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "Please check our meter because it does not operate normally.",
+        "category": "Malfunctioning Water Meter"
+    },
+    {
+        "text": "The meter appears defective and may need inspection.",
+        "category": "Malfunctioning Water Meter"
+    },
 
     {
         "text": "The meter reading printed on our bill does not match the actual reading on our water meter.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "The recorded meter reading appears different from the number currently shown on our meter.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "I think the meter reading used for our bill was recorded incorrectly.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "Our billing statement shows a meter reading that is not the same as our actual meter.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "The previous and current readings shown on the bill appear incorrect.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "The reading recorded for our account seems wrong.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "The meter itself looks fine but the recorded reading on our bill is incorrect.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "We want the meter reading on our bill checked again.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "Mali ang meter reading na nakalagay sa bill namin.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "Hindi pareho ang actual meter reading at ang nasa bill.",
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "Lain ang meter reading sa bill kumpara sa actual nga numero sa amon metro.",
-        "category": "Erroneous Reading"
+        "category": "Erroneous Meter Reading"
     },
     {
         "text": "Daw sala ang reading nga na-record sa amon water bill.",
-        "category": "Erroneous Reading"
-    },
-
-    {
-        "text": "Our account is classified under the wrong consumer category and we want it reviewed.",
-        "category": "Re-classification"
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "We want to request a review of the classification of our water service account.",
-        "category": "Re-classification"
+        "text": "Indi pareho ang reading sa bill kag ang ara sa metro.",
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "Our account classification should be changed because the property use has changed.",
-        "category": "Re-classification"
+        "text": "Gusto namon ipa-check liwat ang meter reading.",
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "I would like our consumer classification to be corrected.",
-        "category": "Re-classification"
+        "text": "Sayop ang meter reading nga naa sa among bill.",
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "The classification shown for our account is no longer appropriate.",
-        "category": "Re-classification"
+        "text": "Lahi ang reading sa bill ug ang actual reading sa meter.",
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "We are requesting that our water account classification be updated.",
-        "category": "Re-classification"
+        "text": "Murag sayop ang reading nga gi-record sa among account.",
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "Gusto namon ipa-review kag ipa-change ang classification sang amon water account.",
-        "category": "Re-classification"
+        "text": "Pa-check unta namo balik ang meter reading sa bill.",
+        "category": "Erroneous Meter Reading"
     },
     {
-        "text": "Indi na sakto ang classification sang amon account kag gusto namon ipa-correct.",
-        "category": "Re-classification"
+        "text": "Wrong ang meter reading sa bill compared sa actual meter.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "Daw incorrect ang recorded reading sa amon bill.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "Our actual meter says a different number from the bill.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "The bill may have been based on the wrong meter reading.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "Please verify the reading recorded for our water account.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "The current reading written on our bill appears inaccurate.",
+        "category": "Erroneous Meter Reading"
+    },
+    {
+        "text": "We believe our meter was read incorrectly.",
+        "category": "Erroneous Meter Reading"
     },
 
     {
         "text": "Our water consumption suddenly became much higher even though our normal usage has not changed.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "The bill shows unusually large water consumption compared with previous months.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "Our recorded consumption doubled this month without any major change in household use.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "We want to know why our account shows a very large amount of water consumption.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "Our monthly water usage is much higher than what we normally consume.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "The consumption recorded on our latest bill increased unexpectedly.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Our water bill suddenly became much higher than usual.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Our usage increased a lot even though nothing changed at home.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Biglang tumaas ang consumption namin kahit pareho lang ang paggamit ng tubig.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Sobrang taas ng water bill namin ngayong buwan.",
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "Nagdoble ang consumption sa amon bill bisan pareho lang man ang paggamit namon sang tubig.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
         "text": "Sobra kataas sang water consumption subong nga bulan kumpara sang una.",
-        "category": "Large Consumption"
+        "category": "High / Unusual Consumption"
     },
     {
-    "text": "Dako gid amon bill subong bisan wala man kami nagdugang gamit tubig.",
-    "category": "Large Consumption"
-},
-{
-    "text": "Ngaa taas gid amon water bill subong nga bulan?",
-    "category": "Large Consumption"
-},
-{
-    "text": "Gatingala kami kay dako amon bill bisan pareho lang amon paggamit.",
-    "category": "Large Consumption"
-},
-{
-    "text": "Sobra kataas amon bill compared sang last month.",
-    "category": "Large Consumption"
-},
-{
-    "text": "Nagmahal amon bill pero wala man kami may ginbag-o sa paggamit tubig.",
-    "category": "Large Consumption"
-},
-{
-    "text": "Our water bill suddenly became much higher than usual.",
-    "category": "Large Consumption"
-},
+        "text": "Dako gid amon bill subong bisan wala man kami nagdugang gamit tubig.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Ngaa taas gid amon water bill subong nga bulan?",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Gatingala kami kay dako amon bill bisan pareho lang amon paggamit.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Sobra kataas amon bill compared sang last month.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Nagmahal amon bill pero wala man kami may ginbag-o sa paggamit tubig.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Nikalit ug taas among water consumption karong bulana.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Dako kaayo among water bill bisan pareho ra among paggamit.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Nidoble among consumption bisan wala mi nagdugang ug gamit.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Ngano taas kaayo among water bill this month?",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Our consumption is unusually high compared sa previous month.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Dako gid increase sang consumption this month.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "Please check why our recorded consumption suddenly increased.",
+        "category": "High / Unusual Consumption"
+    },
+    {
+        "text": "The latest bill shows much more water usage than normal.",
+        "category": "High / Unusual Consumption"
+    },
 
     {
-        "text": "Our water meter continues moving even when all faucets in the house are closed.",
-        "category": "Malfunction Meter"
+        "text": "Our account is classified under the wrong consumer category and we want it reviewed.",
+        "category": "Reclassification"
     },
     {
-        "text": "The meter appears stuck and the reading is not changing even while we use water.",
-        "category": "Malfunction Meter"
+        "text": "We want to request a review of the classification of our water service account.",
+        "category": "Reclassification"
     },
     {
-        "text": "Our water meter is not recording usage properly.",
-        "category": "Malfunction Meter"
+        "text": "Our account classification should be changed because the property use has changed.",
+        "category": "Reclassification"
     },
     {
-        "text": "The meter display appears damaged and cannot be read correctly.",
-        "category": "Malfunction Meter"
+        "text": "I would like our consumer classification to be corrected.",
+        "category": "Reclassification"
     },
     {
-        "text": "The water meter seems defective because its reading changes abnormally.",
-        "category": "Malfunction Meter"
+        "text": "The classification shown for our account is no longer appropriate.",
+        "category": "Reclassification"
     },
     {
-        "text": "Our meter is behaving unusually and may not be measuring our consumption correctly.",
-        "category": "Malfunction Meter"
+        "text": "We are requesting that our water account classification be updated.",
+        "category": "Reclassification"
     },
     {
-        "text": "Padayon gihapon ang lihok sang metro bisan sirado ang tanan nga gripo.",
-        "category": "Malfunction Meter"
+        "text": "Our consumer type on the account needs to be changed.",
+        "category": "Reclassification"
     },
     {
-        "text": "Daw guba ang metro kay wala naga-change ang reading bisan naga gamit kami tubig.",
-        "category": "Malfunction Meter"
+        "text": "Please review whether our account is under the correct classification.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Gusto naming ipa-review ang classification ng water account namin.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Mali ang consumer classification ng account namin.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Gusto namon ipa-review kag ipa-change ang classification sang amon water account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Indi na sakto ang classification sang amon account kag gusto namon ipa-correct.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Gusto namon mag-request reclassification sang account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Nagbag-o ang paggamit sang property gani gusto namon ipa-change ang classification.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Gusto namo ipa-review ang classification sa among water account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Sayop ang consumer classification sa among account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Mag-request unta mi ug reclassification sa water account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Nausab ang paggamit sa property mao gusto namo ipa-change ang classification.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Need namon ipa-change ang account classification.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Request mi reclassification sa among water account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "The account is residential but we need its classification reviewed.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "We believe our account was placed in the wrong consumer class.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Please correct the classification assigned to our water account.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "We need to update the consumer classification for our property.",
+        "category": "Reclassification"
+    },
+    {
+        "text": "Our account category needs reclassification.",
+        "category": "Reclassification"
+    },
+
+    {
+        "text": "We want our sealed water connection reopened.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Please reopen our water service because the connection is currently sealed.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Our account is ready for reconnection after being sealed.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "We are requesting that our sealed connection be reopened.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Please restore our water service by reopening the sealed connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "We need assistance reopening our previously sealed water connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Our water connection was sealed and we want it reopened.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "We would like to request reconnection of our sealed service.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Gusto naming ipa-reopen ang sealed water connection namin.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Paki-reconnect ang water service namin na naka-seal.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Gusto namon ipa-reopen ang sealed nga water connection namon.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Palihog reopen sang connection namon nga gin-seal.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Request namon nga ma-reconnect ang sealed water service.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Gin-seal ang connection namon kag gusto namon ipa-open liwat.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Gusto namo ipa-reopen ang sealed water connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Palihog reconnect sa among water service nga gi-seal.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Request unta mi nga ablihan balik ang sealed connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Gi-seal among water connection ug gusto namo ipa-reconnect.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Need namon ipa-reopen ang sealed connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Please reopen among sealed water service.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "We already settled the concern and want our sealed connection reopened.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Can our sealed water service be reconnected?",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "We are applying to reopen our sealed water connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "Please process the reopening of our sealed connection.",
+        "category": "Re-open Sealed Connection"
+    },
+    {
+        "text": "We need our sealed water line reopened so service can resume.",
+        "category": "Re-open Sealed Connection"
+    },
+
+    {
+        "text": "We would like to temporarily disconnect our water service.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Please temporarily disconnect the water connection at our property.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "We are requesting temporary disconnection of our water service.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "The house will be vacant and we want the water service disconnected temporarily.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Please stop our water service temporarily while the property is unused.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "We need a temporary water disconnection.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "We want the connection temporarily closed until we return.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Can we request temporary disconnection for our account?",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Gusto naming mag-request ng temporary disconnection ng tubig.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Pansamantalang ipapaputol muna namin ang water service.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Gusto namon mag-request temporary disconnection sang tubig.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Temporaryo anay namon gusto ipa-disconnect ang water service.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Wala anay may maistar sa balay gani ipa-temporary disconnect namon ang tubig.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Request namon temporary disconnection sang account.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Gusto namo mag-request ug temporary disconnection sa tubig.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Temporary lang unta namo ipa-disconnect among water service.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Walay mopuyo sa balay mao ipa-temporary disconnect namo ang tubig.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Request mi temporary water disconnection.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Need namon temporary disconnect ang water service.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Temporary disconnect lang among water account for now.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "We are leaving the property for several months and want the water disconnected.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Please temporarily stop water service to our property.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "We want to suspend our water connection temporarily.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "I want to request a temporary disconnection, not permanent closure.",
+        "category": "Temporary Disconnection"
+    },
+    {
+        "text": "Please process a temporary disconnection for our existing account.",
+        "category": "Temporary Disconnection"
+    },
+
+    {
+        "text": "Our water meter is sealed and we want to ask why.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "We found that our water meter has been sealed.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "There is a seal on our meter and we need assistance.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Our meter was sealed and we want information about the issue.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Please check why our water meter is currently sealed.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "We have a concern regarding the seal placed on our water meter.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Our water meter appears to have been sealed.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "We need assistance regarding our sealed water meter.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Naka-seal ang water meter namin at gusto naming malaman kung bakit.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "May seal ang metro namin at kailangan naming ipa-check.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Gin-seal ang water meter namon kag gusto namon mahibaluan ang rason.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "May seal ang metro namon kag gusto namon ipa-check.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Concern namon ang sealed nga water meter.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Daw gin-seal ang metro namon kag wala kami kabalo ngaa.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Gi-seal among water meter ug gusto namo makahibalo ngano.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Naay seal sa among metro ug kinahanglan namo ipa-check.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Concern namo ang sealed water meter.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Murag gi-seal among metro ug wala mi kabalo sa reason.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Our meter is sealed and we need clarification.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Gin-seal ang meter namon and we need assistance.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "We noticed an official seal on our meter and want it checked.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "There is an issue with our currently sealed meter.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Please explain the status of our sealed water meter.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "Our meter has a seal and we want Customer Service to review it.",
+        "category": "Sealed Water Meter Concern"
+    },
+    {
+        "text": "We have a question about the sealed status of our water meter.",
+        "category": "Sealed Water Meter Concern"
     }
 ]

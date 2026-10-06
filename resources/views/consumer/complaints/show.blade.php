@@ -5,17 +5,34 @@
 @section('content')
 
     @php
-        $divisionName = optional($complaint->division)->name ?? '';
+        $divisionName = strtolower((string) optional($complaint->division)->name);
 
-        $isEngineering = $divisionName === 'Engineering Operation';
-        $isCommercial = $divisionName === 'Commercial Services';
+        $isEngineering = str_contains($divisionName, 'engineering');
+        $isCommercial = str_contains($divisionName, 'commercial');
+
+        $commercialResolution = $complaint->commercialResolution;
+        $report = $complaint->maintenanceReport;
+
+        $statusLabel = match ($complaint->status) {
+            'Pending' => 'Submitted',
+            'Verified' => 'Verified',
+            'CS Processing' => 'Under Initial Processing',
+            'For Maintenance' => 'Forwarded to Maintenance',
+            'Assigned' => 'Plumber Assigned',
+            'In Progress' => 'Maintenance In Progress',
+            'Completed' => 'Maintenance Completed',
+            'Closed' => $isCommercial ? 'Request Closed' : 'Complaint Closed',
+            'Rejected' => 'Rejected',
+            default => $complaint->status,
+        };
 
         $statusClasses = match ($complaint->status) {
             'Pending' => 'bg-amber-50 text-amber-700 border-amber-200',
             'Verified' => 'bg-sky-50 text-sky-700 border-sky-200',
+            'CS Processing' => 'bg-cyan-50 text-cyan-700 border-cyan-200',
+            'For Maintenance' => 'bg-violet-50 text-violet-700 border-violet-200',
             'Assigned' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             'In Progress' => 'bg-blue-50 text-blue-700 border-blue-200',
-            'Accomplished' => 'bg-violet-50 text-violet-700 border-violet-200',
             'Completed' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
             'Closed' => 'bg-slate-100 text-slate-700 border-slate-200',
             'Rejected' => 'bg-red-50 text-red-700 border-red-200',
@@ -25,108 +42,32 @@
         $statusIcon = match ($complaint->status) {
             'Pending' => 'fa-clock',
             'Verified' => 'fa-circle-check',
-            'Assigned' => $isCommercial ? 'fa-file-circle-check' : 'fa-user-group',
-            'In Progress' => $isCommercial ? 'fa-gears' : 'fa-screwdriver-wrench',
-            'Accomplished' => $isCommercial ? 'fa-circle-check' : 'fa-clipboard-check',
-            'Completed' => 'fa-circle-check',
+            'CS Processing' => 'fa-clipboard-list',
+            'For Maintenance' => 'fa-share',
+            'Assigned' => 'fa-user-group',
+            'In Progress' => 'fa-screwdriver-wrench',
+            'Completed' => 'fa-clipboard-check',
             'Closed' => 'fa-lock',
             'Rejected' => 'fa-circle-xmark',
             default => 'fa-circle-info',
         };
 
-        if ($isCommercial) {
-            $statuses = [
-                'Pending' => [
-                    'label' => 'Submitted',
-                    'description' => 'Your Commercial Services complaint has been received.',
-                    'icon' => 'fa-paper-plane',
-                ],
-                'Verified' => [
-                    'label' => 'Verified',
-                    'description' => 'Customer Service reviewed and verified your concern.',
-                    'icon' => 'fa-circle-check',
-                ],
-                'In Progress' => [
-                    'label' => 'In Progress',
-                    'description' => 'Your concern is being processed by Sagay Water District personnel.',
-                    'icon' => 'fa-gears',
-                ],
-                'Completed' => [
-                    'label' => 'Completed',
-                    'description' => 'Processing of your Commercial Services concern has been completed.',
-                    'icon' => 'fa-circle-check',
-                ],
-                'Closed' => [
-                    'label' => 'Closed',
-                    'description' => 'Your complaint has been finalized.',
-                    'icon' => 'fa-lock',
-                ],
-            ];
-
-            $commercialStatusMap = [
-                'Pending' => 'Pending',
-                'Verified' => 'Verified',
-                'Assigned' => 'In Progress',
-                'In Progress' => 'In Progress',
-                'Accomplished' => 'Completed',
-                'Completed' => 'Completed',
-                'Closed' => 'Closed',
-            ];
-
-            $trackingStatus = $commercialStatusMap[$complaint->status] ?? $complaint->status;
-        } else {
-            $statuses = [
-                'Pending' => [
-                    'label' => 'Submitted',
-                    'description' => 'Your complaint has been received.',
-                    'icon' => 'fa-paper-plane',
-                ],
-                'Verified' => [
-                    'label' => 'Verified',
-                    'description' => 'Customer Service reviewed your complaint.',
-                    'icon' => 'fa-circle-check',
-                ],
-                'Assigned' => [
-                    'label' => 'Service Team Assigned',
-                    'description' => 'Personnel have been assigned to handle your concern.',
-                    'icon' => 'fa-user-group',
-                ],
-                'In Progress' => [
-                    'label' => 'Service In Progress',
-                    'description' => 'The assigned team has started working on your concern.',
-                    'icon' => 'fa-screwdriver-wrench',
-                ],
-                'Accomplished' => [
-                    'label' => 'Service Accomplished',
-                    'description' => 'Field service has been accomplished and is awaiting review.',
-                    'icon' => 'fa-clipboard-check',
-                ],
-                'Completed' => [
-                    'label' => 'Completed',
-                    'description' => 'The service accomplishment has been reviewed and completed.',
-                    'icon' => 'fa-circle-check',
-                ],
-                'Closed' => [
-                    'label' => 'Closed',
-                    'description' => 'The complaint has been finalized.',
-                    'icon' => 'fa-lock',
-                ],
-            ];
-
-            $trackingStatus = $complaint->status;
-        }
-
-        $statusOrder = array_keys($statuses);
-
-        $currentIndex = array_search($trackingStatus, $statusOrder, true);
-
         $firstAssignedAt = $complaint->technicians->pluck('pivot.assigned_at')->filter()->sort()->first();
 
         $firstStartedAt = $complaint->technicians->pluck('pivot.started_at')->filter()->sort()->first();
 
-        $firstAccomplishedAt = $complaint->technicians->pluck('pivot.completed_at')->filter()->sort()->first();
+        $firstCompletedAt = $complaint->technicians->pluck('pivot.completed_at')->filter()->sort()->first();
 
-        $report = $complaint->maintenanceReport ?? null;
+        $assignedNames = $complaint->technicians->pluck('full_name')->filter()->values();
+
+        $isClosedWithoutMaintenance =
+            $isCommercial && $complaint->status === 'Closed' && !$commercialResolution?->forwarded_to_maintenance_at;
+
+        $hasMaintenanceStage =
+            $complaint->status === 'For Maintenance' ||
+            $complaint->technicians->isNotEmpty() ||
+            $report ||
+            $commercialResolution?->forwarded_to_maintenance_at;
     @endphp
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
@@ -209,7 +150,7 @@
 
                             <i class="fas {{ $statusIcon }}"></i>
 
-                            {{ $complaint->status }}
+                            {{ $statusLabel }}
 
                         </span>
 
@@ -276,36 +217,8 @@
 
         @endif
 
-        @if ($isEngineering && $complaint->status === 'Accomplished')
-            <div class="mb-6 rounded-2xl border border-violet-200 bg-violet-50 p-5">
 
-                <div class="flex items-start gap-3">
-
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600">
-
-                        <i class="fas fa-clipboard-check"></i>
-
-                    </div>
-
-                    <div>
-
-                        <h2 class="font-bold text-violet-900">
-                            Service Accomplished
-                        </h2>
-
-                        <p class="mt-1 text-sm leading-6 text-violet-700">
-                            The assigned service team has finished the field work.
-                            The accomplishment is currently being reviewed before
-                            the complaint is marked as completed.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-        @endif
-        @if (in_array($complaint->status, ['Accomplished', 'Completed', 'Closed']))
+        @if (in_array($complaint->status, ['Completed', 'Closed'], true))
 
             @if (!$complaint->feedback)
 
@@ -766,8 +679,7 @@
 
                     </section>
                 @endif
-
-                @if ($isCommercial && in_array($complaint->status, ['Completed', 'Closed'], true) && $complaint->commercialResolution)
+                @if ($isCommercial && $commercialResolution?->initial_processing_completed_at)
                     @php
                         $commercialResolution = $complaint->commercialResolution;
                     @endphp
@@ -1196,265 +1108,948 @@
             </div>
 
             <div class="space-y-6">
+<section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
-                <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="border-b border-slate-100 px-6 py-5">
 
-                    <div class="border-b border-slate-100 px-6 py-5">
+        <div class="flex items-center gap-3">
 
-                        <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                <i class="fas fa-route"></i>
+            </div>
 
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+            <div>
+                <h2 class="font-bold text-slate-900">
+                    Complaint Tracking
+                </h2>
 
-                                <i class="fas fa-route"></i>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    Follow the progress of your concern.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="p-6">
+
+        <div class="max-w-xl">
+
+            {{-- Submitted --}}
+            <div class="flex gap-4">
+
+                <div class="flex flex-col items-center">
+
+                    <div
+                        class="flex h-9 w-9 shrink-0 items-center justify-center
+                               rounded-full bg-sky-600 text-white">
+
+                        <i class="fas fa-check text-xs"></i>
+
+                    </div>
+
+                    <div class="min-h-12 w-px flex-1 bg-sky-300"></div>
+
+                </div>
+
+
+                <div class="pb-6">
+
+                    <p class="text-sm font-semibold text-slate-800">
+                        Submitted
+                    </p>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        Your concern was submitted to Sagay Water District.
+                    </p>
+
+                    <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                        <i class="far fa-clock mr-1"></i>
+
+                        {{ $complaint->created_at
+                            ->timezone('Asia/Manila')
+                            ->format('M d, Y · g:i A') }}
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {{-- Rejected --}}
+            @if ($complaint->status === 'Rejected')
+
+                <div class="flex gap-4">
+
+                    <div class="flex flex-col items-center">
+
+                        <div
+                            class="flex h-9 w-9 shrink-0 items-center justify-center
+                                   rounded-full bg-red-600 text-white">
+
+                            <i class="fas fa-xmark text-xs"></i>
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <p class="text-sm font-semibold text-red-700">
+                            Complaint Rejected
+                        </p>
+
+                        @if ($complaint->verifier)
+
+                            <p class="mt-1 text-xs text-slate-500">
+                                Reviewed by
+
+                                <span class="font-semibold text-slate-700">
+                                    {{ $complaint->verifier->full_name }}
+                                </span>
+                            </p>
+
+                        @else
+
+                            <p class="mt-1 text-xs leading-5 text-slate-500">
+                                Customer Service reviewed the concern and was unable to proceed with it.
+                            </p>
+
+                        @endif
+
+
+                        @if ($complaint->verification_reason)
+
+                            <p class="mt-2 text-xs text-red-600">
+                                {{ $complaint->verification_reason }}
+                            </p>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+            @else
+
+                {{-- Verified --}}
+                @php
+                    $verified = (bool) $complaint->verified_at;
+                @endphp
+
+
+                <div class="flex gap-4">
+
+                    <div class="flex flex-col items-center">
+
+                        <div
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                            {{ $verified
+                                ? 'bg-sky-600 text-white'
+                                : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                            <i class="fas {{ $verified ? 'fa-check' : 'fa-circle' }} text-xs"></i>
+
+                        </div>
+
+
+                        <div
+                            class="min-h-12 w-px flex-1
+                            {{ $verified ? 'bg-sky-300' : 'bg-slate-200' }}">
+                        </div>
+
+                    </div>
+
+
+                    <div class="pb-6">
+
+                        <p
+                            class="text-sm font-semibold
+                            {{ $verified ? 'text-slate-800' : 'text-slate-400' }}">
+
+                            Verified
+
+                        </p>
+
+
+                        @if ($verified)
+
+                            <p class="mt-1 text-xs text-slate-500">
+                                Reviewed by
+
+                                <span class="font-semibold text-slate-700">
+                                    {{ $complaint->verifier?->full_name ?? 'Customer Service' }}
+                                </span>
+                            </p>
+
+
+                            <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                <i class="far fa-clock mr-1"></i>
+
+                                {{ $complaint->verified_at
+                                    ->timezone('Asia/Manila')
+                                    ->format('M d, Y · g:i A') }}
+
+                            </p>
+
+                        @else
+
+                            <p class="mt-1 text-xs text-slate-500">
+                                Customer Service reviewed and verified your concern.
+                            </p>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+
+
+                {{-- ========================================================= --}}
+                {{-- COMMERCIAL SERVICES WORKFLOW --}}
+                {{-- ========================================================= --}}
+
+                @if ($isCommercial)
+
+                    @php
+                        $processingStarted =
+                            (bool) $commercialResolution?->started_at;
+
+                        $processingCompleted =
+                            (bool) $commercialResolution?->initial_processing_completed_at;
+                    @endphp
+
+
+                    {{-- Under Initial Processing --}}
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $processingStarted
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $processingStarted ? 'fa-check' : 'fa-clipboard-list' }}
+                                    text-xs">
+                                </i>
 
                             </div>
 
+
+                            <div
+                                class="min-h-12 w-px flex-1
+                                {{ $processingStarted ? 'bg-sky-300' : 'bg-slate-200' }}">
+                            </div>
+
+                        </div>
+
+
+                        <div class="pb-6">
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $processingStarted ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                Under Initial Processing
+
+                            </p>
+
+
+                            @if ($processingStarted)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Started by
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $commercialResolution?->processor?->full_name ?? 'Customer Service' }}
+                                    </span>
+                                </p>
+
+
+                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                    <i class="far fa-clock mr-1"></i>
+
+                                    {{ $commercialResolution->started_at
+                                        ->timezone('Asia/Manila')
+                                        ->format('M d, Y · g:i A') }}
+
+                                </p>
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Customer Service is reviewing the requirements and details of your request.
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Initial Processing Completed --}}
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $processingCompleted
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $processingCompleted ? 'fa-check' : 'fa-circle' }}
+                                    text-xs">
+                                </i>
+
+                            </div>
+
+
+                            @if (!$isClosedWithoutMaintenance)
+
+                                <div
+                                    class="min-h-12 w-px flex-1
+                                    {{ $processingCompleted ? 'bg-sky-300' : 'bg-slate-200' }}">
+                                </div>
+
+                            @endif
+
+                        </div>
+
+
+                        <div class="pb-6">
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $processingCompleted ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                Initial Processing Completed
+
+                            </p>
+
+
+                            @if ($processingCompleted)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Completed by
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $commercialResolution?->processor?->full_name ?? 'Customer Service' }}
+                                    </span>
+                                </p>
+
+
+                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                    <i class="far fa-clock mr-1"></i>
+
+                                    {{ $commercialResolution->initial_processing_completed_at
+                                        ->timezone('Asia/Manila')
+                                        ->format('M d, Y · g:i A') }}
+
+                                </p>
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Customer Service will complete the initial assessment of your request.
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+
+                    {{-- Commercial Closed Without Maintenance --}}
+                    @if ($isClosedWithoutMaintenance)
+
+                        <div class="flex gap-4">
+
+                            <div class="flex flex-col items-center">
+
+                                <div
+                                    class="flex h-9 w-9 shrink-0 items-center justify-center
+                                           rounded-full bg-sky-600 text-white">
+
+                                    <i class="fas fa-check text-xs"></i>
+
+                                </div>
+
+                            </div>
+
+
                             <div>
 
-                                <h2 class="font-bold text-slate-900">
-                                    Complaint Tracking
-                                </h2>
+                                <p class="text-sm font-semibold text-slate-800">
+                                    Request Closed
+                                </p>
 
-                                <p class="mt-0.5 text-xs text-slate-500">
-                                    Follow the progress of your concern.
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Completed by
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $commercialResolution?->processor?->full_name ?? 'Customer Service' }}
+                                    </span>
+                                </p>
+
+
+                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                    <i class="far fa-clock mr-1"></i>
+
+                                    {{ ($complaint->completed_at ?? $complaint->updated_at)
+                                        ->timezone('Asia/Manila')
+                                        ->format('M d, Y · g:i A') }}
+
                                 </p>
 
                             </div>
 
                         </div>
 
-                    </div>
+                    @else
 
-                    <div class="p-6">
+                        {{-- Forwarded to Maintenance --}}
+                        @php
+                            $forwarded =
+                                (bool) $commercialResolution?->forwarded_to_maintenance_at ||
+                                in_array(
+                                    $complaint->status,
+                                    [
+                                        'For Maintenance',
+                                        'Assigned',
+                                        'In Progress',
+                                        'Completed',
+                                        'Closed',
+                                    ],
+                                    true
+                                );
+                        @endphp
 
-                        @if ($complaint->status === 'Rejected')
 
-                            <div class="flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4">
+                        <div class="flex gap-4">
+
+                            <div class="flex flex-col items-center">
 
                                 <div
-                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-600 text-white">
+                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                    {{ $forwarded
+                                        ? 'bg-sky-600 text-white'
+                                        : 'border border-slate-200 bg-white text-slate-400' }}">
 
-                                    <i class="fas fa-xmark text-sm"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <p class="text-sm font-semibold text-red-800">
-                                        Complaint Rejected
-                                    </p>
-
-                                    <p class="mt-1 text-xs leading-5 text-red-600">
-                                        This complaint did not proceed to service processing.
-                                    </p>
+                                    <i
+                                        class="fas
+                                        {{ $forwarded ? 'fa-check' : 'fa-share' }}
+                                        text-xs">
+                                    </i>
 
                                 </div>
 
-                            </div>
-                        @else
-                            <div>
 
-                                @foreach ($statuses as $status => $data)
-                                    @php
-                                        $index = array_search($status, $statusOrder, true);
-
-                                        $isReached = $currentIndex !== false && $index <= $currentIndex;
-
-                                        $isCurrent = $trackingStatus === $status;
-
-                                        $stepDate = null;
-
-                                        if ($status === 'Pending') {
-                                            $stepDate = $complaint->created_at;
-                                        }
-
-                                        if ($status === 'Verified') {
-                                            $stepDate = $complaint->verified_at;
-                                        }
-
-                                        if ($isEngineering) {
-                                            if ($status === 'Assigned') {
-                                                $stepDate = $firstAssignedAt;
-                                            }
-
-                                            if ($status === 'In Progress') {
-                                                $stepDate = $firstStartedAt;
-                                            }
-
-                                            if ($status === 'Accomplished') {
-                                                $stepDate = $report?->submitted_at ?? $firstAccomplishedAt;
-                                            }
-                                        } else {
-                                            if ($status === 'In Progress') {
-                                                $stepDate = $complaint->commercialResolution?->started_at;
-                                            }
-                                        }
-
-                                        if ($status === 'Completed') {
-                                            $stepDate = $complaint->completed_at;
-
-                                            if (
-                                                $isCommercial &&
-                                                !$stepDate &&
-                                                in_array(
-                                                    $complaint->status,
-                                                    ['Accomplished', 'Completed', 'Closed'],
-                                                    true,
-                                                )
-                                            ) {
-                                                $stepDate = $complaint->updated_at;
-                                            }
-                                        }
-
-                                        if ($status === 'Closed') {
-                                            $stepDate = $complaint->status === 'Closed' ? $complaint->updated_at : null;
-                                        }
-                                    @endphp
-
-                                    <div class="flex gap-4">
-
-                                        <div class="flex flex-col items-center">
-
-                                            <div
-                                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs transition
-                                                {{ $isCurrent
-                                                    ? 'border-sky-600 bg-sky-600 text-white ring-4 ring-sky-100'
-                                                    : ($isReached
-                                                        ? 'border-sky-600 bg-sky-600 text-white'
-                                                        : 'border-slate-200 bg-white text-slate-400') }}">
-
-                                                <i class="fas {{ $data['icon'] }}"></i>
-
-                                            </div>
-
-                                            @if (!$loop->last)
-                                                <div
-                                                    class="min-h-12 w-px flex-1
-                                                    {{ $isReached && $index < $currentIndex ? 'bg-sky-300' : 'bg-slate-200' }}">
-                                                </div>
-                                            @endif
-
-                                        </div>
-
-                                        <div class="{{ !$loop->last ? 'pb-6' : '' }} min-w-0 flex-1">
-
-                                            <div class="flex items-start justify-between gap-2">
-
-                                                <p
-                                                    class="text-sm font-semibold
-                                                    {{ $isCurrent ? 'text-sky-700' : ($isReached ? 'text-slate-800' : 'text-slate-400') }}">
-
-                                                    {{ $data['label'] }}
-
-                                                </p>
-
-                                                @if ($isCurrent)
-                                                    <span
-                                                        class="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700">
-                                                        Current
-                                                    </span>
-                                                @endif
-
-                                            </div>
-
-                                            <p
-                                                class="mt-1 text-xs leading-5
-                                                {{ $isReached ? 'text-slate-500' : 'text-slate-400' }}">
-
-                                                {{ $data['description'] }}
-
-                                            </p>
-
-                                            @if ($stepDate && $isReached)
-                                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
-
-                                                    <i class="far fa-clock mr-1"></i>
-
-                                                    {{ \Illuminate\Support\Carbon::parse($stepDate)->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
-
-                                                </p>
-                                            @endif
-
-                                            @if ($status === 'Verified' && $isReached && $complaint->verifier)
-                                                <p class="mt-1 text-[11px] text-slate-500">
-                                                    Reviewed by
-                                                    {{ $complaint->verifier->full_name }}
-                                                </p>
-                                            @endif
-
-                                            @if ($isEngineering && $status === 'Assigned' && $isReached && $complaint->technicians->count())
-                                                <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-
-                                                    <div class="flex items-start gap-2.5">
-
-                                                        <div
-                                                            class="flex h-8 w-8 shrink-0 items-center justify-center
-                       rounded-lg bg-white text-sky-700">
-
-                                                            <i class="fas fa-user-group text-xs"></i>
-
-                                                        </div>
-
-                                                        <div class="min-w-0 flex-1">
-
-                                                            <p
-                                                                class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                                                Assigned Service Team
-                                                            </p>
-
-                                                            <div class="mt-2 space-y-1.5">
-
-                                                                @foreach ($complaint->technicians as $technician)
-                                                                    <div class="flex items-center gap-2">
-
-                                                                        <span
-                                                                            class="flex h-6 w-6 shrink-0 items-center justify-center
-                                       rounded-full bg-sky-100 text-[9px]
-                                       font-bold text-sky-700">
-
-                                                                            {{ strtoupper(substr($technician->first_name ?? $technician->full_name, 0, 1)) }}
-
-                                                                        </span>
-
-                                                                        <span class="text-xs font-semibold text-slate-700">
-                                                                            {{ $technician->full_name }}
-                                                                        </span>
-
-                                                                    </div>
-                                                                @endforeach
-
-                                                            </div>
-
-                                                            @if ($firstAssignedAt)
-                                                                <p class="mt-2 text-[11px] text-slate-400">
-
-                                                                    <i class="far fa-clock mr-1"></i>
-
-                                                                    Assigned
-                                                                    {{ \Illuminate\Support\Carbon::parse($firstAssignedAt)->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
-
-                                                                </p>
-                                                            @endif
-
-                                                        </div>
-
-                                                    </div>
-
-                                                </div>
-                                            @endif
-
-                                        </div>
-
-                                    </div>
-                                @endforeach
+                                <div
+                                    class="min-h-12 w-px flex-1
+                                    {{ $forwarded ? 'bg-sky-300' : 'bg-slate-200' }}">
+                                </div>
 
                             </div>
 
-                        @endif
+
+                            <div class="pb-6">
+
+                                <p
+                                    class="text-sm font-semibold
+                                    {{ $forwarded ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                    Forwarded to Maintenance
+
+                                </p>
+
+
+                                @if ($forwarded)
+
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Forwarded by
+
+                                        <span class="font-semibold text-slate-700">
+                                            {{ $commercialResolution?->forwarder?->full_name ?? 'Customer Service' }}
+                                        </span>
+                                    </p>
+
+
+                                    @if ($commercialResolution?->forwarded_to_maintenance_at)
+
+                                        <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                            <i class="far fa-clock mr-1"></i>
+
+                                            {{ $commercialResolution->forwarded_to_maintenance_at
+                                                ->timezone('Asia/Manila')
+                                                ->format('M d, Y · g:i A') }}
+
+                                        </p>
+
+                                    @endif
+
+                                @else
+
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Physical maintenance work may be required for your request.
+                                    </p>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    @endif
+
+
+                {{-- ========================================================= --}}
+                {{-- ENGINEERING WORKFLOW --}}
+                {{-- ========================================================= --}}
+
+                @else
+
+                    {{-- Forwarded to Maintenance --}}
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $verified
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $verified ? 'fa-check' : 'fa-share' }}
+                                    text-xs">
+                                </i>
+
+                            </div>
+
+
+                            <div
+                                class="min-h-12 w-px flex-1
+                                {{ $verified ? 'bg-sky-300' : 'bg-slate-200' }}">
+                            </div>
+
+                        </div>
+
+
+                        <div class="pb-6">
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $verified ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                Forwarded to Maintenance
+
+                            </p>
+
+
+                            @if ($verified)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Forwarded after verification by
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $complaint->verifier?->full_name ?? 'Customer Service' }}
+                                    </span>
+                                </p>
+
+
+                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                    <i class="far fa-clock mr-1"></i>
+
+                                    {{ $complaint->verified_at
+                                        ->timezone('Asia/Manila')
+                                        ->format('M d, Y · g:i A') }}
+
+                                </p>
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Your verified complaint will be forwarded for maintenance handling.
+                                </p>
+
+                            @endif
+
+                        </div>
 
                     </div>
 
-                </section>
+                @endif
+
+
+
+                {{-- ========================================================= --}}
+                {{-- MAINTENANCE WORKFLOW --}}
+                {{-- ========================================================= --}}
+
+                @if (!$isClosedWithoutMaintenance)
+
+                    {{-- Plumber Assigned --}}
+                    @php
+                        $assigned = $complaint->technicians->isNotEmpty();
+                    @endphp
+
+
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $assigned
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $assigned ? 'fa-check' : 'fa-user-group' }}
+                                    text-xs">
+                                </i>
+
+                            </div>
+
+
+                            <div
+                                class="min-h-12 w-px flex-1
+                                {{ $assigned ? 'bg-sky-300' : 'bg-slate-200' }}">
+                            </div>
+
+                        </div>
+
+
+                        <div class="pb-6">
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $assigned ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                Plumber Assigned
+
+                            </p>
+
+
+                            @if ($assigned)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Assigned to
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $assignedNames->join(', ') }}
+                                    </span>
+                                </p>
+
+
+                                @if ($firstAssignedAt)
+
+                                    <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                        <i class="far fa-clock mr-1"></i>
+
+                                        {{ \Illuminate\Support\Carbon::parse($firstAssignedAt)
+                                            ->timezone('Asia/Manila')
+                                            ->format('M d, Y · g:i A') }}
+
+                                    </p>
+
+                                @endif
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-400">
+                                    Waiting for plumber assignment.
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+
+                    {{-- Maintenance In Progress --}}
+                    @php
+                        $maintenanceStarted =
+                            $report?->started_at ??
+                            $firstStartedAt;
+                    @endphp
+
+
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $maintenanceStarted
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $maintenanceStarted ? 'fa-check' : 'fa-screwdriver-wrench' }}
+                                    text-xs">
+                                </i>
+
+                            </div>
+
+
+                            <div
+                                class="min-h-12 w-px flex-1
+                                {{ $maintenanceStarted ? 'bg-sky-300' : 'bg-slate-200' }}">
+                            </div>
+
+                        </div>
+
+
+                        <div class="pb-6">
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $maintenanceStarted ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                Maintenance In Progress
+
+                            </p>
+
+
+                            @if ($maintenanceStarted)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Maintenance team
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $assignedNames->join(', ') }}
+                                    </span>
+                                </p>
+
+
+                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                    <i class="far fa-clock mr-1"></i>
+
+                                    {{ \Illuminate\Support\Carbon::parse($maintenanceStarted)
+                                        ->timezone('Asia/Manila')
+                                        ->format('M d, Y · g:i A') }}
+
+                                </p>
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    The assigned plumber will begin the maintenance work.
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+
+                    {{-- Maintenance Completed --}}
+                    @php
+                        $maintenanceCompleted =
+                            (bool) $report?->submitted_at ||
+                            in_array(
+                                $complaint->status,
+                                ['Completed', 'Closed'],
+                                true
+                            );
+
+                        $maintenanceCompletedAt =
+                            $report?->submitted_at ??
+                            $firstCompletedAt ??
+                            ($maintenanceCompleted
+                                ? $complaint->completed_at
+                                : null);
+                    @endphp
+
+
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $maintenanceCompleted
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $maintenanceCompleted ? 'fa-check' : 'fa-clipboard-check' }}
+                                    text-xs">
+                                </i>
+
+                            </div>
+
+
+                            <div
+                                class="min-h-12 w-px flex-1
+                                {{ $maintenanceCompleted ? 'bg-sky-300' : 'bg-slate-200' }}">
+                            </div>
+
+                        </div>
+
+
+                        <div class="pb-6">
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $maintenanceCompleted ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                Maintenance Completed
+
+                            </p>
+
+
+                            @if ($maintenanceCompleted)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Report submitted by
+
+                                    <span class="font-semibold text-slate-700">
+                                        {{ $report?->technician?->full_name ?? 'Assigned plumber' }}
+                                    </span>
+                                </p>
+
+
+                                @if ($maintenanceCompletedAt)
+
+                                    <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                        <i class="far fa-clock mr-1"></i>
+
+                                        {{ \Illuminate\Support\Carbon::parse($maintenanceCompletedAt)
+                                            ->timezone('Asia/Manila')
+                                            ->format('M d, Y · g:i A') }}
+
+                                    </p>
+
+                                @endif
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    The assigned plumber will submit the maintenance accomplishment report.
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+
+                    {{-- Closed --}}
+                    @php
+                        $closed = $complaint->status === 'Closed';
+                    @endphp
+
+
+                    <div class="flex gap-4">
+
+                        <div class="flex flex-col items-center">
+
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                {{ $closed
+                                    ? 'bg-sky-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-400' }}">
+
+                                <i
+                                    class="fas
+                                    {{ $closed ? 'fa-check' : 'fa-lock' }}
+                                    text-xs">
+                                </i>
+
+                            </div>
+
+                        </div>
+
+
+                        <div>
+
+                            <p
+                                class="text-sm font-semibold
+                                {{ $closed ? 'text-slate-800' : 'text-slate-400' }}">
+
+                                {{ $isCommercial
+                                    ? 'Request Closed'
+                                    : 'Complaint Closed' }}
+
+                            </p>
+
+
+                            @if ($closed)
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Your concern has been finalized by Sagay Water District.
+                                </p>
+
+
+                                <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+
+                                    <i class="far fa-clock mr-1"></i>
+
+                                    {{ $complaint->updated_at
+                                        ->timezone('Asia/Manila')
+                                        ->format('M d, Y · g:i A') }}
+
+                                </p>
+
+                            @else
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Pending final review and closure.
+                                </p>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                @endif
+
+            @endif
+
+        </div>
+
+    </div>
+
+</section>
 
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
 

@@ -8,9 +8,7 @@
         $isCommercial = str_contains(strtolower((string) $complaint->division?->name), 'commercial');
         $isEngineering = str_contains(strtolower((string) $complaint->division?->name), 'engineering');
 
-        $canEdit =
-            $complaint->status === 'Pending' &&
-            (int) $complaint->customer_service_id === (int) auth()->id();
+        $canEdit = $complaint->status === 'Pending' && (int) $complaint->customer_service_id === (int) auth()->id();
 
         $commercialResolution = $complaint->commercialResolution;
         $report = $complaint->maintenanceReport;
@@ -52,50 +50,44 @@
 
         $displayAddress =
             $isCommercial && $complaint->consumer
-                ? ($complaint->consumer->address?->full_address ?? 'No registered account address recorded.')
-                : ($complaint->address ?: 'No address recorded.');
+                ? $complaint->consumer->address?->full_address ?? 'No registered account address recorded.'
+                : ($complaint->address ?:
+                'No address recorded.');
 
         $addressLabel =
             $isCommercial && $complaint->consumer
                 ? 'Account Address'
-                : ($isEngineering ? 'Service Address' : 'Address');
+                : ($isEngineering
+                    ? 'Service Address'
+                    : 'Address');
 
-        $assignedNames = $complaint->technicians
-            ->pluck('full_name')
-            ->filter()
-            ->values();
+        $assignedNames = $complaint->technicians->pluck('full_name')->filter()->values();
 
         $firstAssignedAt = $complaint->technicians
-            ->map(fn ($technician) => $technician->pivot?->assigned_at)
+            ->map(fn($technician) => $technician->pivot?->assigned_at)
             ->filter()
             ->sort()
             ->first();
 
         $firstStartedAt = $complaint->technicians
-            ->map(fn ($technician) => $technician->pivot?->started_at)
+            ->map(fn($technician) => $technician->pivot?->started_at)
             ->filter()
             ->sort()
             ->first();
 
         $firstCompletedAt = $complaint->technicians
-            ->map(fn ($technician) => $technician->pivot?->completed_at)
+            ->map(fn($technician) => $technician->pivot?->completed_at)
             ->filter()
             ->sort()
             ->first();
 
         $hasMaintenanceStage =
-            $complaint->status === 'For Maintenance' ||
-            $complaint->technicians->isNotEmpty() ||
-            $report;
+            $complaint->status === 'For Maintenance' || $complaint->technicians->isNotEmpty() || $report;
 
         $isClosedWithoutMaintenance =
-            $isCommercial &&
-            $complaint->status === 'Closed' &&
-            !$commercialResolution?->forwarded_to_maintenance_at;
+            $isCommercial && $complaint->status === 'Closed' && !$commercialResolution?->forwarded_to_maintenance_at;
 
-        $rawAnalysis = is_array($aiAnalysis?->raw_analysis)
-            ? $aiAnalysis->raw_analysis
-            : [];
+        $rawAnalysis = is_array($aiAnalysis?->raw_analysis) ? $aiAnalysis->raw_analysis : [];
 
         $supportingSummary = data_get($rawAnalysis, 'supporting_evidence.summary');
         $supportingIndicators = data_get($rawAnalysis, 'supporting_evidence.indicators', []);
@@ -223,7 +215,8 @@
                             Status
                         </p>
 
-                        <span class="mt-2 inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-semibold {{ $statusClasses }}">
+                        <span
+                            class="mt-2 inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-semibold {{ $statusClasses }}">
                             {{ $statusLabel }}
                         </span>
                     </div>
@@ -233,7 +226,8 @@
                             Urgency
                         </p>
 
-                        <span class="mt-2 inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-semibold {{ $urgencyClasses }}">
+                        <span
+                            class="mt-2 inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-semibold {{ $urgencyClasses }}">
                             {{ $urgencyLabel }}
                         </span>
                     </div>
@@ -320,7 +314,8 @@
                         Your Concern
                     </p>
 
-                    <div class="mt-2 rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-700 whitespace-pre-line">
+                    <div
+                        class="mt-2 rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-700 whitespace-pre-line">
                         {{ $complaint->description }}
                     </div>
 
@@ -359,8 +354,7 @@
                                     Submitted Photo
                                 </p>
 
-                                <img src="{{ asset('storage/' . $complaint->photo) }}"
-                                    alt="Complaint photo"
+                                <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
                                     class="w-full max-h-72 object-cover rounded-xl border border-gray-200">
 
                             </div>
@@ -369,8 +363,7 @@
                     </div>
 
                     @if (!$isCommercial && $complaint->latitude && $complaint->longitude)
-                        <div id="complaint-map"
-                            class="mt-5 w-full h-72 rounded-xl border border-gray-200 overflow-hidden">
+                        <div id="complaint-map" class="mt-5 w-full h-72 rounded-xl border border-gray-200 overflow-hidden">
                         </div>
                     @endif
 
@@ -405,7 +398,8 @@
 
                         <div class="flex flex-col items-center">
 
-                            <div class="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center shrink-0">
                                 <i class="fas fa-check text-xs"></i>
                             </div>
 
@@ -435,15 +429,15 @@
                     {{-- Verification --}}
                     @php
                         $verificationReached =
-                            $complaint->verified_at ||
-                            !in_array($complaint->status, ['Pending'], true);
+                            $complaint->verified_at || !in_array($complaint->status, ['Pending'], true);
                     @endphp
 
                     <div class="flex gap-4">
 
                         <div class="flex flex-col items-center">
 
-                            <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                            <div
+                                class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                 {{ $verificationReached ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                 <i class="fas {{ $verificationReached ? 'fa-check' : 'fa-circle' }} text-xs"></i>
@@ -451,14 +445,17 @@
                             </div>
 
                             @if ($complaint->status !== 'Rejected')
-                                <div class="w-px flex-1 min-h-12 {{ $verificationReached ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                <div
+                                    class="w-px flex-1 min-h-12 {{ $verificationReached ? 'bg-green-200' : 'bg-gray-200' }}">
+                                </div>
                             @endif
 
                         </div>
 
                         <div class="pb-6">
 
-                            <p class="text-sm font-semibold {{ $verificationReached ? 'text-gray-900' : 'text-gray-400' }}">
+                            <p
+                                class="text-sm font-semibold {{ $verificationReached ? 'text-gray-900' : 'text-gray-400' }}">
                                 {{ $complaint->status === 'Rejected' ? 'Rejected' : 'Verified' }}
                             </p>
 
@@ -501,20 +498,24 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $processingStarted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $processingStarted ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $processingStarted ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div
+                                        class="w-px flex-1 min-h-12 {{ $processingStarted ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
                                 <div class="pb-6">
 
-                                    <p class="text-sm font-semibold {{ $processingStarted ? 'text-gray-900' : 'text-gray-400' }}">
+                                    <p
+                                        class="text-sm font-semibold {{ $processingStarted ? 'text-gray-900' : 'text-gray-400' }}">
                                         Initial Processing Started
                                     </p>
 
@@ -524,7 +525,8 @@
                                         </p>
 
                                         <p class="text-xs text-gray-500 mt-1">
-                                            Started by {{ $commercialResolution->processor?->full_name ?? 'Customer Service' }}
+                                            Started by
+                                            {{ $commercialResolution->processor?->full_name ?? 'Customer Service' }}
                                         </p>
                                     @else
                                         <p class="text-xs text-gray-400 mt-1">
@@ -546,20 +548,24 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $processingCompleted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $processingCompleted ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $processingCompleted ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div
+                                        class="w-px flex-1 min-h-12 {{ $processingCompleted ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
                                 <div class="pb-6">
 
-                                    <p class="text-sm font-semibold {{ $processingCompleted ? 'text-gray-900' : 'text-gray-400' }}">
+                                    <p
+                                        class="text-sm font-semibold {{ $processingCompleted ? 'text-gray-900' : 'text-gray-400' }}">
                                         Initial Processing Completed
                                     </p>
 
@@ -569,7 +575,8 @@
                                         </p>
 
                                         <p class="text-xs text-gray-500 mt-1">
-                                            Processed by {{ $commercialResolution->processor?->full_name ?? 'Customer Service' }}
+                                            Processed by
+                                            {{ $commercialResolution->processor?->full_name ?? 'Customer Service' }}
                                         </p>
                                     @else
                                         <p class="text-xs text-gray-400 mt-1">
@@ -588,7 +595,8 @@
 
                                     <div class="flex flex-col items-center">
 
-                                        <div class="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                                        <div
+                                            class="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center shrink-0">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
 
@@ -611,32 +619,40 @@
                                     </div>
 
                                 </div>
-
                             @else
-
                                 {{-- Forwarded --}}
                                 @php
-                                    $forwarded = (bool) $commercialResolution?->forwarded_to_maintenance_at;
+                                    $forwarded =
+                                        (bool) $commercialResolution?->forwarded_to_maintenance_at ||
+                                        in_array(
+                                            $complaint->status,
+                                            ['For Maintenance', 'Assigned', 'In Progress', 'Completed', 'Closed'],
+                                            true,
+                                        );
                                 @endphp
 
                                 <div class="flex gap-4">
 
                                     <div class="flex flex-col items-center">
 
-                                        <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                        <div
+                                            class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                             {{ $forwarded ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                             <i class="fas {{ $forwarded ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                         </div>
 
-                                        <div class="w-px flex-1 min-h-12 {{ $forwarded ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                        <div
+                                            class="w-px flex-1 min-h-12 {{ $forwarded ? 'bg-green-200' : 'bg-gray-200' }}">
+                                        </div>
 
                                     </div>
 
                                     <div class="pb-6">
 
-                                        <p class="text-sm font-semibold {{ $forwarded ? 'text-gray-900' : 'text-gray-400' }}">
+                                        <p
+                                            class="text-sm font-semibold {{ $forwarded ? 'text-gray-900' : 'text-gray-400' }}">
                                             Forwarded to Maintenance
                                         </p>
 
@@ -646,7 +662,8 @@
                                             </p>
 
                                             <p class="text-xs text-gray-500 mt-1">
-                                                Forwarded by {{ $commercialResolution->forwarder?->full_name ?? 'Customer Service' }}
+                                                Forwarded by
+                                                {{ $commercialResolution->forwarder?->full_name ?? 'Customer Service' }}
                                             </p>
                                         @else
                                             <p class="text-xs text-gray-400 mt-1">
@@ -659,28 +676,31 @@
                                 </div>
 
                             @endif
-
                         @else
-
                             {{-- Engineering automatically goes to Maintenance after verification --}}
                             <div class="flex gap-4">
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $complaint->verified_at ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
-                                        <i class="fas {{ $complaint->verified_at ? 'fa-check' : 'fa-circle' }} text-xs"></i>
+                                        <i
+                                            class="fas {{ $complaint->verified_at ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $complaint->verified_at ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div
+                                        class="w-px flex-1 min-h-12 {{ $complaint->verified_at ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
                                 <div class="pb-6">
 
-                                    <p class="text-sm font-semibold {{ $complaint->verified_at ? 'text-gray-900' : 'text-gray-400' }}">
+                                    <p
+                                        class="text-sm font-semibold {{ $complaint->verified_at ? 'text-gray-900' : 'text-gray-400' }}">
                                         Forwarded to Maintenance
                                     </p>
 
@@ -712,14 +732,16 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $assigned ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $assigned ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $assigned ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div class="w-px flex-1 min-h-12 {{ $assigned ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
@@ -759,20 +781,24 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $maintenanceStarted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $maintenanceStarted ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $maintenanceStarted ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div
+                                        class="w-px flex-1 min-h-12 {{ $maintenanceStarted ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
                                 <div class="pb-6">
 
-                                    <p class="text-sm font-semibold {{ $maintenanceStarted ? 'text-gray-900' : 'text-gray-400' }}">
+                                    <p
+                                        class="text-sm font-semibold {{ $maintenanceStarted ? 'text-gray-900' : 'text-gray-400' }}">
                                         Maintenance Started
                                     </p>
 
@@ -806,20 +832,24 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $accomplished ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $accomplished ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $accomplished ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div
+                                        class="w-px flex-1 min-h-12 {{ $accomplished ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
                                 <div class="pb-6">
 
-                                    <p class="text-sm font-semibold {{ $accomplished ? 'text-gray-900' : 'text-gray-400' }}">
+                                    <p
+                                        class="text-sm font-semibold {{ $accomplished ? 'text-gray-900' : 'text-gray-400' }}">
                                         Maintenance Accomplished
                                     </p>
 
@@ -829,7 +859,8 @@
                                         </p>
 
                                         <p class="text-xs text-gray-500 mt-1">
-                                            Accomplished by {{ $report->technician?->full_name ?? $assignedNames->first() ?? 'Assigned plumber' }}
+                                            Accomplished by
+                                            {{ $report->technician?->full_name ?? ($assignedNames->first() ?? 'Assigned plumber') }}
                                         </p>
                                     @else
                                         <p class="text-xs text-gray-400 mt-1">
@@ -851,14 +882,16 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $reviewed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $reviewed ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
                                     </div>
 
-                                    <div class="w-px flex-1 min-h-12 {{ $reviewed ? 'bg-green-200' : 'bg-gray-200' }}"></div>
+                                    <div class="w-px flex-1 min-h-12 {{ $reviewed ? 'bg-green-200' : 'bg-gray-200' }}">
+                                    </div>
 
                                 </div>
 
@@ -899,7 +932,8 @@
 
                                 <div class="flex flex-col items-center">
 
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                                    <div
+                                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
                                         {{ $maintenanceClosed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $maintenanceClosed ? 'fa-check' : 'fa-circle' }} text-xs"></i>
@@ -910,7 +944,8 @@
 
                                 <div>
 
-                                    <p class="text-sm font-semibold {{ $maintenanceClosed ? 'text-gray-900' : 'text-gray-400' }}">
+                                    <p
+                                        class="text-sm font-semibold {{ $maintenanceClosed ? 'text-gray-900' : 'text-gray-400' }}">
                                         {{ $isCommercial ? 'Request Closed' : 'Complaint Closed' }}
                                     </p>
 
@@ -990,7 +1025,7 @@
                         <div class="rounded-xl border border-green-200 bg-green-50 p-4">
                             <p class="text-xs text-green-600">Verified Classification</p>
                             <p class="mt-1 text-sm font-semibold text-gray-900">
-                                {{ $verifiedCategory?->name ?? ($complaint->status === 'Pending' ? 'Pending review' : ($complaint->category?->name ?? 'Not available')) }}
+                                {{ $verifiedCategory?->name ?? ($complaint->status === 'Pending' ? 'Pending review' : $complaint->category?->name ?? 'Not available') }}
                             </p>
                         </div>
 
@@ -1053,6 +1088,635 @@
             </div>
         @endif
 
+        {{-- Related Complaint Analysis --}}
+{{-- Related Complaint Analysis --}}
+<div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+    <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+            <div class="flex items-start gap-3">
+
+                <div
+                    class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600
+                    flex items-center justify-center shrink-0">
+
+                    <i class="fas fa-link text-sm"></i>
+
+                </div>
+
+                <div>
+
+                    <h2 class="font-semibold text-gray-900">
+                        Related Complaint Analysis
+                    </h2>
+
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        AI compares nearby and recent complaints that may be part of the same or a connected incident.
+                    </p>
+
+                </div>
+
+            </div>
+
+            @if (($similarComplaints['count'] ?? 0) > 0)
+
+                <span
+                    class="inline-flex self-start sm:self-auto items-center gap-1.5
+                    px-2.5 py-1 rounded-full
+                    bg-violet-50 text-violet-700
+                    border border-violet-100
+                    text-xs font-semibold">
+
+                    <i class="fas fa-link text-[10px]"></i>
+
+                    {{ $similarComplaints['count'] }}
+
+                    {{ ($similarComplaints['count'] ?? 0) === 1
+                        ? 'Possible Match'
+                        : 'Possible Matches' }}
+
+                </span>
+
+            @endif
+
+        </div>
+
+    </div>
+
+
+    <div class="p-5 sm:p-6">
+
+        @if ($similarComplaintError)
+
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+
+                <div class="flex items-start gap-3">
+
+                    <i class="fas fa-triangle-exclamation text-amber-600 mt-0.5"></i>
+
+                    <div>
+
+                        <p class="text-sm font-semibold text-amber-800">
+                            Related complaint analysis unavailable
+                        </p>
+
+                        <p class="text-sm text-amber-700 mt-1">
+                            {{ $similarComplaintError }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        @elseif (
+            ($similarComplaints['has_possible_related_complaints'] ?? false) &&
+            !empty($similarComplaints['matches'])
+        )
+
+            <div class="space-y-4">
+
+                @foreach ($similarComplaints['matches'] as $match)
+
+                    @php
+                        $relatedComplaintId = isset($match['complaint_id'])
+                            ? (int) $match['complaint_id']
+                            : null;
+
+                        $relationship =
+                            $match['relationship'] ?? 'Possibly Related';
+
+                        $scorePercentage = (int) round(
+                            (float) ($match['score_percentage'] ?? 0)
+                        );
+
+                        $textSimilarityPercentage = (int) round(
+                            (float) ($match['text_similarity_percentage'] ?? 0)
+                        );
+
+                        $locationSimilarityPercentage = (int) round(
+                            (float) ($match['location_similarity_percentage'] ?? 0)
+                        );
+
+                        $typeSimilarityPercentage = (int) round(
+                            (float) ($match['type_similarity_percentage'] ?? 0)
+                        );
+
+                        $timeSimilarityPercentage = (int) round(
+                            (float) ($match['time_similarity_percentage'] ?? 0)
+                        );
+
+                        $consumerSimilarityPercentage = (int) round(
+                            (float) ($match['consumer_score_percentage'] ?? 0)
+                        );
+
+                        $distanceKm = $match['distance_km'] ?? null;
+
+                        $hoursDifference = $match['hours_difference'] ?? null;
+
+                        $sameComplaintType =
+                            !empty($match['same_complaint_type']);
+
+                        $consumerMatchAvailable =
+                            !empty($match['consumer_match_available']);
+
+                        $sameConsumer =
+                            !empty($match['same_consumer']);
+
+                        $evidence = is_array($match['evidence'] ?? null)
+                            ? $match['evidence']
+                            : [];
+
+                        $relationshipClasses = match ($relationship) {
+                            'Likely Related' =>
+                                'bg-red-50 text-red-700 border-red-200',
+
+                            'Possibly Related' =>
+                                'bg-amber-50 text-amber-700 border-amber-200',
+
+                            default =>
+                                'bg-gray-50 text-gray-700 border-gray-200',
+                        };
+
+                        $relatedStatus = $match['status'] ?? null;
+
+                        $relatedStatusLabel = match ($relatedStatus) {
+                            'Completed' => 'Accomplished',
+                            default => $relatedStatus,
+                        };
+
+                        $relatedStatusClasses = match ($relatedStatus) {
+                            'Pending' =>
+                                'bg-amber-50 text-amber-700',
+
+                            'Verified' =>
+                                'bg-green-50 text-green-700',
+
+                            'CS Processing' =>
+                                'bg-sky-50 text-sky-700',
+
+                            'For Maintenance' =>
+                                'bg-violet-50 text-violet-700',
+
+                            'Assigned' =>
+                                'bg-indigo-50 text-indigo-700',
+
+                            'In Progress' =>
+                                'bg-blue-50 text-blue-700',
+
+                            'Completed' =>
+                                'bg-emerald-50 text-emerald-700',
+
+                            'Closed' =>
+                                'bg-slate-100 text-slate-700',
+
+                            'Rejected' =>
+                                'bg-red-50 text-red-700',
+
+                            default =>
+                                'bg-gray-100 text-gray-600',
+                        };
+                    @endphp
+
+
+                    <div
+                        class="rounded-2xl border border-gray-200
+                        bg-white overflow-hidden">
+
+                        <div class="p-4 sm:p-5">
+
+                            <div
+                                class="flex flex-col sm:flex-row
+                                sm:items-start sm:justify-between gap-4">
+
+                                <div class="min-w-0">
+
+                                    <div class="flex flex-wrap items-center gap-2">
+
+                                        @if ($relatedComplaintId)
+
+                                            <a
+                                                href="{{ route(
+                                                    'customer-service.complaints.show',
+                                                    $relatedComplaintId
+                                                ) }}"
+                                                class="inline-flex items-center gap-1.5
+                                                text-sm font-bold text-gray-900
+                                                hover:text-blue-600 transition">
+
+                                                {{ $match['complaint_no'] ?? 'Unknown Complaint' }}
+
+                                                <i
+                                                    class="fas fa-arrow-up-right-from-square
+                                                    text-[10px] text-gray-400">
+                                                </i>
+
+                                            </a>
+
+                                        @else
+
+                                            <span class="text-sm font-bold text-gray-900">
+                                                {{ $match['complaint_no'] ?? 'Unknown Complaint' }}
+                                            </span>
+
+                                        @endif
+
+
+                                        @if ($relatedStatus)
+
+                                            <span
+                                                class="inline-flex px-2 py-0.5 rounded-full
+                                                text-[11px] font-medium
+                                                {{ $relatedStatusClasses }}">
+
+                                                {{ $relatedStatusLabel }}
+
+                                            </span>
+
+                                        @endif
+
+                                    </div>
+
+
+                                    <div class="mt-2">
+
+                                        <span
+                                            class="inline-flex px-2.5 py-1 rounded-full
+                                            border text-xs font-semibold
+                                            {{ $relationshipClasses }}">
+
+                                            {{ $relationship }}
+
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="sm:text-right shrink-0">
+
+                                    <p class="text-[11px] text-gray-400">
+                                        Relationship Score
+                                    </p>
+
+                                    <p class="text-2xl font-bold text-gray-900">
+                                        {{ $scorePercentage }}%
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                class="grid grid-cols-2
+                                md:grid-cols-3 lg:grid-cols-5
+                                gap-3 mt-5">
+
+                                <div class="rounded-xl bg-gray-50 p-3">
+
+                                    <div class="flex items-center justify-between gap-2">
+
+                                        <p class="text-[11px] text-gray-500">
+                                            Location
+                                        </p>
+
+                                    </div>
+
+                                    <p class="mt-1 text-sm font-semibold text-gray-900">
+
+                                        @if ($distanceKm !== null)
+
+                                            {{ number_format((float) $distanceKm, 2) }} km away
+
+                                        @else
+
+                                            Not available
+
+                                        @endif
+
+                                    </p>
+
+                                    @if ($distanceKm !== null)
+
+                                        <p class="mt-1 text-[11px] text-gray-400">
+                                            {{ $locationSimilarityPercentage }}% proximity score
+                                        </p>
+
+                                    @endif
+
+                                </div>
+
+
+                                <div class="rounded-xl bg-gray-50 p-3">
+
+                                    <div class="flex items-center justify-between">
+
+                                        <p class="text-[11px] text-gray-500">
+                                            Description
+                                        </p>
+
+
+
+                                    </div>
+
+                                    <p class="mt-1 text-sm font-semibold text-gray-900">
+                                        {{ $textSimilarityPercentage }}%
+                                    </p>
+
+                                    <p class="mt-1 text-[11px] text-gray-400">
+                                        Text similarity
+                                    </p>
+
+                                </div>
+
+
+                                <div class="rounded-xl bg-gray-50 p-3">
+
+                                    <div class="flex items-center justify-between gap-2">
+
+                                        <p class="text-[11px] text-gray-500">
+                                            Complaint Type
+                                        </p>
+
+
+                                    </div>
+
+                                    <p class="mt-1 text-sm font-semibold text-gray-900">
+
+                                        {{ $sameComplaintType
+                                            ? 'Same type'
+                                            : 'Different type' }}
+
+                                    </p>
+
+                                    <p class="mt-1 text-[11px] text-gray-400">
+
+                                        {{ $sameComplaintType
+                                            ? $typeSimilarityPercentage . '% type match'
+                                            : 'Can still be related' }}
+
+                                    </p>
+
+                                </div>
+
+
+                                <div class="rounded-xl bg-gray-50 p-3">
+
+                                    <div class="flex items-center justify-between gap-2">
+
+                                        <p class="text-[11px] text-gray-500">
+                                            Time
+                                        </p>
+
+
+                                    </div>
+
+                                    @if ($hoursDifference !== null)
+
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">
+
+                                            @if ((float) $hoursDifference < 1)
+
+                                                Less than 1 hour apart
+
+                                            @elseif ((float) $hoursDifference == 1)
+
+                                                1 hour apart
+
+                                            @else
+
+                                                {{ number_format(
+                                                    (float) $hoursDifference,
+                                                    1
+                                                ) }} hours apart
+
+                                            @endif
+
+                                        </p>
+
+                                        <p class="mt-1 text-[11px] text-gray-400">
+                                            {{ $timeSimilarityPercentage }}% time score
+                                        </p>
+
+                                    @else
+
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">
+                                            Not available
+                                        </p>
+
+                                    @endif
+
+                                </div>
+
+
+                                <div
+                                    class="rounded-xl bg-gray-50 p-3
+                                    col-span-2 md:col-span-1">
+
+                                    <div class="flex items-center justify-between gap-2">
+
+                                        <p class="text-[11px] text-gray-500">
+                                            Consumer
+                                        </p>
+
+
+
+                                    </div>
+
+                                    @if ($consumerMatchAvailable)
+
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">
+                                            {{ $sameConsumer
+                                                ? 'Same account'
+                                                : 'Different account' }}
+                                        </p>
+
+                                        <p class="mt-1 text-[11px] text-gray-400">
+                                            {{ $consumerSimilarityPercentage }}% consumer score
+                                        </p>
+
+                                    @else
+
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">
+                                            Not available
+                                        </p>
+
+                                    @endif
+
+                                </div>
+
+                            </div>
+
+
+                            @if (!$sameComplaintType)
+
+                                <div
+                                    class="mt-4 rounded-xl
+                                    border border-blue-100
+                                    bg-blue-50 px-3 py-2.5">
+
+                                    <div class="flex items-start gap-2">
+
+                                        <i
+                                            class="fas fa-circle-info
+                                            text-blue-600 text-xs mt-0.5">
+                                        </i>
+
+                                        <p class="text-xs text-blue-700 leading-relaxed">
+                                            Different complaint types may still describe the same
+                                            water-service incident, such as Mainline Leakage,
+                                            No Water, and Low Water Pressure.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            @endif
+
+
+                            @if (!empty($evidence))
+
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+
+                                    <p
+                                        class="text-[11px] font-semibold uppercase
+                                        tracking-wide text-gray-400">
+
+                                        Supporting Evidence
+
+                                    </p>
+
+                                    <div class="mt-2 space-y-2">
+
+                                        @foreach ($evidence as $item)
+
+                                            <div
+                                                class="flex items-start gap-2
+                                                text-xs text-gray-600">
+
+                                                <i
+                                                    class="fas fa-check
+                                                    text-green-500 mt-0.5 shrink-0">
+                                                </i>
+
+                                                <span>
+                                                    {{ $item }}
+                                                </span>
+
+                                            </div>
+
+                                        @endforeach
+
+                                    </div>
+
+                                </div>
+
+                            @endif
+
+
+                            @if (!empty($match['human_confirmation_required']))
+
+                                <div
+                                    class="mt-4 flex items-start gap-2
+                                    rounded-xl bg-slate-50
+                                    border border-slate-200
+                                    px-3 py-2.5">
+
+                                    <i
+                                        class="fas fa-user-check
+                                        text-slate-500 text-xs mt-0.5">
+                                    </i>
+
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        AI provides relationship support only.
+                                        Customer Service should review the complaints
+                                        before confirming that they belong to the same
+                                        or connected incident.
+                                    </p>
+
+                                </div>
+
+                            @endif
+
+
+                            @if ($relatedComplaintId)
+
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+
+                                    <a
+                                        href="{{ route(
+                                            'customer-service.complaints.show',
+                                            $relatedComplaintId
+                                        ) }}"
+                                        class="inline-flex w-full sm:w-auto
+                                        items-center justify-center gap-2
+                                        px-4 py-2.5 rounded-xl
+                                        border border-gray-200 bg-white
+                                        text-sm font-semibold text-gray-700
+                                        hover:border-blue-200 hover:bg-blue-50
+                                        hover:text-blue-700 transition">
+
+                                        <i class="far fa-eye"></i>
+
+                                        View Complaint
+
+                                        <i class="fas fa-arrow-right text-xs"></i>
+
+                                    </a>
+
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                @endforeach
+
+            </div>
+
+        @else
+
+            <div class="py-6">
+
+                <div class="flex flex-col items-center text-center">
+
+                    <div
+                        class="w-10 h-10 rounded-xl
+                        bg-gray-50 text-gray-400
+                        flex items-center justify-center">
+
+                        <i class="fas fa-link-slash text-sm"></i>
+
+                    </div>
+
+                    <p class="mt-3 text-sm font-semibold text-gray-700">
+                        No related complaints detected
+                    </p>
+
+                    <p class="mt-1 text-xs text-gray-500 max-w-md">
+                        No recent complaint reached the relationship threshold
+                        based on location, description, complaint type, time,
+                        and consumer information when available.
+                    </p>
+
+                </div>
+
+            </div>
+
+        @endif
+
+    </div>
+
+</div>
+
 
         {{-- Pending Verification --}}
         @if ($complaint->status === 'Pending')
@@ -1072,8 +1736,7 @@
 
                 <div class="p-5 sm:p-6">
 
-                    <form id="verifyComplaintForm"
-                        method="POST"
+                    <form id="verifyComplaintForm" method="POST"
                         action="{{ route('customer-service.complaints.verify', $complaint) }}"
                         onsubmit="return confirm('Verify this complaint with the selected division and complaint type?');">
 
@@ -1091,16 +1754,13 @@
 
                                 </label>
 
-                                <select name="division_id"
-                                    id="verification_division_id"
-                                    required
+                                <select name="division_id" id="verification_division_id" required
                                     class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
 
                                     <option value="">Select division</option>
 
                                     @foreach ($divisions as $division)
-                                        <option value="{{ $division->id }}"
-                                            @selected((string) old('division_id', $complaint->division_id) === (string) $division->id)>
+                                        <option value="{{ $division->id }}" @selected((string) old('division_id', $complaint->division_id) === (string) $division->id)>
 
                                             {{ $division->name }}
 
@@ -1122,9 +1782,7 @@
 
                                 </label>
 
-                                <select name="complaint_category_id"
-                                    id="verification_complaint_category_id"
-                                    required
+                                <select name="complaint_category_id" id="verification_complaint_category_id" required
                                     class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
 
                                     <option value="">Select complaint type</option>
@@ -1138,28 +1796,24 @@
 
                         <div class="mt-5">
 
-                            <label for="verification_reason"
-                                class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="verification_reason" class="block text-sm font-medium text-gray-700 mb-2">
 
                                 Verification Notes
                                 <span class="font-normal text-gray-400">(optional)</span>
 
                             </label>
 
-                            <textarea name="verification_reason"
-                                id="verification_reason"
-                                rows="3"
-                                maxlength="2000"
+                            <textarea name="verification_reason" id="verification_reason" rows="3" maxlength="2000"
                                 class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
                                 placeholder="Add notes about the verification or classification correction...">{{ old('verification_reason') }}</textarea>
 
                         </div>
 
 
-                        <div class="mt-6 pt-5 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                        <div
+                            class="mt-6 pt-5 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
 
-                            <button type="button"
-                                id="showRejectComplaint"
+                            <button type="button" id="showRejectComplaint"
                                 class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
                                 border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50">
 
@@ -1184,8 +1838,7 @@
 
                     <div id="rejectComplaintPanel" class="hidden mt-5 pt-5 border-t border-gray-100">
 
-                        <form id="rejectComplaintForm"
-                            method="POST"
+                        <form id="rejectComplaintForm" method="POST"
                             action="{{ route('customer-service.complaints.reject', $complaint) }}"
                             onsubmit="return confirm('Reject this complaint?');">
 
@@ -1193,26 +1846,20 @@
 
                             <div class="rounded-xl border border-red-200 bg-red-50 p-4">
 
-                                <label for="rejection_reason"
-                                    class="block text-sm font-medium text-red-900 mb-2">
+                                <label for="rejection_reason" class="block text-sm font-medium text-red-900 mb-2">
 
                                     Rejection Reason
                                     <span class="text-red-600">*</span>
 
                                 </label>
 
-                                <textarea name="verification_reason"
-                                    id="rejection_reason"
-                                    rows="3"
-                                    maxlength="2000"
-                                    required
+                                <textarea name="verification_reason" id="rejection_reason" rows="3" maxlength="2000" required
                                     class="w-full rounded-xl border-red-200 bg-white text-sm focus:border-red-500 focus:ring-red-500"
                                     placeholder="Explain why this complaint is being rejected...">{{ old('verification_reason') }}</textarea>
 
                                 <div class="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
 
-                                    <button type="button"
-                                        id="cancelRejectComplaint"
+                                    <button type="button" id="cancelRejectComplaint"
                                         class="px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
 
                                         Cancel
@@ -1249,7 +1896,6 @@
                 <div class="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
                     <div>
-
                         <h2 class="font-semibold text-gray-900">
                             Customer Service Processing
                         </h2>
@@ -1257,7 +1903,6 @@
                         <p class="text-sm text-gray-500 mt-1">
                             Start the initial processing required for this service request.
                         </p>
-
                     </div>
 
                     <form method="POST"
@@ -1268,7 +1913,7 @@
 
                         <button type="submit"
                             class="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
-                            bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                    bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
 
                             <i class="fas fa-play"></i>
                             Start Initial Processing
@@ -1284,6 +1929,7 @@
 
 
         @if ($isCommercial && $complaint->status === 'CS Processing')
+
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
 
                 <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
@@ -1298,32 +1944,28 @@
 
                 </div>
 
-                <form id="commercialResolutionForm"
-                    method="POST"
-                    action="{{ route('customer-service.complaints.commercial.resolution', $complaint) }}">
 
-                    @csrf
-                    @method('PUT')
+                @if (!$commercialResolution?->initial_processing_completed_at)
+                    <form id="commercialResolutionForm" method="POST"
+                        action="{{ route('customer-service.complaints.commercial.resolution', $complaint) }}">
 
-                    <div class="p-5 sm:p-6 space-y-5">
+                        @csrf
+                        @method('PUT')
 
-                        @if (!$commercialResolution?->initial_processing_completed_at)
+                        <div class="p-5 sm:p-6 space-y-5">
 
                             <div>
 
-                                <label for="findings"
-                                    class="block text-sm font-semibold text-gray-700 mb-2">
+                                <label for="findings" class="block text-sm font-semibold text-gray-700 mb-2">
 
                                     Findings
                                     <span class="text-red-500">*</span>
 
                                 </label>
 
-                                <textarea name="findings"
-                                    id="findings"
-                                    rows="5"
-                                    maxlength="5000"
-                                    class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                <textarea name="findings" id="findings" rows="5" maxlength="5000" required
+                                    class="w-full rounded-xl border-gray-300 text-sm
+                            focus:border-blue-500 focus:ring-blue-500"
                                     placeholder="Record the result of the initial review, inspection, or assessment...">{{ old('findings', $commercialResolution?->findings) }}</textarea>
 
                             </div>
@@ -1331,38 +1973,40 @@
 
                             <div>
 
-                                <label for="resolution_remarks"
-                                    class="block text-sm font-semibold text-gray-700 mb-2">
+                                <label for="resolution_remarks" class="block text-sm font-semibold text-gray-700 mb-2">
 
                                     Resolution / Recommendation
                                     <span class="text-red-500">*</span>
 
                                 </label>
 
-                                <textarea name="resolution_remarks"
-                                    id="resolution_remarks"
-                                    rows="5"
-                                    maxlength="5000"
-                                    class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                <textarea name="resolution_remarks" id="resolution_remarks" rows="5" maxlength="5000" required
+                                    class="w-full rounded-xl border-gray-300 text-sm
+                            focus:border-blue-500 focus:ring-blue-500"
                                     placeholder="Record the resolution or recommended next step...">{{ old('resolution_remarks', $commercialResolution?->resolution_remarks) }}</textarea>
 
                             </div>
 
 
-                            <div class="pt-5 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                            <div
+                                class="pt-5 border-t border-gray-100
+                        flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
 
-                                <button type="submit"
-                                    onclick="prepareCommercialSave()"
-                                    class="px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                                <button type="submit" onclick="prepareCommercialSave()"
+                                    class="px-4 py-2.5 rounded-xl
+                            border border-gray-300 bg-white
+                            text-sm font-semibold text-gray-700
+                            hover:bg-gray-50">
 
                                     Save
 
                                 </button>
 
-                                <button type="submit"
-                                    onclick="return prepareCommercialComplete()"
-                                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
-                                    bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                                <button type="submit" onclick="return prepareCommercialComplete()"
+                                    class="inline-flex items-center justify-center gap-2
+                            px-5 py-2.5 rounded-xl
+                            bg-blue-600 text-sm font-semibold text-white
+                            hover:bg-blue-700">
 
                                     <i class="fas fa-circle-check"></i>
                                     Complete Initial Processing
@@ -1371,110 +2015,127 @@
 
                             </div>
 
-                        @else
+                        </div>
 
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    </form>
+                @else
+                    <div class="p-5 sm:p-6 space-y-5">
 
-                                <div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-                                    <p class="text-xs font-medium text-gray-500 mb-2">
-                                        Findings
-                                    </p>
+                            <div>
 
-                                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
-                                        {{ $commercialResolution->findings }}
-                                    </div>
+                                <p class="text-xs font-medium text-gray-500 mb-2">
+                                    Findings
+                                </p>
 
-                                </div>
+                                <div
+                                    class="rounded-xl border border-gray-200
+                            bg-gray-50 p-4 text-sm text-gray-700
+                            whitespace-pre-line">
 
-                                <div>
-
-                                    <p class="text-xs font-medium text-gray-500 mb-2">
-                                        Resolution / Recommendation
-                                    </p>
-
-                                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
-                                        {{ $commercialResolution->resolution_remarks }}
-                                    </div>
+                                    {{ $commercialResolution->findings }}
 
                                 </div>
 
                             </div>
 
 
-                            <div class="pt-5 border-t border-gray-100">
+                            <div>
 
-                                <p class="text-sm font-semibold text-gray-900">
-                                    Initial Processing Completed
+                                <p class="text-xs font-medium text-gray-500 mb-2">
+                                    Resolution / Recommendation
                                 </p>
 
-                                <p class="text-xs text-gray-500 mt-1">
-                                    {{ $commercialResolution->initial_processing_completed_at?->format('M d, Y h:i A') }}
-                                </p>
+                                <div
+                                    class="rounded-xl border border-gray-200
+                            bg-gray-50 p-4 text-sm text-gray-700
+                            whitespace-pre-line">
 
-                                <p class="text-sm text-gray-500 mt-2">
-                                    Choose the next step based on the findings above.
-                                </p>
+                                    {{ $commercialResolution->resolution_remarks }}
+
+                                </div>
 
                             </div>
 
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-                                <form method="POST"
-                                    action="{{ route('customer-service.complaints.commercial.close', $complaint) }}"
-                                    onsubmit="return confirm('Close this request? No maintenance assignment will be created.');">
-
-                                    @csrf
-
-                                    <button type="submit"
-                                        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl
-                                        border border-gray-300 bg-white font-semibold text-gray-700 hover:bg-gray-50">
-
-                                        <i class="fas fa-check"></i>
-                                        Close Request
-
-                                    </button>
-
-                                </form>
+                        </div>
 
 
-                                <form method="POST"
-                                    action="{{ route('customer-service.complaints.commercial.forward-maintenance', $complaint) }}"
-                                    onsubmit="return confirm('Forward this request to Maintenance for plumber assignment?');">
+                        <div class="pt-5 border-t border-gray-100">
 
-                                    @csrf
+                            <p class="text-sm font-semibold text-gray-900">
+                                Initial Processing Completed
+                            </p>
 
-                                    <button type="submit"
-                                        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl
-                                        bg-violet-600 font-semibold text-white hover:bg-violet-700">
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $commercialResolution->initial_processing_completed_at?->format('M d, Y h:i A') }}
+                            </p>
 
-                                        <i class="fas fa-share"></i>
-                                        Forward to Maintenance
+                            <p class="text-sm text-gray-500 mt-2">
+                                Choose the next step based on the findings above.
+                            </p>
 
-                                    </button>
+                        </div>
 
-                                </form>
 
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                        @endif
+                            <form method="POST"
+                                action="{{ route('customer-service.complaints.commercial.close', $complaint) }}"
+                                onsubmit="return confirm('Close this request? No maintenance assignment will be created.');">
+
+                                @csrf
+
+                                <button type="submit"
+                                    class="w-full inline-flex items-center justify-center gap-2
+                            px-5 py-3 rounded-xl
+                            border border-gray-300 bg-white
+                            font-semibold text-gray-700
+                            hover:bg-gray-50">
+
+                                    <i class="fas fa-check"></i>
+                                    Close Request
+
+                                </button>
+
+                            </form>
+
+
+                            <form method="POST"
+                                action="{{ route('customer-service.complaints.commercial.forward-maintenance', $complaint) }}"
+                                onsubmit="return confirm('Forward this request to Maintenance for plumber assignment?');">
+
+                                @csrf
+
+                                <button type="submit"
+                                    class="w-full inline-flex items-center justify-center gap-2
+                            px-5 py-3 rounded-xl
+                            bg-violet-600 font-semibold text-white
+                            hover:bg-violet-700">
+
+                                    <i class="fas fa-share"></i>
+                                    Forward to Maintenance
+
+                                </button>
+
+                            </form>
+
+                        </div>
 
                     </div>
-
-                </form>
+                @endif
 
             </div>
+
         @endif
 
 
         {{-- Read-only CS Processing Result --}}
         @if (
             $isCommercial &&
-            $commercialResolution &&
-            $commercialResolution->initial_processing_completed_at &&
-            $complaint->status !== 'CS Processing'
-        )
+                $commercialResolution &&
+                $commercialResolution->initial_processing_completed_at &&
+                $complaint->status !== 'CS Processing')
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
 
                 <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
@@ -1497,7 +2158,8 @@
                             Findings
                         </p>
 
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                        <div
+                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                             {{ $commercialResolution->findings ?: 'No findings recorded.' }}
                         </div>
 
@@ -1509,56 +2171,10 @@
                             Resolution / Recommendation
                         </p>
 
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                        <div
+                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                             {{ $commercialResolution->resolution_remarks ?: 'No recommendation recorded.' }}
                         </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-        @endif
-
-
-        {{-- Engineering Assessment --}}
-        @if (
-            $isEngineering &&
-            in_array($complaint->status, ['Verified', 'Assigned', 'In Progress', 'Completed', 'Closed'], true)
-        )
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
-
-                <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
-
-                    <h2 class="font-semibold text-gray-900">
-                        Complaint Assessment
-                    </h2>
-
-                </div>
-
-                <div class="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                    <div>
-
-                        <p class="text-xs text-gray-500">
-                            Verification Result
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                            Complaint verified by Customer Service.
-                        </p>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-xs text-gray-500">
-                            Next Step
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                            Forwarded to Maintenance for plumber assignment.
-                        </p>
 
                     </div>
 
@@ -1588,7 +2204,8 @@
 
                         </div>
 
-                        <span class="inline-flex self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-semibold
+                        <span
+                            class="inline-flex self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-semibold
                             {{ $report->review_status === 'Approved'
                                 ? 'bg-green-50 text-green-700'
                                 : ($report->review_status === 'Returned'
@@ -1610,7 +2227,7 @@
                         <div>
                             <p class="text-xs text-gray-500">Plumber</p>
                             <p class="mt-1 text-sm font-semibold text-gray-900">
-                                {{ $report->technician?->full_name ?? $assignedNames->first() ?? '—' }}
+                                {{ $report->technician?->full_name ?? ($assignedNames->first() ?? '—') }}
                             </p>
                         </div>
 
@@ -1639,7 +2256,8 @@
                                 Diagnosis / Findings
                             </p>
 
-                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                            <div
+                                class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                                 {{ $report->diagnosis ?: 'No diagnosis recorded.' }}
                             </div>
 
@@ -1651,7 +2269,8 @@
                                 Root Cause
                             </p>
 
-                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                            <div
+                                class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                                 {{ $report->root_cause ?: 'No root cause recorded.' }}
                             </div>
 
@@ -1666,7 +2285,8 @@
                             Materials / Parts
                         </p>
 
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                        <div
+                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                             {{ $report->materials_parts ?: 'None recorded.' }}
                         </div>
 
@@ -1680,7 +2300,8 @@
                                 Plumber Notes
                             </p>
 
-                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                            <div
+                                class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                                 {{ $report->technician_notes }}
                             </div>
 
@@ -1698,8 +2319,7 @@
                                         Before Maintenance
                                     </p>
 
-                                    <img src="{{ asset('storage/' . $report->before_photo) }}"
-                                        alt="Before maintenance"
+                                    <img src="{{ asset('storage/' . $report->before_photo) }}" alt="Before maintenance"
                                         class="w-full max-h-80 object-cover rounded-xl border border-gray-200">
 
                                 </div>
@@ -1712,8 +2332,7 @@
                                         After Maintenance
                                     </p>
 
-                                    <img src="{{ asset('storage/' . $report->after_photo) }}"
-                                        alt="After maintenance"
+                                    <img src="{{ asset('storage/' . $report->after_photo) }}" alt="After maintenance"
                                         class="w-full max-h-80 object-cover rounded-xl border border-gray-200">
 
                                 </div>
@@ -1730,7 +2349,8 @@
                                 Manager Review Remarks
                             </p>
 
-                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                            <div
+                                class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
                                 {{ $report->review_remarks }}
                             </div>
 
@@ -1761,8 +2381,7 @@
 
                     </div>
 
-                    <form action="{{ route('customer-service.complaints.destroy', $complaint) }}"
-                        method="POST"
+                    <form action="{{ route('customer-service.complaints.destroy', $complaint) }}" method="POST"
                         onsubmit="return confirm('Are you sure you want to delete this complaint?');">
 
                         @csrf
@@ -1797,11 +2416,16 @@
 
             form.action = @json(route('customer-service.complaints.commercial.resolution', $complaint));
 
-            const methodInput = form.querySelector('input[name="_method"]');
+            let methodInput = form.querySelector('input[name="_method"]');
 
-            if (methodInput) {
-                methodInput.value = 'PUT';
+            if (!methodInput) {
+                methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                form.appendChild(methodInput);
             }
+
+            methodInput.value = 'PUT';
         }
 
 
@@ -1836,9 +2460,9 @@
             }
 
             if (!confirm(
-                'Complete the initial Customer Service processing?\n\n' +
-                'After completion, choose Close Request or Forward to Maintenance.'
-            )) {
+                    'Complete the initial Customer Service processing?\n\n' +
+                    'After completion, choose Close Request or Forward to Maintenance.'
+                )) {
                 return false;
             }
 
@@ -1847,7 +2471,7 @@
             const methodInput = form.querySelector('input[name="_method"]');
 
             if (methodInput) {
-                methodInput.value = 'POST';
+                methodInput.remove();
             }
 
             return true;

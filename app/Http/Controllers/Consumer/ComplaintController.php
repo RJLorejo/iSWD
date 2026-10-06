@@ -515,22 +515,10 @@ class ComplaintController extends Controller
     ) {
         $consumer = $this->consumer();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Security
-        |--------------------------------------------------------------------------
-        */
-
         abort_unless(
             $complaint->consumer_id === $consumer->id,
             403
         );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Only Pending Complaints Can Be Updated
-        |--------------------------------------------------------------------------
-        */
 
         if ($complaint->status !== 'Pending') {
             return redirect()
@@ -546,30 +534,25 @@ class ComplaintController extends Controller
 
         $validated = $request->validated();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Verify Division
-        |--------------------------------------------------------------------------
-        */
-
         $division = Division::query()
             ->where('id', $validated['division_id'])
             ->where('is_active', true)
             ->firstOrFail();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Verify Complaint Type Belongs To Division
-        |--------------------------------------------------------------------------
-        */
-
         ComplaintCategory::query()
-            ->where('id', $validated['complaint_category_id'])
-            ->where('division_id', $division->id)
-            ->where('is_active', true)
+            ->where(
+                'id',
+                $validated['complaint_category_id']
+            )
+            ->where(
+                'division_id',
+                $division->id
+            )
+            ->where(
+                'is_active',
+                true
+            )
             ->firstOrFail();
-
-
 
         if ($division->name === 'Commercial Services') {
             $validated['address'] = null;
@@ -577,12 +560,6 @@ class ComplaintController extends Controller
             $validated['latitude'] = null;
             $validated['longitude'] = null;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Replace Photo If New Photo Was Uploaded
-        |--------------------------------------------------------------------------
-        */
 
         if ($request->hasFile('photo')) {
 
@@ -593,16 +570,227 @@ class ComplaintController extends Controller
 
             $validated['photo'] = $request
                 ->file('photo')
-                ->store('complaints', 'public');
+                ->store(
+                    'complaints',
+                    'public'
+                );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Complaint
-        |--------------------------------------------------------------------------
-        */
-
         $complaint->update($validated);
+
+        $analysisToken = $request->input(
+            'ai_analysis_token'
+        );
+
+        if ($analysisToken) {
+
+            $sessionKey =
+                "complaint_ai_analysis.{$analysisToken}";
+
+            $storedAiAnalysis =
+                $request->session()->pull(
+                    $sessionKey
+                );
+
+            if ($storedAiAnalysis) {
+
+                $sameConsumer =
+                    (int) data_get(
+                        $storedAiAnalysis,
+                        'consumer_id'
+                    )
+                    ===
+                    (int) $consumer->id;
+
+                $currentDescriptionHash = hash(
+                    'sha256',
+                    trim($validated['description'])
+                );
+
+                $storedDescriptionHash =
+                    (string) data_get(
+                        $storedAiAnalysis,
+                        'description_hash',
+                        ''
+                    );
+
+                $sameDescription =
+                    $storedDescriptionHash !== ''
+                    &&
+                    hash_equals(
+                        $storedDescriptionHash,
+                        $currentDescriptionHash
+                    );
+
+                if (
+                    $sameConsumer
+                    &&
+                    $sameDescription
+                ) {
+
+                    $analysis = data_get(
+                        $storedAiAnalysis,
+                        'analysis',
+                        []
+                    );
+
+                    $predictedCategoryId =
+                        data_get(
+                            $storedAiAnalysis,
+                            'predicted_category_id'
+                        );
+
+                    $analyzedAt =
+                        data_get(
+                            $storedAiAnalysis,
+                            'analyzed_at'
+                        )
+                        ?? now();
+
+                    if (
+                        is_array($analysis)
+                        &&
+                        !empty($analysis)
+                    ) {
+
+                        $predictedType =
+                            data_get(
+                                $analysis,
+                                'classification.complaint_type'
+                            );
+
+                        $confidence =
+                            data_get(
+                                $analysis,
+                                'classification.confidence'
+                            );
+
+                        $confidenceLevel =
+                            data_get(
+                                $analysis,
+                                'classification.confidence_level'
+                            );
+
+                        $confidenceGap =
+                            data_get(
+                                $analysis,
+                                'classification.confidence_gap'
+                            );
+
+                        $ambiguous =
+                            (bool) data_get(
+                                $analysis,
+                                'classification.ambiguous',
+                                false
+                            );
+
+                        $consumerAccepted = null;
+
+                        if (
+                            $predictedCategoryId !== null
+                        ) {
+
+                            $consumerAccepted =
+                                (int) $predictedCategoryId
+                                ===
+                                (int) $validated['complaint_category_id'];
+                        }
+
+                        $aiAnalysisData = [
+
+                            'predicted_category_id' =>
+                            $predictedCategoryId,
+
+                            'predicted_type' =>
+                            $predictedType,
+
+                            'confidence' =>
+                            $confidence,
+
+                            'confidence_level' =>
+                            $confidenceLevel,
+
+                            'confidence_gap' =>
+                            $confidenceGap,
+
+                            'ambiguous' =>
+                            $ambiguous,
+
+                            'urgency_level' =>
+                            data_get(
+                                $analysis,
+                                'urgency.level'
+                            ),
+
+                            'urgency_score' =>
+                            data_get(
+                                $analysis,
+                                'urgency.score'
+                            ),
+
+                            'signals' =>
+                            data_get(
+                                $analysis,
+                                'operational_analysis.signals',
+                                []
+                            ),
+
+                            'evidence' =>
+                            data_get(
+                                $analysis,
+                                'operational_analysis.evidence',
+                                []
+                            ),
+
+                            'review_reasons' =>
+                            data_get(
+                                $analysis,
+                                'review.reasons',
+                                []
+                            ),
+
+                            'verification_questions' =>
+                            data_get(
+                                $analysis,
+                                'review.verification_questions',
+                                []
+                            ),
+
+                            'consumer_accepted' =>
+                            $consumerAccepted,
+
+                            'consumer_category_id' =>
+                            $validated['complaint_category_id'],
+
+                            'final_category_id' =>
+                            $validated['complaint_category_id'],
+
+                            'raw_analysis' =>
+                            $analysis,
+
+                            'analyzed_at' =>
+                            $analyzedAt,
+                        ];
+
+                        if ($complaint->aiAnalysis) {
+
+                            $complaint
+                                ->aiAnalysis
+                                ->update(
+                                    $aiAnalysisData
+                                );
+                        } else {
+
+                            $complaint
+                                ->aiAnalysis()
+                                ->create(
+                                    $aiAnalysisData
+                                );
+                        }
+                    }
+                }
+            }
+        }
 
         return redirect()
             ->route(

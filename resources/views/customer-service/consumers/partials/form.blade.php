@@ -383,20 +383,6 @@
         {{-- Map Controls --}}
         <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-            <button type="button" id="use-consumer-location"
-                class="inline-flex w-full items-center justify-center gap-2
-                       rounded-lg border border-blue-200 bg-blue-50
-                       px-4 py-2.5 text-sm font-semibold text-blue-700
-                       transition hover:bg-blue-100
-                       disabled:cursor-not-allowed disabled:opacity-60
-                       sm:w-auto">
-
-                <i class="fa-solid fa-location-crosshairs"></i>
-
-                Use My Location
-
-            </button>
-
 
             <p id="consumer-location-status" class="text-xs text-gray-500">
 

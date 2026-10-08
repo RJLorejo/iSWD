@@ -125,7 +125,7 @@
 
                             Your Concern
 
-                            <span class="text-red-500">*</span>
+                            <span class="text-red-500"> * required </span>
 
                         </label>
 
@@ -401,7 +401,7 @@
 
                                 Service Division
 
-                                <span class="text-red-500">*</span>
+                                <span class="text-red-500">* required</span>
 
                             </label>
 
@@ -440,7 +440,7 @@
 
                                 Complaint Type
 
-                                <span class="text-red-500">*</span>
+                                <span class="text-red-500">* required</span>
 
                             </label>
 
@@ -620,7 +620,7 @@
 
                             Service Address
 
-                            <span class="text-red-500">*</span>
+                            <span class="text-red-500">* required</span>
 
                         </label>
 
@@ -676,108 +676,111 @@
 
 
             {{-- ===================================================== --}}
-            {{-- STEP 4 — PHOTO --}}
+            {{-- STEP 4 — SUPPORTING PHOTOS --}}
             {{-- ===================================================== --}}
 
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-
                 <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-
                     <div class="flex items-start gap-3">
-
                         <div
                             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-sm font-bold text-amber-700">
                             4
                         </div>
-
                         <div>
-
-                            <h2 id="evidenceTitle" class="font-semibold text-slate-900">
-                                Add a Photo
-                            </h2>
-
+                            <h2 id="evidenceTitle" class="font-semibold text-slate-900">Supporting Photos   <span class="text-red-500">* required</span></h2>
                             <p id="evidenceSubtitle" class="mt-1 text-sm text-slate-500">
-                                A photo can help SWD personnel understand the concern.
+                                Add 1 to 5 photos to help SWD personnel understand the concern.
                             </p>
-
                         </div>
-
                     </div>
-
                 </div>
 
 
-                <div class="p-5 sm:p-6">
 
-                    <label for="photo" id="photoDropArea"
-                        class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-7 text-center transition hover:border-sky-300 hover:bg-sky-50">
+                <div class="space-y-4 p-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button type="button" id="takePhotoButton"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-100">
+                            <i class="fas fa-camera"></i>
+                            Take Photo
+                        </button>
 
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600">
-
-                            <i id="evidenceIcon" class="fas fa-camera"></i>
-
-                        </div>
-
-                        <p id="evidenceUploadTitle" class="mt-3 text-sm font-semibold text-slate-700">
-                            Upload Photo
-                        </p>
-
-                        <p id="evidenceUploadHelp" class="mt-1 text-xs text-slate-500">
-                            JPG, PNG or WEBP · Maximum 5 MB
-                        </p>
-
-                        <input type="file" id="photo" name="photo"
-                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="sr-only">
-
-                    </label>
-
-
-                    <div id="photoPreviewContainer" class="mt-4 hidden">
-
-                        <div
-                            class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center">
-
-                            <div
-                                class="h-24 w-full shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white sm:w-24">
-
-                                <img id="photoPreview" src="" alt="Selected photo"
-                                    class="h-full w-full object-cover">
-
-                            </div>
-
-                            <div class="min-w-0 flex-1">
-
-                                <p id="photoName" class="truncate text-sm font-semibold text-slate-700">
-                                </p>
-
-                                <p id="photoSize" class="mt-1 text-xs text-slate-500">
-                                </p>
-
-                                <button type="button" id="removePhoto"
-                                    class="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-red-600">
-
-                                    <i class="fas fa-trash-can"></i>
-
-                                    Remove
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
+                        <button type="button" id="choosePhotoButton"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            <i class="fas fa-images"></i>
+                            Choose from Device
+                        </button>
                     </div>
 
+                    <input type="file" id="devicePhotoInput"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple class="hidden">
 
-                    @error('photo')
-                        <p class="mt-2 text-sm font-medium text-red-600">
-                            {{ $message }}
+                    <input type="file" id="photos" name="photos[]"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple class="hidden">
+
+                    <div class="flex items-center justify-between gap-4">
+
+                        <p class="text-xs leading-5 text-slate-500">
+
+                            JPG, JPEG, PNG or WEBP · Maximum 5 MB each · 1–5 photos required
                         </p>
+                        <span id="photoCount" class="shrink-0 text-xs font-semibold text-slate-500">0 / 5</span>
+                    </div>
+
+                    <div id="photoError"
+                        class="hidden rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"></div>
+
+                    <div id="photoPreviewContainer" class="hidden">
+                        <p class="mb-3 text-sm font-semibold text-slate-700">Selected Photos</p>
+                        <div id="photoPreviewGrid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5"></div>
+                    </div>
+
+                    @error('photos')
+                        <p class="text-sm font-medium text-red-600">{{ $message }}</p>
                     @enderror
 
+                    @error('photos.*')
+                        <p class="text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
-
             </section>
+
+            {{-- Live Camera Modal --}}
+            <div id="cameraModal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-slate-950/80 p-4">
+                <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                        <div>
+                            <h3 class="font-semibold text-slate-900">Take Photo</h3>
+                            <p class="mt-1 text-xs text-slate-500">Position the concern clearly inside the camera view.</p>
+                        </div>
+                        <button type="button" id="closeCameraButton"
+                            class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="bg-black">
+                        <video id="cameraVideo" autoplay playsinline muted
+                            class="max-h-[65vh] w-full object-contain"></video>
+                        <canvas id="cameraCanvas" class="hidden"></canvas>
+                    </div>
+
+                    <div id="cameraError" class="hidden border-t border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
+                        <button type="button" id="cancelCameraButton"
+                            class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            Cancel
+                        </button>
+                        <button type="button" id="capturePhotoButton"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-800">
+                            <i class="fas fa-camera"></i>
+                            Capture Photo
+                        </button>
+                    </div>
+                </div>
+            </div>
 
 
             {{-- ===================================================== --}}
@@ -913,23 +916,21 @@
                 const beforeSubmitText =
                     document.getElementById('beforeSubmitText');
 
-                const photoInput =
-                    document.getElementById('photo');
-
-                const photoPreviewContainer =
-                    document.getElementById('photoPreviewContainer');
-
-                const photoPreview =
-                    document.getElementById('photoPreview');
-
-                const photoName =
-                    document.getElementById('photoName');
-
-                const photoSize =
-                    document.getElementById('photoSize');
-
-                const removePhoto =
-                    document.getElementById('removePhoto');
+                const photosInput = document.getElementById('photos');
+                const devicePhotoInput = document.getElementById('devicePhotoInput');
+                const takePhotoButton = document.getElementById('takePhotoButton');
+                const choosePhotoButton = document.getElementById('choosePhotoButton');
+                const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+                const photoPreviewGrid = document.getElementById('photoPreviewGrid');
+                const photoCount = document.getElementById('photoCount');
+                const photoError = document.getElementById('photoError');
+                const cameraModal = document.getElementById('cameraModal');
+                const cameraVideo = document.getElementById('cameraVideo');
+                const cameraCanvas = document.getElementById('cameraCanvas');
+                const cameraError = document.getElementById('cameraError');
+                const closeCameraButton = document.getElementById('closeCameraButton');
+                const cancelCameraButton = document.getElementById('cancelCameraButton');
+                const capturePhotoButton = document.getElementById('capturePhotoButton');
 
                 const mapElement =
                     document.getElementById('complaintMap');
@@ -1003,6 +1004,39 @@
                 let map = null;
                 let marker = null;
                 let mapInitialized = false;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | SMOOTH SECTION FOCUS
+                |--------------------------------------------------------------------------
+                */
+
+                function scrollToCenter(element, delay = 150) {
+
+                    if (!element) {
+                        return;
+                    }
+
+                    window.setTimeout(function() {
+
+                        const rect = element.getBoundingClientRect();
+
+                        const absoluteTop =
+                            window.pageYOffset + rect.top;
+
+                        const centerPosition =
+                            absoluteTop -
+                            (window.innerHeight / 2) +
+                            (rect.height / 2);
+
+                        window.scrollTo({
+                            top: Math.max(0, centerPosition),
+                            behavior: 'smooth'
+                        });
+
+                    }, delay);
+                }
 
 
                 /*
@@ -1547,8 +1581,7 @@
 
                     const indicators =
                         Array.isArray(supportingIndicators) ?
-                        supportingIndicators :
-                        [];
+                        supportingIndicators : [];
 
 
                     if (
@@ -1690,10 +1723,9 @@
                     );
 
 
-                    aiAnalysisCard.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest'
-                    });
+                    scrollToCenter(
+                        aiAnalysisCard
+                    );
 
                 }
 
@@ -1899,10 +1931,14 @@
                         );
 
 
-                        classificationSection.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center'
-                        });
+                        setTimeout(function() {
+
+                            classificationSection.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+
+                        }, 300);
 
 
                         /*
@@ -1949,155 +1985,259 @@
 
                 /*
                 |--------------------------------------------------------------------------
-                | PHOTO
+                | SUPPORTING PHOTOS
                 |--------------------------------------------------------------------------
                 */
 
-                function formatFileSize(bytes) {
+                const MAX_PHOTOS = 5;
+                const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+                const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-                    if (bytes < 1024) {
-                        return bytes + ' bytes';
-                    }
+                let selectedPhotos = [];
+                let cameraStream = null;
 
-
-                    if (bytes < 1024 * 1024) {
-
-                        return (
-                            bytes / 1024
-                        ).toFixed(1) + ' KB';
-
-                    }
-
-
-                    return (
-                        bytes /
-                        (1024 * 1024)
-                    ).toFixed(1) + ' MB';
-
+                function showPhotoError(message) {
+                    if (!photoError) return;
+                    photoError.textContent = message;
+                    photoError.classList.remove('hidden');
                 }
 
+                function clearPhotoError() {
+                    if (!photoError) return;
+                    photoError.textContent = '';
+                    photoError.classList.add('hidden');
+                }
 
-                function clearPhotoPreview() {
+                function formatFileSize(bytes) {
+                    if (bytes < 1024) return bytes + ' bytes';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                }
 
-                    if (!photoInput) {
+                function syncPhotosInput() {
+                    if (!photosInput) return;
+                    const transfer = new DataTransfer();
+                    selectedPhotos.forEach(file => transfer.items.add(file));
+                    photosInput.files = transfer.files;
+                }
+
+                function renderPhotoPreviews() {
+                    if (!photoPreviewGrid || !photoPreviewContainer) return;
+
+                    photoPreviewGrid.innerHTML = '';
+
+                    selectedPhotos.forEach((file, index) => {
+                        const url = URL.createObjectURL(file);
+                        const card = document.createElement('div');
+                        card.className =
+                            'relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50';
+
+                        const image = document.createElement('img');
+                        image.src = url;
+                        image.alt = 'Supporting photo ' + (index + 1);
+                        image.className = 'h-28 w-full object-cover';
+                        image.onload = () => URL.revokeObjectURL(url);
+
+                        const info = document.createElement('div');
+                        info.className = 'p-2';
+
+                        const name = document.createElement('p');
+                        name.className = 'truncate text-xs font-semibold text-slate-700';
+                        name.textContent = file.name;
+
+                        const size = document.createElement('p');
+                        size.className = 'mt-0.5 text-[11px] text-slate-500';
+                        size.textContent = formatFileSize(file.size);
+
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className =
+                            'mt-2 inline-flex items-center gap-1 text-xs font-semibold text-red-600';
+                        remove.innerHTML = '<i class="fas fa-trash-can"></i> Remove';
+                        remove.addEventListener('click', function() {
+                            selectedPhotos.splice(index, 1);
+                            syncPhotosInput();
+                            renderPhotoPreviews();
+                            clearPhotoError();
+                        });
+
+                        info.appendChild(name);
+                        info.appendChild(size);
+                        info.appendChild(remove);
+                        card.appendChild(image);
+                        card.appendChild(info);
+                        photoPreviewGrid.appendChild(card);
+                    });
+
+                    photoPreviewContainer.classList.toggle('hidden', selectedPhotos.length === 0);
+
+                    if (photoCount) {
+                        photoCount.textContent = selectedPhotos.length + ' / ' + MAX_PHOTOS;
+                    }
+                }
+
+                function addSupportingPhotos(files) {
+                    clearPhotoError();
+
+                    for (const file of Array.from(files || [])) {
+                        if (selectedPhotos.length >= MAX_PHOTOS) {
+                            showPhotoError('You may add a maximum of 5 supporting photos.');
+                            break;
+                        }
+
+                        if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+                            showPhotoError('Please use JPG, JPEG, PNG, or WEBP images only.');
+                            continue;
+                        }
+
+                        if (file.size > MAX_PHOTO_SIZE) {
+                            showPhotoError('Each supporting photo must not exceed 5 MB.');
+                            continue;
+                        }
+
+                        selectedPhotos.push(file);
+                    }
+
+                    syncPhotosInput();
+                    renderPhotoPreviews();
+                }
+
+                choosePhotoButton?.addEventListener('click', function() {
+                    if (selectedPhotos.length >= MAX_PHOTOS) {
+                        showPhotoError('You already have the maximum of 5 supporting photos.');
+                        return;
+                    }
+                    devicePhotoInput?.click();
+                });
+
+                devicePhotoInput?.addEventListener('change', function() {
+                    addSupportingPhotos(this.files);
+                    this.value = '';
+                });
+
+                function stopCamera() {
+                    if (cameraStream) {
+                        cameraStream.getTracks().forEach(track => track.stop());
+                        cameraStream = null;
+                    }
+                    if (cameraVideo) cameraVideo.srcObject = null;
+                }
+
+                function closeCamera() {
+                    stopCamera();
+                    cameraModal?.classList.add('hidden');
+                    cameraModal?.classList.remove('flex');
+                }
+
+                async function openCamera() {
+                    clearPhotoError();
+
+                    if (selectedPhotos.length >= MAX_PHOTOS) {
+                        showPhotoError('You already have the maximum of 5 supporting photos.');
                         return;
                     }
 
+                    cameraModal?.classList.remove('hidden');
+                    cameraModal?.classList.add('flex');
+                    cameraError?.classList.add('hidden');
+                    if (cameraError) cameraError.textContent = '';
 
-                    photoInput.value = '';
-
-
-                    if (photoPreview) {
-                        photoPreview.src = '';
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        if (cameraError) {
+                            cameraError.textContent =
+                                'Camera access requires HTTPS or localhost. You can use Choose from Device instead.';
+                            cameraError.classList.remove('hidden');
+                        }
+                        return;
                     }
 
+                    try {
+                        cameraStream = await navigator.mediaDevices.getUserMedia({
+                            video: {
+                                facingMode: {
+                                    ideal: 'environment'
+                                }
+                            },
+                            audio: false
+                        });
 
-                    if (photoName) {
-                        photoName.textContent = '';
+                        if (cameraVideo) {
+                            cameraVideo.srcObject = cameraStream;
+                            await cameraVideo.play();
+                        }
+                    } catch (error) {
+                        if (cameraError) {
+                            cameraError.textContent =
+                                'Unable to open the camera. Please allow camera permission, or use Choose from Device instead.';
+                            cameraError.classList.remove('hidden');
+                        }
                     }
-
-
-                    if (photoSize) {
-                        photoSize.textContent = '';
-                    }
-
-
-                    photoPreviewContainer?.classList.add(
-                        'hidden'
-                    );
-
                 }
 
+                takePhotoButton?.addEventListener('click', openCamera);
+                closeCameraButton?.addEventListener('click', closeCamera);
+                cancelCameraButton?.addEventListener('click', closeCamera);
 
-                photoInput?.addEventListener(
-                    'change',
-                    function() {
+                cameraModal?.addEventListener('click', function(event) {
+                    if (event.target === cameraModal) closeCamera();
+                });
 
-                        const file =
-                            this.files?.[0];
+                capturePhotoButton?.addEventListener('click', function() {
+                    if (!cameraVideo || !cameraCanvas || !cameraVideo.videoWidth || !cameraVideo.videoHeight) {
+                        if (cameraError) {
+                            cameraError.textContent =
+                                'The camera is not ready yet. Please wait a moment and try again.';
+                            cameraError.classList.remove('hidden');
+                        }
+                        return;
+                    }
 
+                    cameraCanvas.width = cameraVideo.videoWidth;
+                    cameraCanvas.height = cameraVideo.videoHeight;
 
-                        if (!file) {
+                    const context = cameraCanvas.getContext('2d');
+                    context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
 
-                            clearPhotoPreview();
-
+                    cameraCanvas.toBlob(function(blob) {
+                        if (!blob) {
+                            showPhotoError('Unable to capture the photo. Please try again.');
                             return;
-
                         }
 
-
-                        if (
-                            file.size >
-                            5 * 1024 * 1024
-                        ) {
-
-                            alert(
-                                'The selected photo must not exceed 5 MB.'
-                            );
-
-                            clearPhotoPreview();
-
-                            return;
-
-                        }
-
-
-                        if (
-                            ![
-                                'image/jpeg',
-                                'image/png',
-                                'image/webp'
-                            ].includes(file.type)
-                        ) {
-
-                            alert(
-                                'Please select a JPG, JPEG, PNG, or WEBP image.'
-                            );
-
-                            clearPhotoPreview();
-
-                            return;
-
-                        }
-
-
-                        const reader =
-                            new FileReader();
-
-
-                        reader.onload =
-                            function(event) {
-
-                                photoPreview.src =
-                                    event.target.result;
-
-                                photoName.textContent =
-                                    file.name;
-
-                                photoSize.textContent =
-                                    formatFileSize(
-                                        file.size
-                                    );
-
-                                photoPreviewContainer.classList.remove(
-                                    'hidden'
-                                );
-
-                            };
-
-
-                        reader.readAsDataURL(
-                            file
+                        const file = new File(
+                            [blob],
+                            'complaint-photo-' + Date.now() + '.jpg', {
+                                type: 'image/jpeg'
+                            }
                         );
 
+                        addSupportingPhotos([file]);
+                        closeCamera();
+                    }, 'image/jpeg', 0.9);
+                });
+
+                const complaintForm = photosInput?.closest('form');
+
+                complaintForm?.addEventListener('submit', function(event) {
+                    if (selectedPhotos.length < 1) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        showPhotoError('At least one supporting photo is required.');
+                        document.getElementById('evidenceTitle')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        return;
                     }
-                );
 
+                    if (selectedPhotos.length > MAX_PHOTOS) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        showPhotoError('You may add a maximum of 5 supporting photos.');
+                    }
+                }, true);
 
-                removePhoto?.addEventListener(
-                    'click',
-                    clearPhotoPreview
-                );
+                window.addEventListener('beforeunload', stopCamera);
 
 
                 /*
@@ -2119,8 +2259,8 @@
                     }
 
 
-                    const defaultLat = 10.9447;
-                    const defaultLng = 123.4247;
+                    const defaultLat = 10.8961;
+                    const defaultLng = 123.4155;
 
 
                     map =
@@ -2133,7 +2273,7 @@
                                 defaultLat,
                                 defaultLng
                             ],
-                            14
+                            15
                         );
 
 
@@ -2374,6 +2514,16 @@
                         reverseGeocode(
                             lat,
                             lng
+                        );
+
+                        /*
+                         * The location was selected by the consumer
+                         * (map click, marker drag, or Use My Location).
+                         * Keep the map comfortably visible after the action.
+                         */
+                        scrollToCenter(
+                            mapElement,
+                            120
                         );
 
                     }

@@ -118,7 +118,7 @@
 
                             Your Concern
 
-                            <span class="text-red-500">*</span>
+                            <span class="text-red-500">* required</span>
 
                         </label>
 
@@ -373,7 +373,7 @@
 
                                 Service Division
 
-                                <span class="text-red-500">*</span>
+                                <span class="text-red-500">* required</span>
 
                             </label>
 
@@ -408,7 +408,7 @@
 
                                 Complaint Type
 
-                                <span class="text-red-500">*</span>
+                                <span class="text-red-500">* required</span>
 
                             </label>
 
@@ -583,7 +583,7 @@
 
                             Service Address
 
-                            <span class="text-red-500">*</span>
+                            <span class="text-red-500">* required</span>
 
                         </label>
 
@@ -643,124 +643,158 @@
             </span>
 
 
-            {{-- STEP 4 — PHOTO --}}
+            {{-- STEP 4 — SUPPORTING PHOTOS --}}
 
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
 
                 <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-
                     <div class="flex items-start gap-3">
-
                         <div
                             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-sm font-bold text-amber-700">
                             4
                         </div>
 
                         <div>
-
                             <h2 id="evidenceTitle" class="font-semibold text-slate-900">
-                                Supporting Photo
+                                Supporting Photos   <span class="text-red-500">* required</span>
                             </h2>
 
                             <p id="evidenceSubtitle" class="mt-1 text-sm text-slate-500">
-                                Keep the current photo or choose a replacement.
+                                Keep or remove existing photos, then add more if needed. You must keep at least 1 and no
+                                more than 5 photos.
                             </p>
-
                         </div>
-
                     </div>
-
                 </div>
 
+                <div class="space-y-5 p-5 sm:p-6">
 
-                <div class="space-y-4 p-5 sm:p-6">
-
-                    @if ($complaint->photo)
+                    {{-- Existing photos --}}
+                    @if ($complaint->photos->count())
                         <div>
-
-                            <p id="currentEvidenceLabel" class="mb-2 text-sm font-semibold text-slate-700">
-                                Current Photo
+                            <p class="mb-3 text-sm font-semibold text-slate-700">
+                                Existing Photos
                             </p>
 
-                            <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                            <div id="existingPhotoGrid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                                @foreach ($complaint->photos as $existingPhoto)
+                                    <div class="existing-photo-card overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                                        data-photo-id="{{ $existingPhoto->id }}">
 
-                                <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Current complaint photo"
-                                    class="w-full max-h-80 object-contain">
+                                        <div class="aspect-square overflow-hidden bg-white">
+                                            <img src="{{ asset('storage/' . $existingPhoto->photo) }}"
+                                                alt="Supporting photo" class="h-full w-full object-cover">
+                                        </div>
 
+                                        <div class="p-2">
+                                            <button type="button"
+                                                class="remove-existing-photo inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                                                data-photo-id="{{ $existingPhoto->id }}">
+                                                <i class="fas fa-trash-can"></i>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-
                         </div>
                     @endif
 
+                    {{-- Removed photo IDs are added here by JavaScript --}}
+                    <div id="removedPhotoInputs"></div>
 
-                    <label for="photo" id="photoDropArea"
-                        class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-7 text-center transition hover:border-sky-300 hover:bg-sky-50">
+                    {{-- Hidden real input submitted to Laravel --}}
+                    <input type="file" id="photos" name="photos[]" multiple
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden">
 
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600">
+                    {{-- Separate device picker --}}
+                    <input type="file" id="devicePhotoPicker" multiple
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden">
 
-                            <i id="evidenceIcon" class="fas fa-camera"></i>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button type="button" id="takePhotoButton"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-100">
+                            <i class="fas fa-camera"></i>
+                            Take Photo
+                        </button>
 
-                        </div>
-
-                        <p id="evidenceUploadTitle" class="mt-3 text-sm font-semibold text-slate-700">
-                            {{ $complaint->photo ? 'Choose a Replacement Photo' : 'Upload Photo' }}
-                        </p>
-
-                        <p id="evidenceUploadHelp" class="mt-1 text-xs text-slate-500">
-                            JPG, PNG or WEBP · Maximum 5 MB
-                        </p>
-
-                        <input type="file" id="photo" name="photo"
-                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="sr-only">
-
-                    </label>
-
-
-                    <div id="photoPreviewContainer" class="hidden">
-
-                        <div
-                            class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center">
-
-                            <div
-                                class="h-24 w-full shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white sm:w-24">
-
-                                <img id="photoPreview" src="" alt="Selected photo"
-                                    class="h-full w-full object-cover">
-
-                            </div>
-
-                            <div class="min-w-0 flex-1">
-
-                                <p id="photoName" class="truncate text-sm font-semibold text-slate-700"></p>
-
-                                <p id="photoSize" class="mt-1 text-xs text-slate-500"></p>
-
-                                <button type="button" id="removePhoto"
-                                    class="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-red-600">
-
-                                    <i class="fas fa-trash-can"></i>
-
-                                    Remove
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
+                        <button type="button" id="choosePhotoButton"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            <i class="fas fa-images"></i>
+                            Choose from Device
+                        </button>
                     </div>
 
+                    <p class="text-xs leading-5 text-slate-500">
+                        Final total: 1 to 5 photos. JPG, JPEG, PNG or WEBP. Maximum 5 MB each.
+                    </p>
 
-                    @error('photo')
-                        <p class="mt-2 text-sm font-medium text-red-600">
-                            {{ $message }}
+                    <div id="newPhotosSection" class="hidden">
+                        <p class="mb-3 text-sm font-semibold text-slate-700">
+                            New Photos
                         </p>
+
+                        <div id="photoPreviewGrid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"></div>
+                    </div>
+
+                    <p id="photoValidationMessage" class="hidden text-sm font-medium text-red-600"></p>
+
+                    @error('photos')
+                        <p class="text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+
+                    @error('photos.*')
+                        <p class="text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+
+                    @error('remove_photos')
+                        <p class="text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+
+                    @error('remove_photos.*')
+                        <p class="text-sm font-medium text-red-600">{{ $message }}</p>
                     @enderror
 
                 </div>
 
             </section>
 
+            {{-- CAMERA MODAL --}}
+            <div id="cameraModal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-slate-950/80 p-4">
+                <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                        <div>
+                            <h3 class="font-semibold text-slate-900">Take Photo</h3>
+                            <p class="mt-1 text-xs text-slate-500">Position the concern clearly, then capture the photo.
+                            </p>
+                        </div>
+
+                        <button type="button" id="closeCameraButton"
+                            class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="bg-black">
+                        <video id="cameraVideo" autoplay playsinline muted
+                            class="max-h-[65vh] w-full object-contain"></video>
+                        <canvas id="cameraCanvas" class="hidden"></canvas>
+                    </div>
+
+                    <div class="flex flex-col gap-3 p-4 sm:flex-row sm:justify-end">
+                        <button type="button" id="cancelCameraButton"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            Cancel
+                        </button>
+
+                        <button type="button" id="capturePhotoButton"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-800">
+                            <i class="fas fa-camera"></i>
+                            Capture Photo
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div class="rounded-xl border border-sky-100 bg-sky-50 p-4">
 
@@ -869,38 +903,50 @@
                 const evidenceSubtitle =
                     document.getElementById('evidenceSubtitle');
 
-                const evidenceUploadTitle =
-                    document.getElementById('evidenceUploadTitle');
-
-                const evidenceUploadHelp =
-                    document.getElementById('evidenceUploadHelp');
-
-                const evidenceIcon =
-                    document.getElementById('evidenceIcon');
-
-                const currentEvidenceLabel =
-                    document.getElementById('currentEvidenceLabel');
-
                 const beforeSubmitText =
                     document.getElementById('beforeSubmitText');
 
-                const photoInput =
-                    document.getElementById('photo');
+                const photosInput =
+                    document.getElementById('photos');
 
-                const photoPreviewContainer =
-                    document.getElementById('photoPreviewContainer');
+                const devicePhotoPicker =
+                    document.getElementById('devicePhotoPicker');
 
-                const photoPreview =
-                    document.getElementById('photoPreview');
+                const takePhotoButton =
+                    document.getElementById('takePhotoButton');
 
-                const photoName =
-                    document.getElementById('photoName');
+                const choosePhotoButton =
+                    document.getElementById('choosePhotoButton');
 
-                const photoSize =
-                    document.getElementById('photoSize');
+                const photoPreviewGrid =
+                    document.getElementById('photoPreviewGrid');
 
-                const removePhoto =
-                    document.getElementById('removePhoto');
+                const newPhotosSection =
+                    document.getElementById('newPhotosSection');
+
+                const removedPhotoInputs =
+                    document.getElementById('removedPhotoInputs');
+
+                const photoValidationMessage =
+                    document.getElementById('photoValidationMessage');
+
+                const cameraModal =
+                    document.getElementById('cameraModal');
+
+                const cameraVideo =
+                    document.getElementById('cameraVideo');
+
+                const cameraCanvas =
+                    document.getElementById('cameraCanvas');
+
+                const closeCameraButton =
+                    document.getElementById('closeCameraButton');
+
+                const cancelCameraButton =
+                    document.getElementById('cancelCameraButton');
+
+                const capturePhotoButton =
+                    document.getElementById('capturePhotoButton');
 
                 const mapElement =
                     document.getElementById('complaintMap');
@@ -962,10 +1008,9 @@
                 const useAiClassification =
                     document.getElementById('useAiClassification');
 
-
-                const hasExistingPhoto =
-                    @json((bool) $complaint->photo);
-
+                let selectedPhotos = [];
+                let removedPhotoIds = new Set();
+                let cameraStream = null;
 
                 let matchedAiCategory = null;
 
@@ -1171,140 +1216,61 @@
                         return;
                     }
 
-
                     if (isEngineeringDivision()) {
 
-                        commercialAccountSection?.classList.add(
-                            'hidden'
-                        );
-
-                        engineeringLocationSection?.classList.remove(
-                            'hidden'
-                        );
-
+                        commercialAccountSection?.classList.add('hidden');
+                        engineeringLocationSection?.classList.remove('hidden');
                         addressInput.required = true;
 
-
                         if (evidenceTitle) {
-                            evidenceTitle.textContent =
-                                'Supporting Photo';
+                            evidenceTitle.textContent = 'Supporting Photos';
                         }
 
                         if (evidenceSubtitle) {
                             evidenceSubtitle.textContent =
-                                'Keep the current photo or choose a replacement.';
-                        }
-
-                        if (evidenceUploadTitle) {
-
-                            evidenceUploadTitle.textContent =
-                                hasExistingPhoto ?
-                                'Choose a Replacement Photo' :
-                                'Upload Photo';
-                        }
-
-                        if (evidenceUploadHelp) {
-                            evidenceUploadHelp.textContent =
-                                'JPG, PNG or WEBP · Maximum 5 MB';
-                        }
-
-                        if (evidenceIcon) {
-                            evidenceIcon.className =
-                                'fas fa-camera';
-                        }
-
-                        if (currentEvidenceLabel) {
-                            currentEvidenceLabel.textContent =
-                                'Current Photo';
+                                'Keep or remove existing photos, then add more if needed. You must keep at least 1 and no more than 5 photos.';
                         }
 
                         if (beforeSubmitText) {
                             beforeSubmitText.textContent =
-                                'Check your concern, complaint type, service location, and photo before saving your changes.';
+                                'Check your concern, complaint type, service location, and supporting photos before saving your changes.';
                         }
-
 
                         initializeMap();
 
-
-                        setTimeout(
-                            function() {
-
-                                if (map) {
-                                    map.invalidateSize();
-                                }
-
-                            },
-                            250
-                        );
-
+                        setTimeout(function() {
+                            if (map) {
+                                map.invalidateSize();
+                            }
+                        }, 250);
 
                     } else if (isCommercialDivision()) {
 
-                        commercialAccountSection?.classList.remove(
-                            'hidden'
-                        );
-
-                        engineeringLocationSection?.classList.add(
-                            'hidden'
-                        );
-
+                        commercialAccountSection?.classList.remove('hidden');
+                        engineeringLocationSection?.classList.add('hidden');
                         addressInput.required = false;
 
-
                         if (evidenceTitle) {
-                            evidenceTitle.textContent =
-                                'Supporting Evidence';
+                            evidenceTitle.textContent = 'Supporting Photos';
                         }
 
                         if (evidenceSubtitle) {
                             evidenceSubtitle.textContent =
-                                'Keep the current evidence or choose a replacement image.';
-                        }
-
-                        if (evidenceUploadTitle) {
-
-                            evidenceUploadTitle.textContent =
-                                hasExistingPhoto ?
-                                'Choose Replacement Evidence' :
-                                'Upload Supporting Evidence';
-                        }
-
-                        if (evidenceUploadHelp) {
-                            evidenceUploadHelp.textContent =
-                                'JPG, PNG or WEBP · Maximum 5 MB';
-                        }
-
-                        if (evidenceIcon) {
-                            evidenceIcon.className =
-                                'fas fa-file-image';
-                        }
-
-                        if (currentEvidenceLabel) {
-                            currentEvidenceLabel.textContent =
-                                'Current Evidence';
+                                'Keep or remove existing photos, then add more if needed. You must keep at least 1 and no more than 5 photos.';
                         }
 
                         if (beforeSubmitText) {
                             beforeSubmitText.textContent =
-                                'Check your concern and complaint type before saving. Your registered consumer account remains linked automatically.';
+                                'Check your concern, complaint type, and supporting photos before saving. Your registered consumer account remains linked automatically.';
                         }
-
 
                     } else {
 
-                        commercialAccountSection?.classList.add(
-                            'hidden'
-                        );
-
-                        engineeringLocationSection?.classList.remove(
-                            'hidden'
-                        );
-
+                        commercialAccountSection?.classList.add('hidden');
+                        engineeringLocationSection?.classList.remove('hidden');
                         addressInput.required = false;
                     }
                 }
-
 
                 divisionSelect?.addEventListener(
                     'change',
@@ -1527,8 +1493,7 @@
                         Array.isArray(
                             supportingIndicators
                         ) ?
-                        supportingIndicators :
-                        [];
+                        supportingIndicators : [];
 
 
                     if (
@@ -1666,10 +1631,12 @@
                     );
 
 
-                    aiAnalysisCard?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest'
-                    });
+                    setTimeout(function() {
+                        aiAnalysisCard?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }, 150);
                 }
 
 
@@ -1881,10 +1848,12 @@
                         );
 
 
-                        classificationSection?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center'
-                        });
+                        setTimeout(function() {
+                            classificationSection?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }, 300);
 
 
                         const originalHtml =
@@ -1929,157 +1898,280 @@
 
 
                 function formatFileSize(bytes) {
-
-                    if (bytes < 1024) {
-                        return bytes + ' bytes';
-                    }
-
-
-                    if (
-                        bytes <
-                        1024 * 1024
-                    ) {
-
-                        return (
-                                bytes / 1024
-                            ).toFixed(1) +
-                            ' KB';
-                    }
-
-
-                    return (
-                            bytes /
-                            (1024 * 1024)
-                        ).toFixed(1) +
-                        ' MB';
+                    if (bytes < 1024) return bytes + ' bytes';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
                 }
 
+                function activeExistingPhotoCount() {
+                    return document.querySelectorAll('.existing-photo-card:not(.hidden)').length;
+                }
 
-                function clearPhotoPreview() {
+                function finalPhotoCount() {
+                    return activeExistingPhotoCount() + selectedPhotos.length;
+                }
 
-                    if (!photoInput) {
+                function showPhotoValidation(message = '') {
+                    if (!photoValidationMessage) return;
+                    photoValidationMessage.textContent = message;
+                    photoValidationMessage.classList.toggle('hidden', !message);
+                }
+
+                function syncPhotosInput() {
+                    if (!photosInput) return;
+
+                    const transfer = new DataTransfer();
+                    selectedPhotos.forEach(function(file) {
+                        transfer.items.add(file);
+                    });
+                    photosInput.files = transfer.files;
+                }
+
+                function syncRemovedPhotoInputs() {
+                    if (!removedPhotoInputs) return;
+                    removedPhotoInputs.innerHTML = '';
+
+                    removedPhotoIds.forEach(function(id) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'remove_photos[]';
+                        input.value = id;
+                        removedPhotoInputs.appendChild(input);
+                    });
+                }
+
+                function renderNewPhotos() {
+                    if (!photoPreviewGrid || !newPhotosSection) return;
+
+                    photoPreviewGrid.innerHTML = '';
+                    newPhotosSection.classList.toggle('hidden', selectedPhotos.length === 0);
+
+                    selectedPhotos.forEach(function(file, index) {
+                        const card = document.createElement('div');
+                        card.className = 'overflow-hidden rounded-xl border border-slate-200 bg-slate-50';
+
+                        const imageWrap = document.createElement('div');
+                        imageWrap.className = 'aspect-square overflow-hidden bg-white';
+
+                        const image = document.createElement('img');
+                        image.className = 'h-full w-full object-cover';
+                        image.alt = 'New supporting photo';
+                        image.src = URL.createObjectURL(file);
+                        image.onload = function() {
+                            URL.revokeObjectURL(image.src);
+                        };
+
+                        imageWrap.appendChild(image);
+
+                        const details = document.createElement('div');
+                        details.className = 'p-2';
+
+                        const name = document.createElement('p');
+                        name.className = 'truncate text-xs font-semibold text-slate-700';
+                        name.textContent = file.name;
+
+                        const size = document.createElement('p');
+                        size.className = 'mt-1 text-[11px] text-slate-500';
+                        size.textContent = formatFileSize(file.size);
+
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className =
+                            'mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-100';
+                        remove.innerHTML = '<i class="fas fa-trash-can"></i> Remove';
+                        remove.addEventListener('click', function() {
+                            selectedPhotos.splice(index, 1);
+                            syncPhotosInput();
+                            renderNewPhotos();
+                            showPhotoValidation('');
+                        });
+
+                        details.appendChild(name);
+                        details.appendChild(size);
+                        details.appendChild(remove);
+                        card.appendChild(imageWrap);
+                        card.appendChild(details);
+                        photoPreviewGrid.appendChild(card);
+                    });
+                }
+
+                function isAllowedPhoto(file) {
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Please select JPG, JPEG, PNG, or WEBP images only.');
+                        return false;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Each photo must not exceed 5 MB.');
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                function addPhotos(files) {
+                    const incoming = Array.from(files || []);
+
+                    for (const file of incoming) {
+                        if (!isAllowedPhoto(file)) continue;
+
+                        if (finalPhotoCount() >= 5) {
+                            alert('You can keep a maximum of 5 supporting photos in total.');
+                            break;
+                        }
+
+                        selectedPhotos.push(file);
+                    }
+
+                    syncPhotosInput();
+                    renderNewPhotos();
+                    showPhotoValidation('');
+                }
+
+                document.querySelectorAll('.remove-existing-photo').forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        const id = String(this.dataset.photoId || '');
+                        const card = this.closest('.existing-photo-card');
+
+                        if (!id || !card) return;
+
+                        if (finalPhotoCount() <= 1) {
+                            showPhotoValidation('At least 1 supporting photo must remain.');
+                            return;
+                        }
+
+                        removedPhotoIds.add(id);
+                        card.classList.add('hidden');
+                        syncRemovedPhotoInputs();
+                        showPhotoValidation('');
+                    });
+                });
+
+                choosePhotoButton?.addEventListener('click', function() {
+                    if (finalPhotoCount() >= 5) {
+                        alert('You already have the maximum of 5 supporting photos.');
+                        return;
+                    }
+                    devicePhotoPicker?.click();
+                });
+
+                devicePhotoPicker?.addEventListener('change', function() {
+                    addPhotos(this.files);
+                    this.value = '';
+                });
+
+                function stopCamera() {
+                    if (cameraStream) {
+                        cameraStream.getTracks().forEach(function(track) {
+                            track.stop();
+                        });
+                        cameraStream = null;
+                    }
+
+                    if (cameraVideo) {
+                        cameraVideo.srcObject = null;
+                    }
+                }
+
+                function closeCamera() {
+                    stopCamera();
+                    cameraModal?.classList.add('hidden');
+                    cameraModal?.classList.remove('flex');
+                }
+
+                takePhotoButton?.addEventListener('click', async function() {
+                    if (finalPhotoCount() >= 5) {
+                        alert('You already have the maximum of 5 supporting photos.');
                         return;
                     }
 
-
-                    photoInput.value = '';
-
-
-                    if (photoPreview) {
-                        photoPreview.src = '';
+                    if (!navigator.mediaDevices?.getUserMedia) {
+                        alert(
+                            'Camera access requires HTTPS or localhost. You can use Choose from Device instead.');
+                        return;
                     }
 
+                    try {
+                        cameraStream = await navigator.mediaDevices.getUserMedia({
+                            video: {
+                                facingMode: {
+                                    ideal: 'environment'
+                                }
+                            },
+                            audio: false
+                        });
 
-                    if (photoName) {
-                        photoName.textContent = '';
+                        cameraVideo.srcObject = cameraStream;
+                        cameraModal?.classList.remove('hidden');
+                        cameraModal?.classList.add('flex');
+
+                        await cameraVideo.play();
+
+                    } catch (error) {
+                        console.error('Camera error:', error);
+                        stopCamera();
+                        alert(
+                            'Unable to open the camera. Camera access requires HTTPS or localhost. You can use Choose from Device instead.');
+                    }
+                });
+
+                closeCameraButton?.addEventListener('click', closeCamera);
+                cancelCameraButton?.addEventListener('click', closeCamera);
+
+                cameraModal?.addEventListener('click', function(event) {
+                    if (event.target === cameraModal) {
+                        closeCamera();
+                    }
+                });
+
+                capturePhotoButton?.addEventListener('click', function() {
+                    if (!cameraVideo || !cameraCanvas || !cameraVideo.videoWidth || !cameraVideo.videoHeight) {
+                        return;
                     }
 
+                    cameraCanvas.width = cameraVideo.videoWidth;
+                    cameraCanvas.height = cameraVideo.videoHeight;
 
-                    if (photoSize) {
-                        photoSize.textContent = '';
-                    }
+                    const context = cameraCanvas.getContext('2d');
+                    context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
 
+                    cameraCanvas.toBlob(function(blob) {
+                        if (!blob) return;
 
-                    photoPreviewContainer?.classList.add(
-                        'hidden'
-                    );
-                }
-
-
-                photoInput?.addEventListener(
-                    'change',
-                    function() {
-
-                        const file =
-                            this.files?.[0];
-
-
-                        if (!file) {
-
-                            clearPhotoPreview();
-
-                            return;
-                        }
-
-
-                        if (
-                            file.size >
-                            5 * 1024 * 1024
-                        ) {
-
-                            alert(
-                                'The selected photo must not exceed 5 MB.'
-                            );
-
-                            clearPhotoPreview();
-
-                            return;
-                        }
-
-
-                        if (
-                            ![
-                                'image/jpeg',
-                                'image/png',
-                                'image/webp'
-                            ].includes(file.type)
-                        ) {
-
-                            alert(
-                                'Please select a JPG, JPEG, PNG, or WEBP image.'
-                            );
-
-                            clearPhotoPreview();
-
-                            return;
-                        }
-
-
-                        const reader =
-                            new FileReader();
-
-
-                        reader.onload =
-                            function(event) {
-
-                                if (photoPreview) {
-
-                                    photoPreview.src =
-                                        event.target.result;
-                                }
-
-                                if (photoName) {
-
-                                    photoName.textContent =
-                                        file.name;
-                                }
-
-                                if (photoSize) {
-
-                                    photoSize.textContent =
-                                        formatFileSize(
-                                            file.size
-                                        );
-                                }
-
-                                photoPreviewContainer?.classList.remove(
-                                    'hidden'
-                                );
-                            };
-
-
-                        reader.readAsDataURL(
-                            file
+                        const file = new File(
+                            [blob],
+                            'camera-' + Date.now() + '.jpg', {
+                                type: 'image/jpeg'
+                            }
                         );
+
+                        addPhotos([file]);
+                        closeCamera();
+                    }, 'image/jpeg', 0.9);
+                });
+
+                const complaintForm = photosInput?.closest('form');
+
+                complaintForm?.addEventListener('submit', function(event) {
+                    const total = finalPhotoCount();
+
+                    if (total < 1) {
+                        event.preventDefault();
+                        showPhotoValidation('At least 1 supporting photo is required.');
+                        document.getElementById('evidenceTitle')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        return;
                     }
-                );
 
-
-                removePhoto?.addEventListener(
-                    'click',
-                    clearPhotoPreview
-                );
-
+                    if (total > 5) {
+                        event.preventDefault();
+                        showPhotoValidation('You can keep a maximum of 5 supporting photos.');
+                    }
+                });
 
                 function initializeMap() {
 
@@ -2093,10 +2185,10 @@
 
 
                     const defaultLat =
-                        10.9447;
+                        10.8961;
 
                     const defaultLng =
-                        123.4247;
+                        123.4155;
 
 
                     map =
@@ -2109,7 +2201,7 @@
                                 defaultLat,
                                 defaultLng
                             ],
-                            14
+                            15
                         );
 
 
@@ -2360,6 +2452,13 @@
                             parsedLat,
                             parsedLng
                         );
+
+                        setTimeout(function() {
+                            mapElement?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+                        }, 120);
                     }
                 }
 
@@ -2453,6 +2552,11 @@
                                             ],
                                             17
                                         );
+
+                                        mapElement?.scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'center'
+                                        });
 
                                     },
                                     200

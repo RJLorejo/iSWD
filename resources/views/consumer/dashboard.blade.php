@@ -1,86 +1,10 @@
 @extends('consumer.layouts.app')
 
-@section('title', 'Consumer Dashboard')
+@section('title', 'Dashboard')
 
 @section('content')
 
     @php
-
-        /*
-        |--------------------------------------------------------------------------
-        | Status Display
-        |--------------------------------------------------------------------------
-        */
-
-        $statusClasses = [
-
-            'Pending' =>
-                'bg-amber-50 text-amber-700 border-amber-100',
-
-            'Verified' =>
-                'bg-blue-50 text-blue-700 border-blue-100',
-
-            'CS Processing' =>
-                'bg-violet-50 text-violet-700 border-violet-100',
-
-            'For Maintenance' =>
-                'bg-cyan-50 text-cyan-700 border-cyan-100',
-
-            'Assigned' =>
-                'bg-indigo-50 text-indigo-700 border-indigo-100',
-
-            'In Progress' =>
-                'bg-sky-50 text-sky-700 border-sky-100',
-
-            'Accomplished' =>
-                'bg-violet-50 text-violet-700 border-violet-100',
-
-            'Completed' =>
-                'bg-emerald-50 text-emerald-700 border-emerald-100',
-
-            'Closed' =>
-                'bg-slate-100 text-slate-700 border-slate-200',
-
-            'Rejected' =>
-                'bg-red-50 text-red-700 border-red-100',
-
-        ];
-
-
-        $statusIcons = [
-
-            'Pending' =>
-                'fa-clock',
-
-            'Verified' =>
-                'fa-circle-check',
-
-            'CS Processing' =>
-                'fa-clipboard-list',
-
-            'For Maintenance' =>
-                'fa-screwdriver-wrench',
-
-            'Assigned' =>
-                'fa-user-check',
-
-            'In Progress' =>
-                'fa-screwdriver-wrench',
-
-            'Accomplished' =>
-                'fa-clipboard-check',
-
-            'Completed' =>
-                'fa-circle-check',
-
-            'Closed' =>
-                'fa-lock',
-
-            'Rejected' =>
-                'fa-circle-xmark',
-
-        ];
-
 
         /*
         |--------------------------------------------------------------------------
@@ -103,564 +27,1235 @@
                 'Forwarded to Maintenance',
 
             'Assigned' =>
-                'Assigned for Maintenance',
+                'Plumber Assigned',
 
             'In Progress' =>
                 'Maintenance In Progress',
-
-            'Accomplished' =>
-                'Work Accomplished',
 
             'Completed' =>
                 'Maintenance Completed',
 
             'Closed' =>
-                'Closed',
+                'Request Closed',
 
             'Rejected' =>
                 'Rejected',
 
         ];
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status Styles
+        |--------------------------------------------------------------------------
+        */
+
+        $statusClasses = [
+
+            'Pending' =>
+                'border-amber-200 bg-amber-50 text-amber-700',
+
+            'Verified' =>
+                'border-sky-200 bg-sky-50 text-sky-700',
+
+            'CS Processing' =>
+                'border-cyan-200 bg-cyan-50 text-cyan-700',
+
+            'For Maintenance' =>
+                'border-violet-200 bg-violet-50 text-violet-700',
+
+            'Assigned' =>
+                'border-indigo-200 bg-indigo-50 text-indigo-700',
+
+            'In Progress' =>
+                'border-blue-200 bg-blue-50 text-blue-700',
+
+            'Completed' =>
+                'border-emerald-200 bg-emerald-50 text-emerald-700',
+
+            'Closed' =>
+                'border-slate-200 bg-slate-100 text-slate-700',
+
+            'Rejected' =>
+                'border-red-200 bg-red-50 text-red-700',
+
+        ];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status Icons
+        |--------------------------------------------------------------------------
+        */
+
+        $statusIcons = [
+
+            'Pending' =>
+                'fa-clock',
+
+            'Verified' =>
+                'fa-circle-check',
+
+            'CS Processing' =>
+                'fa-clipboard-list',
+
+            'For Maintenance' =>
+                'fa-share',
+
+            'Assigned' =>
+                'fa-user-group',
+
+            'In Progress' =>
+                'fa-screwdriver-wrench',
+
+            'Completed' =>
+                'fa-clipboard-check',
+
+            'Closed' =>
+                'fa-lock',
+
+            'Rejected' =>
+                'fa-circle-xmark',
+
+        ];
+
     @endphp
 
 
-    <div class="max-w-7xl mx-auto space-y-5">
+    <div class="mx-auto max-w-7xl space-y-6">
 
 
         {{-- ========================================================= --}}
-        {{-- HEADER --}}
+        {{-- WELCOME --}}
         {{-- ========================================================= --}}
 
-        <div class="flex flex-col sm:flex-row
-                    sm:items-center sm:justify-between gap-4">
+        <section
+            class="
+                overflow-hidden
+                rounded-2xl
+                border
+                border-sky-100
+                bg-gradient-to-br
+                from-sky-50
+                via-white
+                to-cyan-50
+                shadow-sm
+            "
+        >
 
-            <div>
+            <div
+                class="
+                    flex
+                    flex-col
+                    gap-6
+                    px-6
+                    py-7
+                    sm:px-7
+                    lg:flex-row
+                    lg:items-center
+                    lg:justify-between
+                "
+            >
 
-                <p class="text-sm font-semibold text-sky-600">
-                    Consumer Portal
-                </p>
+                <div class="max-w-2xl">
 
-                <p class="mt-1 text-sm text-slate-500">
-                    Track your water service concerns and view SWD announcements.
-                </p>
+                    <div
+                        class="
+                            inline-flex
+                            items-center
+                            gap-2
+                            rounded-full
+                            border
+                            border-sky-100
+                            bg-white/80
+                            px-3
+                            py-1.5
+                            text-xs
+                            font-semibold
+                            text-sky-700
+                        "
+                    >
+
+                        <i class="fas fa-house"></i>
+
+                        Consumer Dashboard
+
+                    </div>
+
+
+                    <h1
+                        class="
+                            mt-4
+                            text-2xl
+                            font-bold
+                            tracking-tight
+                            text-slate-900
+                            sm:text-3xl
+                        "
+                    >
+
+                        Welcome,
+                        {{ $consumer->first_name }}
+
+                    </h1>
+
+
+                    <p
+                        class="
+                            mt-2
+                            max-w-xl
+                            text-sm
+                            leading-6
+                            text-slate-500
+                        "
+                    >
+
+                        Track your water service concerns and stay
+                        informed about important Sagay Water District
+                        service updates.
+
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="{{ route('consumer.complaints.create') }}"
+                    class="
+                        inline-flex
+                        shrink-0
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        bg-sky-700
+                        px-5
+                        py-3
+                        text-sm
+                        font-semibold
+                        text-white
+                        shadow-sm
+                        transition
+                        hover:bg-sky-800
+                        focus:outline-none
+                        focus:ring-4
+                        focus:ring-sky-100
+                    "
+                >
+
+                    <i class="fas fa-plus text-xs"></i>
+
+                    Submit Complaint
+
+                </a>
 
             </div>
 
+        </section>
 
-            <a href="{{ route('consumer.complaints.create') }}"
-                class="inline-flex self-start sm:self-auto
-                       items-center justify-center gap-2
-                       rounded-xl bg-sky-700
-                       px-4 py-2.5
-                       text-sm font-semibold text-white
-                       transition hover:bg-sky-800">
-
-                <i class="fa-solid fa-plus text-xs"></i>
-
-                Submit Complaint
-
-            </a>
-
-        </div>
 
 
         {{-- ========================================================= --}}
-        {{-- MINIMAL STATISTICS --}}
+        {{-- CLICKABLE STATISTICS --}}
         {{-- ========================================================= --}}
 
-        <section class="grid grid-cols-3 gap-2 sm:gap-4">
+        <section
+            class="
+                grid
+                grid-cols-1
+                gap-4
+                sm:grid-cols-2
+                xl:grid-cols-4
+            "
+        >
 
 
-            {{-- Pending --}}
+            {{-- Total Requests --}}
 
-            <a href="{{ route('consumer.complaints.index', [
-                    'status' => 'Pending'
-                ]) }}"
-                class="rounded-xl sm:rounded-2xl
-                       border border-slate-200
-                       bg-white
-                       p-3 sm:p-5
-                       transition
-                       hover:border-amber-200
-                       hover:shadow-sm">
+            <a
+                href="{{ route('consumer.complaints.index') }}"
+                class="
+                    group
+                    block
+                    rounded-2xl
+                    border
+                    border-slate-200
+                    bg-white
+                    p-5
+                    shadow-sm
+                    transition
+                    duration-200
+                    hover:-translate-y-0.5
+                    hover:border-slate-300
+                    hover:shadow-md
+                    focus:outline-none
+                    focus:ring-4
+                    focus:ring-slate-100
+                "
+            >
 
-                <div class="flex items-center justify-between gap-3">
+                <div
+                    class="flex items-start justify-between gap-4"
+                >
 
                     <div>
 
-                        <p class="text-[10px] sm:text-sm
-                                  font-medium text-slate-500">
-                            Pending
+                        <p
+                            class="
+                                text-xs
+                                font-semibold
+                                uppercase
+                                tracking-wide
+                                text-slate-400
+                            "
+                        >
+                            Total Requests
                         </p>
 
-                        <p class="mt-1 text-xl sm:text-3xl
-                                  font-bold text-amber-600">
 
-                            {{ number_format($pendingComplaints) }}
-
+                        <p
+                            class="
+                                mt-2
+                                text-3xl
+                                font-bold
+                                tracking-tight
+                                text-slate-900
+                            "
+                        >
+                            {{ $totalComplaints }}
                         </p>
 
                     </div>
 
 
-                    <div class="hidden sm:flex
-                                h-10 w-10
-                                items-center justify-center
-                                rounded-xl
-                                bg-amber-50 text-amber-600">
+                    <div
+                        class="
+                            flex
+                            h-11
+                            w-11
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-slate-100
+                            text-slate-600
+                            transition
+                            group-hover:bg-sky-50
+                            group-hover:text-sky-700
+                        "
+                    >
 
-                        <i class="fa-solid fa-clock"></i>
+                        <i class="fas fa-file-lines"></i>
 
                     </div>
 
                 </div>
 
 
-                <p class="hidden sm:block
-                          mt-2 text-xs text-slate-400">
+                <div
+                    class="
+                        mt-4
+                        flex
+                        items-center
+                        justify-between
+                        gap-3
+                    "
+                >
 
-                    Awaiting or under initial review
+                    <span
+                        class="text-xs text-slate-500"
+                    >
+                        All submitted requests
+                    </span>
 
-                </p>
+
+                    <span
+                        class="
+                            inline-flex
+                            shrink-0
+                            items-center
+                            gap-1
+                            text-xs
+                            font-semibold
+                            text-slate-500
+                            transition
+                            group-hover:text-sky-700
+                        "
+                    >
+
+                        View
+
+                        <i
+                            class="
+                                fas
+                                fa-arrow-right
+                                text-[9px]
+                                transition
+                                group-hover:translate-x-0.5
+                            "
+                        ></i>
+
+                    </span>
+
+                </div>
 
             </a>
 
 
-            {{-- Active --}}
 
-            <a href="{{ route('consumer.complaints.index') }}"
-                class="rounded-xl sm:rounded-2xl
-                       border border-slate-200
-                       bg-white
-                       p-3 sm:p-5
-                       transition
-                       hover:border-sky-200
-                       hover:shadow-sm">
+            {{-- Awaiting Review --}}
 
-                <div class="flex items-center justify-between gap-3">
+            <a
+                href="{{ route(
+                    'consumer.complaints.index',
+                    ['group' => 'pending']
+                ) }}"
+                class="
+                    group
+                    block
+                    rounded-2xl
+                    border
+                    border-amber-100
+                    bg-white
+                    p-5
+                    shadow-sm
+                    transition
+                    duration-200
+                    hover:-translate-y-0.5
+                    hover:border-amber-200
+                    hover:shadow-md
+                    focus:outline-none
+                    focus:ring-4
+                    focus:ring-amber-50
+                "
+            >
+
+                <div
+                    class="flex items-start justify-between gap-4"
+                >
 
                     <div>
 
-                        <p class="text-[10px] sm:text-sm
-                                  font-medium text-slate-500">
-                            Active
+                        <p
+                            class="
+                                text-xs
+                                font-semibold
+                                uppercase
+                                tracking-wide
+                                text-slate-400
+                            "
+                        >
+                            Awaiting Review
                         </p>
 
-                        <p class="mt-1 text-xl sm:text-3xl
-                                  font-bold text-sky-600">
 
-                            {{ number_format($activeComplaints) }}
-
+                        <p
+                            class="
+                                mt-2
+                                text-3xl
+                                font-bold
+                                tracking-tight
+                                text-slate-900
+                            "
+                        >
+                            {{ $pendingComplaints }}
                         </p>
 
                     </div>
 
 
-                    <div class="hidden sm:flex
-                                h-10 w-10
-                                items-center justify-center
-                                rounded-xl
-                                bg-sky-50 text-sky-600">
+                    <div
+                        class="
+                            flex
+                            h-11
+                            w-11
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-amber-50
+                            text-amber-600
+                        "
+                    >
 
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                        <i class="fas fa-clock"></i>
 
                     </div>
 
                 </div>
 
 
-                <p class="hidden sm:block
-                          mt-2 text-xs text-slate-400">
+                <div
+                    class="
+                        mt-4
+                        flex
+                        items-center
+                        justify-between
+                        gap-3
+                    "
+                >
 
-                    Currently being processed
+                    <span
+                        class="text-xs text-slate-500"
+                    >
+                        Submitted or verified
+                    </span>
 
-                </p>
+
+                    <span
+                        class="
+                            inline-flex
+                            shrink-0
+                            items-center
+                            gap-1
+                            text-xs
+                            font-semibold
+                            text-amber-600
+                        "
+                    >
+
+                        View
+
+                        <i
+                            class="
+                                fas
+                                fa-arrow-right
+                                text-[9px]
+                                transition
+                                group-hover:translate-x-0.5
+                            "
+                        ></i>
+
+                    </span>
+
+                </div>
 
             </a>
 
 
-            {{-- Completed --}}
 
-            <a href="{{ route('consumer.complaints.index') }}"
-                class="rounded-xl sm:rounded-2xl
-                       border border-slate-200
-                       bg-white
-                       p-3 sm:p-5
-                       transition
-                       hover:border-emerald-200
-                       hover:shadow-sm">
+            {{-- Active Requests --}}
 
-                <div class="flex items-center justify-between gap-3">
+            <a
+                href="{{ route(
+                    'consumer.complaints.index',
+                    ['group' => 'active']
+                ) }}"
+                class="
+                    group
+                    block
+                    rounded-2xl
+                    border
+                    border-sky-100
+                    bg-white
+                    p-5
+                    shadow-sm
+                    transition
+                    duration-200
+                    hover:-translate-y-0.5
+                    hover:border-sky-200
+                    hover:shadow-md
+                    focus:outline-none
+                    focus:ring-4
+                    focus:ring-sky-50
+                "
+            >
+
+                <div
+                    class="flex items-start justify-between gap-4"
+                >
 
                     <div>
 
-                        <p class="text-[10px] sm:text-sm
-                                  font-medium text-slate-500">
+                        <p
+                            class="
+                                text-xs
+                                font-semibold
+                                uppercase
+                                tracking-wide
+                                text-slate-400
+                            "
+                        >
+                            Active Requests
+                        </p>
+
+
+                        <p
+                            class="
+                                mt-2
+                                text-3xl
+                                font-bold
+                                tracking-tight
+                                text-slate-900
+                            "
+                        >
+                            {{ $activeComplaints }}
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="
+                            flex
+                            h-11
+                            w-11
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-sky-50
+                            text-sky-700
+                        "
+                    >
+
+                        <i class="fas fa-screwdriver-wrench"></i>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="
+                        mt-4
+                        flex
+                        items-center
+                        justify-between
+                        gap-3
+                    "
+                >
+
+                    <span
+                        class="text-xs text-slate-500"
+                    >
+                        Currently being handled
+                    </span>
+
+
+                    <span
+                        class="
+                            inline-flex
+                            shrink-0
+                            items-center
+                            gap-1
+                            text-xs
+                            font-semibold
+                            text-sky-700
+                        "
+                    >
+
+                        View
+
+                        <i
+                            class="
+                                fas
+                                fa-arrow-right
+                                text-[9px]
+                                transition
+                                group-hover:translate-x-0.5
+                            "
+                        ></i>
+
+                    </span>
+
+                </div>
+
+            </a>
+
+
+
+            {{-- Completed Requests --}}
+
+            <a
+                href="{{ route(
+                    'consumer.complaints.index',
+                    ['group' => 'completed']
+                ) }}"
+                class="
+                    group
+                    block
+                    rounded-2xl
+                    border
+                    border-emerald-100
+                    bg-white
+                    p-5
+                    shadow-sm
+                    transition
+                    duration-200
+                    hover:-translate-y-0.5
+                    hover:border-emerald-200
+                    hover:shadow-md
+                    focus:outline-none
+                    focus:ring-4
+                    focus:ring-emerald-50
+                "
+            >
+
+                <div
+                    class="flex items-start justify-between gap-4"
+                >
+
+                    <div>
+
+                        <p
+                            class="
+                                text-xs
+                                font-semibold
+                                uppercase
+                                tracking-wide
+                                text-slate-400
+                            "
+                        >
                             Completed
                         </p>
 
-                        <p class="mt-1 text-xl sm:text-3xl
-                                  font-bold text-emerald-600">
 
-                            {{ number_format($completedComplaints) }}
-
+                        <p
+                            class="
+                                mt-2
+                                text-3xl
+                                font-bold
+                                tracking-tight
+                                text-slate-900
+                            "
+                        >
+                            {{ $completedComplaints }}
                         </p>
 
                     </div>
 
 
-                    <div class="hidden sm:flex
-                                h-10 w-10
-                                items-center justify-center
-                                rounded-xl
-                                bg-emerald-50 text-emerald-600">
+                    <div
+                        class="
+                            flex
+                            h-11
+                            w-11
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-emerald-50
+                            text-emerald-600
+                        "
+                    >
 
-                        <i class="fa-solid fa-circle-check"></i>
+                        <i class="fas fa-circle-check"></i>
 
                     </div>
 
                 </div>
 
 
-                <p class="hidden sm:block
-                          mt-2 text-xs text-slate-400">
+                <div
+                    class="
+                        mt-4
+                        flex
+                        items-center
+                        justify-between
+                        gap-3
+                    "
+                >
 
-                    Completed or closed requests
+                    <span
+                        class="text-xs text-slate-500"
+                    >
+                        Completed or closed
+                    </span>
 
-                </p>
+
+                    <span
+                        class="
+                            inline-flex
+                            shrink-0
+                            items-center
+                            gap-1
+                            text-xs
+                            font-semibold
+                            text-emerald-600
+                        "
+                    >
+
+                        View
+
+                        <i
+                            class="
+                                fas
+                                fa-arrow-right
+                                text-[9px]
+                                transition
+                                group-hover:translate-x-0.5
+                            "
+                        ></i>
+
+                    </span>
+
+                </div>
 
             </a>
 
         </section>
 
 
+
         {{-- ========================================================= --}}
-        {{-- MAIN CONTENT --}}
+        {{-- RECENT COMPLAINTS + SERVICE UPDATES --}}
         {{-- ========================================================= --}}
 
-        <div class="grid grid-cols-1
-                    xl:grid-cols-5 gap-5
-                    items-start">
+        <div
+            class="
+                grid
+                grid-cols-1
+                gap-6
+                xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.8fr)]
+            "
+        >
 
 
             {{-- ===================================================== --}}
             {{-- RECENT COMPLAINTS --}}
             {{-- ===================================================== --}}
 
-            <section class="xl:col-span-3
-                            overflow-hidden
-                            rounded-2xl
-                            border border-slate-200
-                            bg-white">
+            <section
+                class="
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-slate-200
+                    bg-white
+                    shadow-sm
+                "
+            >
 
-
-                {{-- Header --}}
-
-                <div class="flex items-center
-                            justify-between gap-4
-                            border-b border-slate-100
-                            px-4 sm:px-5 py-4">
+                <div
+                    class="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        border-b
+                        border-slate-100
+                        bg-slate-50/60
+                        px-5
+                        py-4
+                        sm:px-6
+                    "
+                >
 
                     <div>
 
-                        <h2 class="font-semibold text-slate-900">
+                        <h2
+                            class="
+                                text-sm
+                                font-semibold
+                                text-slate-900
+                            "
+                        >
                             Recent Complaints
                         </h2>
 
-                        <p class="mt-1 text-xs sm:text-sm
-                                  text-slate-500">
 
-                            Latest updates from your submitted concerns.
-
+                        <p
+                            class="
+                                mt-0.5
+                                text-xs
+                                text-slate-500
+                            "
+                        >
+                            Your latest submitted service concerns.
                         </p>
 
                     </div>
 
 
-                    <a href="{{ route('consumer.complaints.index') }}"
-                        class="inline-flex shrink-0
-                               items-center gap-1.5
-                               text-xs font-semibold
-                               text-sky-700
-                               hover:text-sky-800">
+                    <a
+                        href="{{ route('consumer.complaints.index') }}"
+                        class="
+                            inline-flex
+                            shrink-0
+                            items-center
+                            gap-1.5
+                            text-xs
+                            font-semibold
+                            text-sky-700
+                            transition
+                            hover:text-sky-900
+                        "
+                    >
 
-                        View All
+                        View all
 
-                        <i class="fa-solid fa-arrow-right
-                                  text-[9px]">
-                        </i>
+                        <i
+                            class="
+                                fas
+                                fa-arrow-right
+                                text-[9px]
+                            "
+                        ></i>
 
                     </a>
 
                 </div>
 
 
-                {{-- Complaint Records --}}
 
-                <div class="divide-y divide-slate-100">
+                @forelse ($recentComplaints as $complaint)
 
-                    @forelse ($recentComplaints as $complaint)
+                    @php
 
-                        <a href="{{ route(
-                                'consumer.complaints.show',
-                                $complaint
-                            ) }}"
-                            class="group block
-                                   px-4 sm:px-5 py-4
-                                   transition
-                                   hover:bg-slate-50/70">
+                        $complaintStatus =
+                            $statusLabels[$complaint->status]
+                            ?? $complaint->status;
 
 
-                            <div class="flex items-start gap-3">
+                        $complaintStatusClass =
+                            $statusClasses[$complaint->status]
+                            ?? 'border-slate-200 bg-slate-100 text-slate-700';
 
 
-                                {{-- Icon --}}
+                        $complaintStatusIcon =
+                            $statusIcons[$complaint->status]
+                            ?? 'fa-circle';
 
-                                <div class="flex h-9 w-9
-                                            shrink-0
-                                            items-center justify-center
-                                            rounded-xl
-                                            bg-sky-50
-                                            text-sky-600">
-
-                                    <i class="fa-solid fa-droplet
-                                              text-xs">
-                                    </i>
-
-                                </div>
+                    @endphp
 
 
-                                {{-- Complaint --}}
+                    <a
+                        href="{{ route(
+                            'consumer.complaints.show',
+                            $complaint
+                        ) }}"
+                        class="
+                            group
+                            block
+                            border-b
+                            border-slate-100
+                            px-5
+                            py-4
+                            transition
+                            last:border-b-0
+                            hover:bg-sky-50/40
+                            sm:px-6
+                        "
+                    >
 
-                                <div class="min-w-0 flex-1">
+                        <div
+                            class="
+                                flex
+                                items-start
+                                gap-4
+                            "
+                        >
+
+                            <div
+                                class="
+                                    flex
+                                    h-10
+                                    w-10
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-xl
+                                    bg-sky-50
+                                    text-sky-700
+                                "
+                            >
+
+                                <i class="fas fa-droplet text-sm"></i>
+
+                            </div>
 
 
-                                    {{-- Number + Status --}}
+                            <div class="min-w-0 flex-1">
 
-                                    <div class="flex items-start
-                                                justify-between gap-3">
+                                <div
+                                    class="
+                                        flex
+                                        flex-col
+                                        gap-2
+                                        sm:flex-row
+                                        sm:items-center
+                                        sm:justify-between
+                                    "
+                                >
 
-                                        <div class="min-w-0">
+                                    <div class="min-w-0">
 
-                                            <p class="truncate
-                                                      text-sm font-semibold
-                                                      text-slate-900">
+                                        <div
+                                            class="
+                                                flex
+                                                flex-wrap
+                                                items-center
+                                                gap-2
+                                            "
+                                        >
 
+                                            <p
+                                                class="
+                                                    text-sm
+                                                    font-semibold
+                                                    text-slate-900
+                                                "
+                                            >
                                                 {{ $complaint->complaint_no }}
-
                                             </p>
 
 
-                                            <p class="mt-0.5 truncate
-                                                      text-xs sm:text-sm
-                                                      text-slate-600">
+                                            <span
+                                                class="
+                                                    inline-flex
+                                                    items-center
+                                                    gap-1.5
+                                                    rounded-full
+                                                    border
+                                                    px-2.5
+                                                    py-1
+                                                    text-[10px]
+                                                    font-semibold
+                                                    {{ $complaintStatusClass }}
+                                                "
+                                            >
 
-                                                {{ $complaint->category?->name
-                                                    ?? 'Water Service Concern' }}
+                                                <i
+                                                    class="
+                                                        fas
+                                                        {{ $complaintStatusIcon }}
+                                                        text-[8px]
+                                                    "
+                                                ></i>
 
-                                            </p>
+                                                {{ $complaintStatus }}
+
+                                            </span>
 
                                         </div>
 
 
-                                        <span class="inline-flex
-                                                     shrink-0
-                                                     items-center gap-1.5
-                                                     rounded-full border
-                                                     px-2 py-1
-                                                     text-[9px] sm:text-[10px]
-                                                     font-semibold
-                                                     {{ $statusClasses[$complaint->status]
-                                                        ?? 'border-slate-200 bg-slate-50 text-slate-600' }}">
+                                        <p
+                                            class="
+                                                mt-1
+                                                truncate
+                                                text-xs
+                                                font-medium
+                                                text-slate-600
+                                            "
+                                        >
 
-                                            <i class="fa-solid
-                                                      {{ $statusIcons[$complaint->status]
-                                                        ?? 'fa-circle' }}
-                                                      text-[7px]">
-                                            </i>
+                                            {{ optional(
+                                                $complaint->category
+                                            )->name
+                                                ?? 'Water Service Concern' }}
 
-                                            <span class="hidden sm:inline">
-
-                                                {{ $statusLabels[$complaint->status]
-                                                    ?? $complaint->status }}
-
-                                            </span>
-
-                                            <span class="sm:hidden">
-
-                                                {{ $complaint->status }}
-
-                                            </span>
-
-                                        </span>
+                                        </p>
 
                                     </div>
 
 
-                                    {{-- Metadata --}}
+                                    <div
+                                        class="
+                                            flex
+                                            shrink-0
+                                            items-center
+                                            gap-3
+                                        "
+                                    >
 
-                                    <div class="mt-2
-                                                flex flex-wrap
-                                                items-center
-                                                gap-x-3 gap-y-1
-                                                text-[10px] sm:text-[11px]
-                                                text-slate-400">
+                                        <span
+                                            class="
+                                                text-[11px]
+                                                text-slate-400
+                                            "
+                                        >
 
-                                        @if ($complaint->division)
-
-                                            <span class="inline-flex
-                                                         items-center gap-1">
-
-                                                <i class="fa-solid
-                                                          fa-building
-                                                          text-[8px]">
-                                                </i>
-
-                                                {{ $complaint->division->name }}
-
-                                            </span>
-
-                                        @endif
-
-
-                                        <span class="inline-flex
-                                                     items-center gap-1">
-
-                                            <i class="fa-regular
-                                                      fa-calendar
-                                                      text-[8px]">
-                                            </i>
-
-                                            {{ $complaint->created_at
+                                            {{ $complaint
+                                                ->created_at
                                                 ->timezone('Asia/Manila')
                                                 ->format('M d, Y') }}
 
                                         </span>
 
+
+                                        <i
+                                            class="
+                                                fas
+                                                fa-chevron-right
+                                                text-[9px]
+                                                text-slate-300
+                                                transition
+                                                group-hover:text-sky-600
+                                            "
+                                        ></i>
+
                                     </div>
 
                                 </div>
 
-
-                                <i class="fa-solid fa-chevron-right
-                                          hidden sm:block
-                                          mt-3 text-[9px]
-                                          text-slate-300
-                                          group-hover:text-sky-600">
-                                </i>
-
                             </div>
-
-                        </a>
-
-
-                    @empty
-
-                        {{-- Empty State --}}
-
-                        <div class="px-5 py-12 text-center">
-
-                            <div class="mx-auto
-                                        flex h-11 w-11
-                                        items-center justify-center
-                                        rounded-xl
-                                        bg-slate-100
-                                        text-slate-400">
-
-                                <i class="fa-regular fa-file-lines"></i>
-
-                            </div>
-
-
-                            <p class="mt-3
-                                      text-sm font-semibold
-                                      text-slate-700">
-
-                                No complaints submitted
-
-                            </p>
-
-
-                            <p class="mx-auto mt-1
-                                      max-w-sm
-                                      text-xs leading-5
-                                      text-slate-400">
-
-                                Your submitted water service concerns
-                                will appear here.
-
-                            </p>
-
-
-                            <a href="{{ route('consumer.complaints.create') }}"
-                                class="mt-4 inline-flex
-                                       items-center gap-2
-                                       rounded-lg
-                                       bg-sky-700
-                                       px-3.5 py-2
-                                       text-xs font-semibold
-                                       text-white
-                                       hover:bg-sky-800">
-
-                                <i class="fa-solid fa-plus"></i>
-
-                                Submit Complaint
-
-                            </a>
 
                         </div>
 
-                    @endforelse
+                    </a>
 
-                </div>
+
+                @empty
+
+
+                    <div
+                        class="
+                            px-6
+                            py-14
+                            text-center
+                        "
+                    >
+
+                        <div
+                            class="
+                                mx-auto
+                                flex
+                                h-14
+                                w-14
+                                items-center
+                                justify-center
+                                rounded-2xl
+                                bg-slate-100
+                                text-slate-400
+                            "
+                        >
+
+                            <i class="far fa-file-lines text-lg"></i>
+
+                        </div>
+
+
+                        <h3
+                            class="
+                                mt-4
+                                text-sm
+                                font-semibold
+                                text-slate-800
+                            "
+                        >
+                            No complaints yet
+                        </h3>
+
+
+                        <p
+                            class="
+                                mx-auto
+                                mt-1
+                                max-w-sm
+                                text-xs
+                                leading-5
+                                text-slate-500
+                            "
+                        >
+                            Your recently submitted water service
+                            concerns will appear here.
+                        </p>
+
+
+                        <a
+                            href="{{ route(
+                                'consumer.complaints.create'
+                            ) }}"
+                            class="
+                                mt-5
+                                inline-flex
+                                items-center
+                                gap-2
+                                rounded-xl
+                                bg-sky-700
+                                px-4
+                                py-2.5
+                                text-xs
+                                font-semibold
+                                text-white
+                                transition
+                                hover:bg-sky-800
+                            "
+                        >
+
+                            <i class="fas fa-plus text-[10px]"></i>
+
+                            Submit Complaint
+
+                        </a>
+
+                    </div>
+
+                @endforelse
 
             </section>
 
 
+
             {{-- ===================================================== --}}
-            {{-- ANNOUNCEMENTS --}}
+            {{-- SERVICE UPDATES --}}
             {{-- ===================================================== --}}
 
-            <section class="xl:col-span-2
-                            overflow-hidden
-                            rounded-2xl
-                            border border-slate-200
-                            bg-white">
+            <section
+                class="
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-slate-200
+                    bg-white
+                    shadow-sm
+                "
+            >
 
+                <div
+                    class="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        border-b
+                        border-slate-100
+                        bg-slate-50/60
+                        px-5
+                        py-4
+                    "
+                >
 
-                {{-- Header --}}
+                    <div>
 
-                <div class="flex items-center
-                            justify-between gap-3
-                            border-b border-slate-100
-                            px-4 sm:px-5 py-4">
+                        <div
+                            class="
+                                flex
+                                items-center
+                                gap-2
+                            "
+                        >
 
-                    <div class="min-w-0">
-
-                        <div class="flex flex-wrap
-                                    items-center gap-2">
-
-                            <h2 class="font-semibold text-slate-900">
-                                Service Announcements
+                            <h2
+                                class="
+                                    text-sm
+                                    font-semibold
+                                    text-slate-900
+                                "
+                            >
+                                Service Updates
                             </h2>
 
 
-                            @if (($unreadAnnouncementCount ?? 0) > 0)
+                            @if ($unreadAnnouncementCount > 0)
 
-                                <span class="inline-flex
-                                             items-center gap-1
-                                             rounded-full
-                                             bg-sky-50
-                                             px-2 py-0.5
-                                             text-[9px]
-                                             font-bold
-                                             text-sky-700">
-
-                                    <span class="h-1.5 w-1.5
-                                                 rounded-full
-                                                 bg-sky-500">
-                                    </span>
+                                <span
+                                    class="
+                                        inline-flex
+                                        min-w-5
+                                        items-center
+                                        justify-center
+                                        rounded-full
+                                        bg-red-500
+                                        px-1.5
+                                        py-0.5
+                                        text-[10px]
+                                        font-bold
+                                        text-white
+                                    "
+                                >
 
                                     {{ $unreadAnnouncementCount }}
 
@@ -671,258 +1266,244 @@
                         </div>
 
 
-                        <p class="mt-1
-                                  text-xs sm:text-sm
-                                  text-slate-500">
-
-                            Latest SWD service advisories.
-
+                        <p
+                            class="
+                                mt-0.5
+                                text-xs
+                                text-slate-500
+                            "
+                        >
+                            Latest SWD announcements.
                         </p>
 
                     </div>
 
 
-                    <a href="{{ route(
-                            'consumer.announcements.index'
-                        ) }}"
-                        class="shrink-0
-                               text-xs font-semibold
-                               text-sky-700
-                               hover:text-sky-800">
+                    <div
+                        class="
+                            flex
+                            h-9
+                            w-9
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-amber-50
+                            text-amber-600
+                        "
+                    >
 
-                        View All
+                        <i class="fas fa-bullhorn text-sm"></i>
 
-                    </a>
+                    </div>
 
                 </div>
 
 
-                {{-- Announcement List --}}
-
-                <div class="divide-y divide-slate-100">
+                <div>
 
                     @forelse ($announcements as $announcement)
 
                         @php
 
-                            $isUnread =
-                                $announcement->reads->isEmpty();
+                            $isRead =
+                                $announcement
+                                    ->reads
+                                    ->isNotEmpty();
 
                         @endphp
 
 
-                        <a href="{{ route(
-                                'consumer.announcements.show',
-                                $announcement
-                            ) }}"
-                            class="group relative block
-                                   px-4 sm:px-5 py-4
-                                   transition
-                                   hover:bg-slate-50/70
-                                   {{ $isUnread
-                                        ? 'bg-sky-50/30'
-                                        : '' }}">
+                        <div
+                            class="
+                                border-b
+                                border-slate-100
+                                px-5
+                                py-4
+                                last:border-b-0
+                                {{ !$isRead
+                                    ? 'bg-sky-50/40'
+                                    : ''
+                                }}
+                            "
+                        >
 
+                            <div
+                                class="
+                                    flex
+                                    items-start
+                                    gap-3
+                                "
+                            >
 
-                            {{-- Unread Indicator --}}
+                                <span
+                                    class="
+                                        mt-1.5
+                                        h-2
+                                        w-2
+                                        shrink-0
+                                        rounded-full
+                                        {{ !$isRead
+                                            ? 'bg-sky-600'
+                                            : 'bg-slate-200'
+                                        }}
+                                    "
+                                ></span>
 
-                            @if ($isUnread)
-
-                                <span class="absolute
-                                             bottom-0 left-0 top-0
-                                             w-0.5
-                                             bg-sky-500">
-                                </span>
-
-                            @endif
-
-
-                            <div class="flex items-start gap-3">
-
-
-                                {{-- Icon --}}
-
-                                <div class="flex h-9 w-9
-                                            shrink-0
-                                            items-center justify-center
-                                            rounded-xl
-                                            {{ $isUnread
-                                                ? 'bg-sky-100 text-sky-700'
-                                                : 'bg-slate-50 text-slate-500' }}">
-
-                                    <i class="fa-solid
-                                              fa-bullhorn
-                                              text-xs">
-                                    </i>
-
-                                </div>
-
-
-                                {{-- Announcement --}}
 
                                 <div class="min-w-0 flex-1">
 
-                                    <div class="flex
-                                                items-start
-                                                justify-between
-                                                gap-3">
+                                    <div
+                                        class="
+                                            flex
+                                            items-start
+                                            justify-between
+                                            gap-2
+                                        "
+                                    >
 
-                                        <div class="min-w-0">
-
-                                            {{-- Badges --}}
-
-                                            <div class="flex flex-wrap
-                                                        items-center gap-1.5">
-
-                                                <span class="rounded-full
-                                                             bg-slate-100
-                                                             px-2 py-0.5
-                                                             text-[9px]
-                                                             font-semibold
-                                                             text-slate-600">
-
-                                                    {{ $announcement->type }}
-
-                                                </span>
+                                        <p
+                                            class="
+                                                text-sm
+                                                font-semibold
+                                                text-slate-800
+                                            "
+                                        >
+                                            {{ $announcement->title }}
+                                        </p>
 
 
-                                                @if ($isUnread)
+                                        @if (!$isRead)
 
-                                                    <span class="rounded-full
-                                                                 bg-sky-600
-                                                                 px-2 py-0.5
-                                                                 text-[9px]
-                                                                 font-semibold
-                                                                 text-white">
-
-                                                        New
-
-                                                    </span>
-
-                                                @endif
-
-                                            </div>
-
-
-                                            {{-- Title --}}
-
-                                            <p class="mt-1.5
-                                                      line-clamp-1
-                                                      text-sm
-                                                      {{ $isUnread
-                                                        ? 'font-bold'
-                                                        : 'font-semibold' }}
-                                                      text-slate-800">
-
-                                                {{ $announcement->title }}
-
-                                            </p>
-
-                                        </div>
-
-
-                                        <i class="fa-solid
-                                                  fa-chevron-right
-                                                  mt-2
-                                                  text-[9px]
-                                                  text-slate-300
-                                                  group-hover:text-sky-600">
-                                        </i>
-
-                                    </div>
-
-
-                                    {{-- Content --}}
-
-                                    <p class="mt-1
-                                              line-clamp-2
-                                              text-xs leading-5
-                                              text-slate-500">
-
-                                        {{ $announcement->content }}
-
-                                    </p>
-
-
-                                    {{-- Metadata --}}
-
-                                    <div class="mt-2
-                                                flex flex-wrap
-                                                items-center
-                                                gap-x-3 gap-y-1
-                                                text-[10px]
-                                                text-slate-400">
-
-
-                                        <span class="inline-flex
-                                                     items-center gap-1">
-
-                                            <i class="fa-solid
-                                                      fa-location-dot
-                                                      text-[8px]">
-                                            </i>
-
-                                            {{ $announcement->affected_barangay
-                                                ?: 'General Service Area' }}
-
-                                        </span>
-
-
-                                        @if ($announcement->published_at)
-
-                                            <span class="inline-flex
-                                                         items-center gap-1">
-
-                                                <i class="fa-regular
-                                                          fa-clock
-                                                          text-[8px]">
-                                                </i>
-
-                                                {{ $announcement
-                                                    ->published_at
-                                                    ->diffForHumans() }}
-
+                                            <span
+                                                class="
+                                                    shrink-0
+                                                    rounded-full
+                                                    bg-sky-100
+                                                    px-2
+                                                    py-0.5
+                                                    text-[9px]
+                                                    font-bold
+                                                    uppercase
+                                                    tracking-wide
+                                                    text-sky-700
+                                                "
+                                            >
+                                                New
                                             </span>
 
                                         @endif
 
                                     </div>
 
+
+                                    @if ($announcement->message)
+
+                                        <p
+                                            class="
+                                                mt-1
+                                                line-clamp-3
+                                                text-xs
+                                                leading-5
+                                                text-slate-500
+                                            "
+                                        >
+                                            {{ $announcement->message }}
+                                        </p>
+
+                                    @endif
+
+
+                                    @if ($announcement->published_at)
+
+                                        <p
+                                            class="
+                                                mt-2
+                                                text-[11px]
+                                                text-slate-400
+                                            "
+                                        >
+
+                                            <i
+                                                class="
+                                                    far
+                                                    fa-clock
+                                                    mr-1
+                                                "
+                                            ></i>
+
+                                            {{ $announcement
+                                                ->published_at
+                                                ->timezone('Asia/Manila')
+                                                ->diffForHumans() }}
+
+                                        </p>
+
+                                    @endif
+
                                 </div>
 
                             </div>
 
-                        </a>
+                        </div>
 
 
                     @empty
 
-                        <div class="px-5 py-10 text-center">
 
-                            <div class="mx-auto
-                                        flex h-10 w-10
-                                        items-center justify-center
-                                        rounded-xl
-                                        bg-slate-100
-                                        text-slate-400">
+                        <div
+                            class="
+                                flex
+                                min-h-[260px]
+                                flex-col
+                                items-center
+                                justify-center
+                                px-6
+                                text-center
+                            "
+                        >
 
-                                <i class="fa-regular fa-bell"></i>
+                            <div
+                                class="
+                                    flex
+                                    h-12
+                                    w-12
+                                    items-center
+                                    justify-center
+                                    rounded-xl
+                                    bg-slate-100
+                                    text-slate-400
+                                "
+                            >
+
+                                <i class="fas fa-bullhorn"></i>
 
                             </div>
 
-                            <p class="mt-3
-                                      text-sm font-medium
-                                      text-slate-700">
 
-                                No active announcements
-
+                            <p
+                                class="
+                                    mt-3
+                                    text-sm
+                                    font-semibold
+                                    text-slate-700
+                                "
+                            >
+                                No service updates
                             </p>
 
-                            <p class="mt-1
-                                      text-xs text-slate-400">
 
-                                New SWD advisories will appear here.
-
+                            <p
+                                class="
+                                    mt-1
+                                    max-w-xs
+                                    text-xs
+                                    leading-5
+                                    text-slate-500
+                                "
+                            >
+                                Important Sagay Water District
+                                announcements will appear here.
                             </p>
 
                         </div>
@@ -934,6 +1515,7 @@
             </section>
 
         </div>
+
 
     </div>
 

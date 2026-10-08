@@ -138,21 +138,44 @@
                             @enderror
                         </div>
 
-                        <div class="flex items-center justify-between gap-4">
-                            <label class="inline-flex cursor-pointer items-center gap-2.5">
-                                <input type="checkbox" name="remember" value="1"
-                                    class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+<div class="flex items-center justify-between gap-4">
 
-                                <span class="text-sm text-slate-600">
-                                    Remember me
-                                </span>
-                            </label>
+    <label class="inline-flex cursor-pointer items-center gap-2.5">
 
-                            <span class="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                                <i class="fa-solid fa-lock"></i>
-                                Secure access
-                            </span>
-                        </div>
+        <input
+            type="checkbox"
+            name="remember"
+            value="1"
+            class="
+                rounded
+                border-slate-300
+                text-sky-600
+                focus:ring-sky-500
+            "
+        >
+
+        <span class="text-sm text-slate-600">
+            Remember me
+        </span>
+
+    </label>
+
+
+    <a
+        href="{{ route('consumer.password.request') }}"
+        class="
+            inline-flex
+            items-center gap-1.5
+            text-sm font-medium
+            text-sky-700
+            transition
+            hover:text-sky-800
+        "
+    >
+        Forgot password?
+    </a>
+
+</div>
 
                         <button type="submit" :disabled="loading"
                             class="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70">

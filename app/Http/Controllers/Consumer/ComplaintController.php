@@ -8,13 +8,13 @@ use App\Http\Requests\Consumer\UpdateConsumerComplaintRequest;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
 use App\Models\Division;
-use Illuminate\Support\Str;
 use App\Services\AI\AIService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Throwable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Throwable;
 
 class ComplaintController extends Controller
 {
@@ -37,22 +37,245 @@ class ComplaintController extends Controller
     /**
      * Display consumer complaints.
      */
-    public function index()
+    /**
+     * Display consumer complaints.
+     */
+    public function index(Request $request)
     {
         $consumer = $this->consumer();
 
-        $complaints = Complaint::with([
-            'division',
-            'category',
-            'technicians',
-        ])
-            ->where('consumer_id', $consumer->id)
-            ->latest()
-            ->paginate(10);
+
+        /*
+    |--------------------------------------------------------------------------
+    | Request Filters
+    |--------------------------------------------------------------------------
+    */
+
+        $search = trim(
+            (string) $request->input(
+                'search',
+                ''
+            )
+        );
+
+
+        $status = trim(
+            (string) $request->input(
+                'status',
+                ''
+            )
+        );
+
+
+        $group = trim(
+            (string) $request->input(
+                'group',
+                ''
+            )
+        );
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Allowed Individual Statuses
+    |--------------------------------------------------------------------------
+    */
+
+        $allowedStatuses = [
+            'Pending',
+            'Verified',
+            'CS Processing',
+            'For Maintenance',
+            'Assigned',
+            'In Progress',
+            'Completed',
+            'Closed',
+            'Rejected',
+        ];
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Dashboard Status Groups
+    |--------------------------------------------------------------------------
+    */
+
+        $statusGroups = [
+
+            'pending' => [
+                'Pending',
+                'Verified',
+            ],
+
+            'active' => [
+                'CS Processing',
+                'For Maintenance',
+                'Assigned',
+                'In Progress',
+            ],
+
+            'completed' => [
+                'Completed',
+                'Closed',
+            ],
+
+        ];
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Complaint Query
+    |--------------------------------------------------------------------------
+    */
+
+        $complaints = Complaint::query()
+
+            ->with([
+                'division',
+                'category',
+                'technicians',
+            ])
+
+            ->where(
+                'consumer_id',
+                $consumer->id
+            )
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+
+            ->when(
+                $search !== '',
+                function ($query) use ($search) {
+
+                    $query->where(
+                        function ($searchQuery) use ($search) {
+
+                            $searchQuery
+
+                                ->where(
+                                    'complaint_no',
+                                    'like',
+                                    "%{$search}%"
+                                )
+
+                                ->orWhere(
+                                    'description',
+                                    'like',
+                                    "%{$search}%"
+                                )
+
+                                ->orWhereHas(
+                                    'category',
+                                    function ($categoryQuery) use ($search) {
+
+                                        $categoryQuery->where(
+                                            'name',
+                                            'like',
+                                            "%{$search}%"
+                                        );
+                                    }
+                                )
+
+                                ->orWhereHas(
+                                    'division',
+                                    function ($divisionQuery) use ($search) {
+
+                                        $divisionQuery->where(
+                                            'name',
+                                            'like',
+                                            "%{$search}%"
+                                        );
+                                    }
+                                );
+                        }
+                    );
+                }
+            )
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | Dashboard Group Filter
+        |--------------------------------------------------------------------------
+        */
+
+            ->when(
+                isset(
+                    $statusGroups[$group]
+                ),
+                function ($query) use (
+                    $statusGroups,
+                    $group
+                ) {
+
+                    $query->whereIn(
+                        'status',
+                        $statusGroups[$group]
+                    );
+                }
+            )
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | Individual Status Filter
+        |--------------------------------------------------------------------------
+        */
+
+            ->when(
+                !isset(
+                    $statusGroups[$group]
+                )
+                    &&
+                    in_array(
+                        $status,
+                        $allowedStatuses,
+                        true
+                    ),
+                function ($query) use ($status) {
+
+                    $query->where(
+                        'status',
+                        $status
+                    );
+                }
+            )
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | Latest First
+        |--------------------------------------------------------------------------
+        */
+
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+
+            ->paginate(10)
+
+            ->withQueryString();
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Complaints View
+    |--------------------------------------------------------------------------
+    */
 
         return view(
             'consumer.complaints.index',
-            compact('complaints')
+            compact(
+                'complaints',
+                'search',
+                'status',
+                'group',
+                'allowedStatuses'
+            )
         );
     }
 
@@ -93,7 +316,6 @@ class ComplaintController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-
         ComplaintCategory::query()
             ->where('id', $validated['complaint_category_id'])
             ->where('division_id', $division->id)
@@ -107,9 +329,7 @@ class ComplaintController extends Controller
         */
 
         $validated['consumer_id'] = $consumer->id;
-
         $validated['complainant_name'] = $consumer->full_name;
-
         $validated['complainant_phone'] = $consumer->phone;
 
         /*
@@ -129,6 +349,15 @@ class ComplaintController extends Controller
 
         $validated['status'] = 'Pending';
 
+        /*
+        |--------------------------------------------------------------------------
+        | Commercial Service Location
+        |--------------------------------------------------------------------------
+        |
+        | Commercial concerns use the registered consumer account address.
+        |
+        */
+
         if ($division->name === 'Commercial Services') {
             $validated['address'] = null;
             $validated['landmark'] = null;
@@ -136,32 +365,67 @@ class ComplaintController extends Controller
             $validated['longitude'] = null;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Remove Photo Inputs From Complaint Data
+        |--------------------------------------------------------------------------
+        |
+        | Photos are now stored in complaint_photos, not complaints.photo.
+        |
+        */
 
-        if ($request->hasFile('photo')) {
-            $validated['photo'] = $request
-                ->file('photo')
-                ->store('complaints', 'public');
-        }
+        unset(
+            $validated['photos'],
+            $validated['remove_photos']
+        );
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | Create Complaint
+        |--------------------------------------------------------------------------
+        */
 
         $complaint = Complaint::create($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store Supporting Photos
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($request->file('photos', []) as $photo) {
+            $path = $photo->store(
+                'complaints',
+                'public'
+            );
+
+            $complaint->photos()->create([
+                'photo' => $path,
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI Analysis
+        |--------------------------------------------------------------------------
+        */
 
         $analysisToken = $request->input(
             'ai_analysis_token'
         );
 
         $analysis = null;
-
         $predictedCategoryId = null;
-
         $analyzedAt = now();
-
         $consumerUsedAiAssistance = false;
 
+        /*
+        |--------------------------------------------------------------------------
+        | Use Trusted AI Analysis From Session
+        |--------------------------------------------------------------------------
+        */
 
         if ($analysisToken) {
-
             $sessionKey =
                 "complaint_ai_analysis.{$analysisToken}";
 
@@ -171,7 +435,6 @@ class ComplaintController extends Controller
                 );
 
             if ($storedAiAnalysis) {
-
                 $sameConsumer =
                     (int) data_get(
                         $storedAiAnalysis,
@@ -180,30 +443,31 @@ class ComplaintController extends Controller
                     ===
                     (int) $consumer->id;
 
-
                 $currentDescriptionHash = hash(
                     'sha256',
                     trim($validated['description'])
                 );
 
-
-                $sameDescription =
-                    hash_equals(
-                        (string) data_get(
-                            $storedAiAnalysis,
-                            'description_hash',
-                            ''
-                        ),
-                        $currentDescriptionHash
+                $storedDescriptionHash =
+                    (string) data_get(
+                        $storedAiAnalysis,
+                        'description_hash',
+                        ''
                     );
 
+                $sameDescription =
+                    $storedDescriptionHash !== ''
+                    &&
+                    hash_equals(
+                        $storedDescriptionHash,
+                        $currentDescriptionHash
+                    );
 
                 if (
                     $sameConsumer
                     &&
                     $sameDescription
                 ) {
-
                     $analysis = data_get(
                         $storedAiAnalysis,
                         'analysis',
@@ -228,22 +492,24 @@ class ComplaintController extends Controller
             }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Server-Side AI Analysis Fallback
+        |--------------------------------------------------------------------------
+        */
+
         if (
             empty($analysis)
         ) {
-
             try {
-
                 $aiService = app(
                     AIService::class
                 );
-
 
                 $analysis =
                     $aiService->analyzeComplaint(
                         $validated['description']
                     );
-
 
                 $predictedTypeForMatching = trim(
                     (string) (
@@ -255,11 +521,9 @@ class ComplaintController extends Controller
                     )
                 );
 
-
                 if (
                     $predictedTypeForMatching !== ''
                 ) {
-
                     $matchedCategory =
                         ComplaintCategory::query()
                         ->where(
@@ -269,7 +533,6 @@ class ComplaintController extends Controller
                         ->whereHas(
                             'division',
                             function ($query) {
-
                                 $query->where(
                                     'is_active',
                                     true
@@ -286,37 +549,35 @@ class ComplaintController extends Controller
                         )
                         ->first();
 
-
                     $predictedCategoryId =
                         $matchedCategory?->id;
                 }
 
-
                 $analyzedAt = now();
             } catch (Throwable $exception) {
-
-
                 report($exception);
 
                 $analysis = null;
-
                 $predictedCategoryId = null;
             }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Save AI Analysis
+        |--------------------------------------------------------------------------
+        */
 
         if (
             is_array($analysis)
             &&
             !empty($analysis)
         ) {
-
             $predictedType =
                 data_get(
                     $analysis,
                     'classification.complaint_type'
                 );
-
 
             $confidence =
                 data_get(
@@ -324,20 +585,17 @@ class ComplaintController extends Controller
                     'classification.confidence'
                 );
 
-
             $confidenceLevel =
                 data_get(
                     $analysis,
                     'classification.confidence_level'
                 );
 
-
             $confidenceGap =
                 data_get(
                     $analysis,
                     'classification.confidence_gap'
                 );
-
 
             $ambiguous =
                 (bool) data_get(
@@ -353,16 +611,13 @@ class ComplaintController extends Controller
                 &&
                 $predictedCategoryId !== null
             ) {
-
                 $consumerAccepted =
                     (int) $predictedCategoryId
                     ===
                     (int) $validated['complaint_category_id'];
             }
 
-
             $complaint->aiAnalysis()->create([
-
                 'predicted_category_id' =>
                 $predictedCategoryId,
 
@@ -410,14 +665,14 @@ class ComplaintController extends Controller
                 'review_reasons' =>
                 data_get(
                     $analysis,
-                    'review.reasons',
+                    'review\.reasons',
                     []
                 ),
 
                 'verification_questions' =>
                 data_get(
                     $analysis,
-                    'review.verification_questions',
+                    'review\.verification_questions',
                     []
                 ),
 
@@ -435,7 +690,6 @@ class ComplaintController extends Controller
 
                 'analyzed_at' =>
                 $analyzedAt,
-
             ]);
         }
 
@@ -459,12 +713,10 @@ class ComplaintController extends Controller
     {
         $consumer = $this->consumer();
 
-
         abort_unless(
-            $complaint->consumer_id === $consumer->id,
+            (int) $complaint->consumer_id === (int) $consumer->id,
             403
         );
-
 
         if ($complaint->status !== 'Pending') {
             return redirect()
@@ -478,7 +730,6 @@ class ComplaintController extends Controller
                 );
         }
 
-
         $divisions = Division::query()
             ->where('is_active', true)
             ->with([
@@ -491,10 +742,10 @@ class ComplaintController extends Controller
             ->orderBy('name')
             ->get();
 
-
         $complaint->load([
             'division',
             'category',
+            'photos',
         ]);
 
         return view(
@@ -516,7 +767,7 @@ class ComplaintController extends Controller
         $consumer = $this->consumer();
 
         abort_unless(
-            $complaint->consumer_id === $consumer->id,
+            (int) $complaint->consumer_id === (int) $consumer->id,
             403
         );
 
@@ -554,6 +805,12 @@ class ComplaintController extends Controller
             )
             ->firstOrFail();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Commercial Service Location
+        |--------------------------------------------------------------------------
+        */
+
         if ($division->name === 'Commercial Services') {
             $validated['address'] = null;
             $validated['landmark'] = null;
@@ -561,29 +818,135 @@ class ComplaintController extends Controller
             $validated['longitude'] = null;
         }
 
-        if ($request->hasFile('photo')) {
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Final Photo Count
+        |--------------------------------------------------------------------------
+        */
 
-            if ($complaint->photo) {
-                Storage::disk('public')
-                    ->delete($complaint->photo);
-            }
+        $complaint->load('photos');
 
-            $validated['photo'] = $request
-                ->file('photo')
-                ->store(
-                    'complaints',
-                    'public'
-                );
+        $removePhotoIds = collect(
+            $request->input('remove_photos', [])
+        )
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $existingPhotoCount =
+            $complaint->photos->count();
+
+        $removedPhotoCount =
+            $complaint->photos
+            ->whereIn(
+                'id',
+                $removePhotoIds->all()
+            )
+            ->count();
+
+        $newPhotoCount =
+            count(
+                $request->file(
+                    'photos',
+                    []
+                )
+            );
+
+        $finalPhotoCount =
+            $existingPhotoCount
+            - $removedPhotoCount
+            + $newPhotoCount;
+
+        if ($finalPhotoCount < 1) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'photos' =>
+                    'At least one supporting photo is required.',
+                ]);
         }
 
+        if ($finalPhotoCount > 5) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'photos' =>
+                    'You may keep or upload a maximum of 5 supporting photos.',
+                ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Remove Photo Inputs From Complaint Data
+        |--------------------------------------------------------------------------
+        */
+
+        unset(
+            $validated['photos'],
+            $validated['remove_photos']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Complaint
+        |--------------------------------------------------------------------------
+        */
+
         $complaint->update($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Delete Removed Existing Photos
+        |--------------------------------------------------------------------------
+        */
+
+        if ($removePhotoIds->isNotEmpty()) {
+            $photosToRemove =
+                $complaint->photos()
+                ->whereIn(
+                    'id',
+                    $removePhotoIds->all()
+                )
+                ->get();
+
+            foreach ($photosToRemove as $photo) {
+                if ($photo->photo) {
+                    Storage::disk('public')
+                        ->delete($photo->photo);
+                }
+
+                $photo->delete();
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store New Supporting Photos
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($request->file('photos', []) as $photo) {
+            $path = $photo->store(
+                'complaints',
+                'public'
+            );
+
+            $complaint->photos()->create([
+                'photo' => $path,
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update AI Analysis
+        |--------------------------------------------------------------------------
+        */
 
         $analysisToken = $request->input(
             'ai_analysis_token'
         );
 
         if ($analysisToken) {
-
             $sessionKey =
                 "complaint_ai_analysis.{$analysisToken}";
 
@@ -593,7 +956,6 @@ class ComplaintController extends Controller
                 );
 
             if ($storedAiAnalysis) {
-
                 $sameConsumer =
                     (int) data_get(
                         $storedAiAnalysis,
@@ -627,7 +989,6 @@ class ComplaintController extends Controller
                     &&
                     $sameDescription
                 ) {
-
                     $analysis = data_get(
                         $storedAiAnalysis,
                         'analysis',
@@ -652,7 +1013,6 @@ class ComplaintController extends Controller
                         &&
                         !empty($analysis)
                     ) {
-
                         $predictedType =
                             data_get(
                                 $analysis,
@@ -686,10 +1046,7 @@ class ComplaintController extends Controller
 
                         $consumerAccepted = null;
 
-                        if (
-                            $predictedCategoryId !== null
-                        ) {
-
+                        if ($predictedCategoryId !== null) {
                             $consumerAccepted =
                                 (int) $predictedCategoryId
                                 ===
@@ -697,7 +1054,6 @@ class ComplaintController extends Controller
                         }
 
                         $aiAnalysisData = [
-
                             'predicted_category_id' =>
                             $predictedCategoryId,
 
@@ -745,14 +1101,14 @@ class ComplaintController extends Controller
                             'review_reasons' =>
                             data_get(
                                 $analysis,
-                                'review.reasons',
+                                'review\.reasons',
                                 []
                             ),
 
                             'verification_questions' =>
                             data_get(
                                 $analysis,
-                                'review.verification_questions',
+                                'review\.verification_questions',
                                 []
                             ),
 
@@ -773,14 +1129,12 @@ class ComplaintController extends Controller
                         ];
 
                         if ($complaint->aiAnalysis) {
-
                             $complaint
                                 ->aiAnalysis
                                 ->update(
                                     $aiAnalysisData
                                 );
                         } else {
-
                             $complaint
                                 ->aiAnalysis()
                                 ->create(
@@ -803,12 +1157,13 @@ class ComplaintController extends Controller
             );
     }
 
-
+    /**
+     * Analyze complaint description using AI.
+     */
     public function analyze(
         Request $request,
         AIService $aiService
     ): JsonResponse {
-
         $consumer = $this->consumer();
 
         $validated = $request->validate([
@@ -821,23 +1176,21 @@ class ComplaintController extends Controller
         ]);
 
         try {
-
             /*
-        |--------------------------------------------------------------------------
-        | Analyze Complaint
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | Analyze Complaint
+            |--------------------------------------------------------------------------
+            */
 
             $analysis = $aiService->analyzeComplaint(
                 $validated['description']
             );
 
-
             /*
-        |--------------------------------------------------------------------------
-        | Get Predicted Complaint Type
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | Get Predicted Complaint Type
+            |--------------------------------------------------------------------------
+            */
 
             $predictedType = trim(
                 (string) (
@@ -855,17 +1208,15 @@ class ComplaintController extends Controller
                 )
             );
 
-
             /*
-        |--------------------------------------------------------------------------
-        | Match AI Prediction To Real Complaint Category
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | Match AI Prediction To Real Complaint Category
+            |--------------------------------------------------------------------------
+            */
 
             $category = null;
 
             if ($predictedType !== '') {
-
                 $category = ComplaintCategory::query()
                     ->with('division')
                     ->where('is_active', true)
@@ -889,84 +1240,56 @@ class ComplaintController extends Controller
                     ->first();
             }
 
-
             /*
-        |--------------------------------------------------------------------------
-        | Generate Secure AI Analysis Token
-        |--------------------------------------------------------------------------
-        |
-        | The browser receives only this random token.
-        |
-        | The actual AI analysis stays inside the Laravel session.
-        |
-        */
+            |--------------------------------------------------------------------------
+            | Generate Secure AI Analysis Token
+            |--------------------------------------------------------------------------
+            |
+            | The browser receives only this random token.
+            | The actual AI analysis stays inside the Laravel session.
+            |
+            */
 
             $analysisToken = (string) Str::uuid();
 
-
             /*
-        |--------------------------------------------------------------------------
-        | Store Trusted Analysis In Session
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | Store Trusted Analysis In Session
+            |--------------------------------------------------------------------------
+            */
 
             $request->session()->put(
                 "complaint_ai_analysis.{$analysisToken}",
                 [
+                    'consumer_id' =>
+                    $consumer->id,
 
-                    /*
-                | Consumer that requested the analysis
-                */
-
-                    'consumer_id' => $consumer->id,
-
-
-                    /*
-                | Original description
-                |
-                | We save a hash so that if the consumer changes
-                | the description after analyzing, we will not
-                | attach an outdated AI analysis.
-                */
-
-                    'description_hash' => hash(
+                    'description_hash' =>
+                    hash(
                         'sha256',
-                        trim($validated['description'])
+                        trim(
+                            $validated['description']
+                        )
                     ),
-
-
-                    /*
-                | Real matched database category
-                */
 
                     'predicted_category_id' =>
                     $category?->id,
 
+                    'analysis' =>
+                    $analysis,
 
-                    /*
-                | Complete trusted AI response
-                */
-
-                    'analysis' => $analysis,
-
-
-                    /*
-                | Time analysis was performed
-                */
-
-                    'analyzed_at' => now()->toISOString(),
+                    'analyzed_at' =>
+                    now()->toISOString(),
                 ]
             );
 
-
             /*
-        |--------------------------------------------------------------------------
-        | Return Result To Consumer
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | Return Result To Consumer
+            |--------------------------------------------------------------------------
+            */
 
             return response()->json([
-
                 'success' => true,
 
                 'analysis_token' =>
@@ -998,7 +1321,6 @@ class ComplaintController extends Controller
                 true,
             ]);
         } catch (Throwable $exception) {
-
             report($exception);
 
             return response()->json(
@@ -1020,10 +1342,15 @@ class ComplaintController extends Controller
     {
         $consumer = Auth::user()->consumer;
 
-        abort_unless($consumer, 403);
+        abort_unless(
+            $consumer,
+            403
+        );
 
         abort_unless(
-            (int) $complaint->consumer_id === (int) $consumer->id,
+            (int) $complaint->consumer_id
+                ===
+                (int) $consumer->id,
             403
         );
 
@@ -1031,6 +1358,7 @@ class ComplaintController extends Controller
             'consumer',
             'division',
             'category',
+            'photos',
             'technicians',
             'customerService',
             'verifier',

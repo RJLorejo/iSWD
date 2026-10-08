@@ -292,6 +292,7 @@ class ComplaintController extends Controller
             'consumer.address',
             'division',
             'category',
+            'photos',
             'customerService',
             'verifier',
             'technicians',

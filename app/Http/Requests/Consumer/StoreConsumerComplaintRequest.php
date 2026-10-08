@@ -85,8 +85,15 @@ class StoreConsumerComplaintRequest extends FormRequest
                 'between:-180,180',
             ],
 
-            'photo' => [
-                'nullable',
+            'photos' => [
+                'required',
+                'array',
+                'min:1',
+                'max:5',
+            ],
+
+            'photos.*' => [
+                'required',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
                 'max:5120',
@@ -139,14 +146,29 @@ class StoreConsumerComplaintRequest extends FormRequest
             'longitude.between' =>
                 'The longitude must be between -180 and 180.',
 
-            'photo.image' =>
-                'The uploaded file must be an image.',
+            'photos.required' =>
+                'At least one supporting photo is required.',
 
-            'photo.mimes' =>
-                'Please upload a JPG, JPEG, PNG, or WEBP image.',
+            'photos.array' =>
+                'The supporting photos must be valid files.',
 
-            'photo.max' =>
-                'The photo must not exceed 5 MB.',
+            'photos.min' =>
+                'At least one supporting photo is required.',
+
+            'photos.max' =>
+                'You may upload a maximum of 5 supporting photos.',
+
+            'photos.*.required' =>
+                'Each supporting photo is required.',
+
+            'photos.*.image' =>
+                'Each supporting file must be an image.',
+
+            'photos.*.mimes' =>
+                'Supporting photos must be JPG, JPEG, PNG, or WEBP.',
+
+            'photos.*.max' =>
+                'Each supporting photo must not exceed 5 MB.',
         ];
     }
 }

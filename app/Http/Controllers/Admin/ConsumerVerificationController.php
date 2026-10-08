@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Consumer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\ConsumerAccountVerified;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ConsumerVerificationController extends Controller
 {
@@ -199,31 +202,14 @@ class ConsumerVerificationController extends Controller
         );
     }
 
-
-    /**
-     * Approve consumer registration.
-     */
     public function approve(Consumer $consumer)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Registration Source
-        |--------------------------------------------------------------------------
-        */
-
         if (
             $consumer->registration_source
             !== 'Self Registration'
         ) {
             abort(404);
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Only Pending Registrations Can Be Approved
-        |--------------------------------------------------------------------------
-        */
 
         if (
             $consumer->verification_status
@@ -235,59 +221,25 @@ class ConsumerVerificationController extends Controller
             );
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Consumer Must Have Portal Account
-        |--------------------------------------------------------------------------
-        */
-
         $consumer->load('user');
 
         if (!$consumer->user) {
-
             return back()->with(
                 'error',
                 'This consumer does not have a linked portal account.'
             );
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Approve Registration
-        |--------------------------------------------------------------------------
-        */
-
         DB::transaction(
             function () use ($consumer) {
 
-                /*
-                 * Update Consumer.
-                 */
-
                 $consumer->update([
-
-                    'verification_status' =>
-                    'Verified',
-
-                    'verified_at' =>
-                    now(),
-
-                    'verified_by' =>
-                    auth()->id(),
-
-                    'verification_reason' =>
-                    null,
-
-                    'is_active' =>
-                    true,
+                    'verification_status' => 'Verified',
+                    'verified_at' => now(),
+                    'verified_by' => auth()->id(),
+                    'verification_reason' => null,
+                    'is_active' => true,
                 ]);
-
-
-                /*
-                 * Activate Portal User.
-                 */
 
                 $consumer->user->update([
                     'is_active' => true,
@@ -295,6 +247,40 @@ class ConsumerVerificationController extends Controller
             }
         );
 
+        $emailSent = false;
+
+        try {
+
+            $consumer->user->notify(
+                new ConsumerAccountVerified()
+            );
+
+            $emailSent = true;
+        } catch (Throwable $exception) {
+
+            report($exception);
+
+            Log::warning(
+                'Consumer verification email could not be sent.',
+                [
+                    'consumer_id' => $consumer->id,
+                    'user_id' => $consumer->user->id,
+                ]
+            );
+        }
+
+        if ($emailSent) {
+
+            return redirect()
+                ->route(
+                    'admin.consumer-verifications.show',
+                    $consumer
+                )
+                ->with(
+                    'success',
+                    'Consumer registration approved successfully. The account is now active and a verification email was sent to the consumer.'
+                );
+        }
 
         return redirect()
             ->route(
@@ -303,7 +289,11 @@ class ConsumerVerificationController extends Controller
             )
             ->with(
                 'success',
-                'Consumer registration approved successfully. The consumer can now sign in to the iSWD Consumer Portal.'
+                'Consumer registration approved successfully. The account is now active.'
+            )
+            ->with(
+                'warning',
+                'The verification email could not be sent. The consumer can still sign in to the iSWD Consumer Portal.'
             );
     }
 

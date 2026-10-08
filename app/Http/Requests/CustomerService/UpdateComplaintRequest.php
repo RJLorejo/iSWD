@@ -128,6 +128,7 @@ class UpdateComplaintRequest extends FormRequest
 
                     return false;
                 }),
+
                 'nullable',
                 'string',
                 'max:1000',
@@ -151,11 +152,37 @@ class UpdateComplaintRequest extends FormRequest
                 'between:-180,180',
             ],
 
-            'photo' => [
+            'photos' => [
                 'nullable',
+                'array',
+                'max:5',
+            ],
+
+            'photos.*' => [
+                'required',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
                 'max:5120',
+            ],
+
+            'remove_photos' => [
+                'nullable',
+                'array',
+            ],
+
+            'remove_photos.*' => [
+                'integer',
+                Rule::exists('complaint_photos', 'id')
+                    ->where(function ($query) {
+                        $complaint = $this->route('complaint');
+
+                        if ($complaint) {
+                            $query->where(
+                                'complaint_id',
+                                $complaint->id
+                            );
+                        }
+                    }),
             ],
         ];
     }
@@ -190,14 +217,32 @@ class UpdateComplaintRequest extends FormRequest
             'address.required' =>
                 'Please provide the service address for an Engineering complaint or the complainant address for a Commercial complaint without a linked SWD account.',
 
-            'photo.image' =>
-                'The supporting file must be an image.',
+            'photos.array' =>
+                'The supporting photos must be valid files.',
 
-            'photo.mimes' =>
-                'The supporting image must be a JPG, JPEG, PNG, or WEBP file.',
+            'photos.max' =>
+                'You may upload a maximum of 5 new supporting photos at a time.',
 
-            'photo.max' =>
-                'The supporting image must not exceed 5 MB.',
+            'photos.*.required' =>
+                'Each selected supporting photo is required.',
+
+            'photos.*.image' =>
+                'Each supporting file must be an image.',
+
+            'photos.*.mimes' =>
+                'Supporting photos must be JPG, JPEG, PNG, or WEBP files.',
+
+            'photos.*.max' =>
+                'Each supporting photo must not exceed 5 MB.',
+
+            'remove_photos.array' =>
+                'The selected photos to remove are invalid.',
+
+            'remove_photos.*.integer' =>
+                'The selected photo to remove is invalid.',
+
+            'remove_photos.*.exists' =>
+                'One of the selected photos does not belong to this complaint.',
         ];
     }
 }

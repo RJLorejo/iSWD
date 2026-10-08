@@ -614,25 +614,146 @@
                         </div>
 
 
-                        @if ($complaint->photo)
+                        {{-- Supporting Photos --}}
+                        @php
+                            $supportingPhotos = $complaint->photos ?? collect();
+
+                            /*
+    |--------------------------------------------------------------------------
+    | Temporary Legacy Photo Fallback
+    |--------------------------------------------------------------------------
+    | This can be removed after old complaints.photo records have been
+    | migrated into complaint_photos.
+    */
+                            $legacyPhoto = $supportingPhotos->isEmpty() ? $complaint->photo : null;
+
+                            $supportingPhotoCount = $supportingPhotos->count() + ($legacyPhoto ? 1 : 0);
+                        @endphp
+
+                        @if ($supportingPhotoCount > 0)
+
                             <div class="border-t border-gray-100 pt-5">
 
-                                <p
-                                    class="text-xs uppercase tracking-wide
-                                           font-semibold text-gray-400 mb-3">
-                                    Consumer Photo
-                                </p>
+                                <div
+                                    class="mb-4 flex flex-col gap-2
+                   sm:flex-row sm:items-center sm:justify-between">
+
+                                    <div>
+
+                                        <p
+                                            class="text-xs uppercase tracking-wide
+                           font-semibold text-gray-400">
+                                            Supporting Photos
+                                        </p>
+
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            Photos submitted with this complaint.
+                                        </p>
+
+                                    </div>
+
+                                    <span
+                                        class="inline-flex w-fit items-center gap-1.5
+                       rounded-full border border-gray-200
+                       bg-gray-50 px-2.5 py-1
+                       text-xs font-semibold text-gray-600">
+
+                                        <i class="fas fa-images"></i>
+
+                                        {{ $supportingPhotoCount }}
+                                        {{ $supportingPhotoCount === 1 ? 'Photo' : 'Photos' }}
+
+                                    </span>
+
+                                </div>
+
 
                                 <div
-                                    class="rounded-xl overflow-hidden
-                                           border border-gray-200 bg-gray-50">
+                                    class="grid grid-cols-1 gap-4
+                   sm:grid-cols-2
+                   lg:grid-cols-3">
 
-                                    <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
-                                        class="w-full max-h-[500px] object-contain">
+                                    @foreach ($supportingPhotos as $photo)
+                                        <a href="{{ asset('storage/' . $photo->photo) }}" target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="group relative block overflow-hidden
+                           rounded-xl border border-gray-200
+                           bg-gray-50">
+
+                                            <img src="{{ asset('storage/' . $photo->photo) }}"
+                                                alt="Supporting photo {{ $loop->iteration }}" loading="lazy"
+                                                class="h-56 w-full object-cover
+                               transition duration-300
+                               group-hover:scale-[1.02]">
+
+                                            <div
+                                                class="absolute inset-x-0 bottom-0
+                               flex items-center justify-between
+                               bg-gradient-to-t from-black/70
+                               to-transparent px-3 pb-3 pt-8">
+
+                                                <span class="text-xs font-semibold text-white">
+                                                    Photo {{ $loop->iteration }}
+                                                </span>
+
+                                                <span
+                                                    class="flex h-8 w-8 items-center
+                                   justify-center rounded-lg
+                                   bg-white/20 text-white
+                                   backdrop-blur-sm">
+
+                                                    <i class="fas fa-up-right-from-square text-xs"></i>
+
+                                                </span>
+
+                                            </div>
+
+                                        </a>
+                                    @endforeach
+
+
+                                    @if ($legacyPhoto)
+                                        <a href="{{ asset('storage/' . $legacyPhoto) }}" target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="group relative block overflow-hidden
+                           rounded-xl border border-gray-200
+                           bg-gray-50">
+
+                                            <img src="{{ asset('storage/' . $legacyPhoto) }}" alt="Supporting photo"
+                                                loading="lazy"
+                                                class="h-56 w-full object-cover
+                               transition duration-300
+                               group-hover:scale-[1.02]">
+
+                                            <div
+                                                class="absolute inset-x-0 bottom-0
+                               flex items-center justify-between
+                               bg-gradient-to-t from-black/70
+                               to-transparent px-3 pb-3 pt-8">
+
+                                                <span class="text-xs font-semibold text-white">
+                                                    Photo 1
+                                                </span>
+
+                                                <span
+                                                    class="flex h-8 w-8 items-center
+                                   justify-center rounded-lg
+                                   bg-white/20 text-white
+                                   backdrop-blur-sm">
+
+                                                    <i class="fas fa-up-right-from-square text-xs"></i>
+
+                                                </span>
+
+                                            </div>
+
+                                        </a>
+                                    @endif
 
                                 </div>
 
                             </div>
+
                         @endif
 
                     </div>
@@ -1448,7 +1569,7 @@
                                             </p>
                                         @elseif ($completedDate)
                                             <p class="text-xs text-gray-500 mt-1">
-                                                {{ \Carbon\Carbon::parse($completedDate)->format('M d, Y • h:i A') }}
+                                                {{($completedDate)->format('M d, Y • h:i A') }}
                                             </p>
                                         @else
                                             <p class="text-xs text-gray-400 mt-1">

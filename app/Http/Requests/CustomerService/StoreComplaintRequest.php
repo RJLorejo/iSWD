@@ -151,8 +151,15 @@ class StoreComplaintRequest extends FormRequest
                 'between:-180,180',
             ],
 
-            'photo' => [
-                'nullable',
+            'photos' => [
+                'required',
+                'array',
+                'min:1',
+                'max:5',
+            ],
+
+            'photos.*' => [
+                'required',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
                 'max:5120',
@@ -164,40 +171,49 @@ class StoreComplaintRequest extends FormRequest
     {
         return [
             'consumer_id.exists' =>
-                'The selected SWD account is invalid or inactive.',
+            'The selected SWD account is invalid or inactive.',
 
             'complainant_name.required' =>
-                'Please enter the name of the person reporting the complaint.',
+            'Please enter the name of the person reporting the complaint.',
 
             'division_id.required' =>
-                'Please select a division.',
+            'Please select a division.',
 
             'division_id.exists' =>
-                'The selected division is invalid or inactive.',
+            'The selected division is invalid or inactive.',
 
             'complaint_category_id.required' =>
-                'Please select a complaint type.',
+            'Please select a complaint type.',
 
             'complaint_category_id.exists' =>
-                'The selected complaint type does not belong to the selected division or is inactive.',
+            'The selected complaint type does not belong to the selected division or is inactive.',
 
             'description.required' =>
-                'Please provide a description of the complaint.',
+            'Please provide a description of the complaint.',
 
             'description.min' =>
-                'The complaint description must contain at least 10 characters.',
+            'The complaint description must contain at least 10 characters.',
 
             'address.required' =>
-                'Please provide the service address for an Engineering complaint or the complainant address for a Commercial complaint without a linked SWD account.',
+            'Please provide the service address for an Engineering complaint or the complainant address for a Commercial complaint without a linked SWD account.',
 
             'photo.image' =>
-                'The supporting file must be an image.',
+            'The supporting file must be an image.',
+            'photos.required' => 'At least one supporting photo is required.',
+            'photos.array' => 'The supporting photos must be valid files.',
+            'photos.min' => 'At least one supporting photo is required.',
+            'photos.max' => 'You may upload a maximum of 5 supporting photos.',
+
+            'photos.*.required' => 'Each supporting photo is required.',
+            'photos.*.image' => 'Each supporting file must be an image.',
+            'photos.*.mimes' => 'Supporting photos must be JPG, JPEG, PNG, or WEBP.',
+            'photos.*.max' => 'Each supporting photo must not exceed 5 MB.',
 
             'photo.mimes' =>
-                'The supporting image must be a JPG, JPEG, PNG, or WEBP file.',
+            'The supporting image must be a JPG, JPEG, PNG, or WEBP file.',
 
             'photo.max' =>
-                'The supporting image must not exceed 5 MB.',
+            'The supporting image must not exceed 5 MB.',
         ];
     }
 }

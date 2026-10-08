@@ -85,7 +85,9 @@ class RegisterConsumerRequest extends FormRequest
             'phone' => [
                 'required',
                 'string',
-                'max:20',
+                'digits:11',
+                'regex:/^09\d{9}$/',
+                'unique:consumers,phone',
             ],
 
             'email' => [
@@ -116,31 +118,23 @@ class RegisterConsumerRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:150',
+                'required_without:purok',
             ],
 
             'purok' => [
                 'nullable',
                 'string',
-                'max:100',
+                'max:150',
+                'required_without:street',
             ],
 
             'barangay' => [
                 'required',
-                'string',
-                'max:150',
+                Rule::in(config('sagay.barangays')),
             ],
 
-            'latitude' => [
-                'required',
-                'numeric',
-                'between:-90,90',
-            ],
-
-            'longitude' => [
-                'required',
-                'numeric',
-                'between:-180,180',
-            ],
+            'latitude'  => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
 
 
             /*
@@ -194,7 +188,16 @@ class RegisterConsumerRequest extends FormRequest
             'Please select your sex.',
 
             'phone.required' =>
-            'Please enter your mobile number.',
+            'Mobile number is required.',
+
+            'phone.digits' =>
+            'Mobile number must contain exactly 11 digits.',
+
+            'phone.regex' =>
+            'Mobile number must be a valid Philippine number starting with 09.',
+
+            'phone.unique' =>
+            'This mobile number is already registered.',
 
             'email.required' =>
             'Please enter your email address.',
@@ -204,6 +207,21 @@ class RegisterConsumerRequest extends FormRequest
 
             'email.unique' =>
             'This email address is already registered.',
+
+            'street.required_without' =>
+            'Please enter either a street or purok.',
+
+            'purok.required_without' =>
+            'Please enter either a purok or street.',
+
+            'street.max' =>
+            'Street must not exceed 150 characters.',
+
+            'purok.max' =>
+            'Purok must not exceed 150 characters.',
+
+            'house_no.max' =>
+            'House or building number must not exceed 100 characters.',
 
             'barangay.required' =>
             'Please enter your barangay.',

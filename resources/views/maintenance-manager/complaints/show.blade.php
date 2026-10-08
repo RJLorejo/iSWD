@@ -385,18 +385,146 @@
                         </div>
 
 
-                        @if ($complaint->photo)
-                            <div>
+                        {{-- Supporting Photos --}}
+                        @php
+                            $supportingPhotos = $complaint->photos ?? collect();
 
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                    Submitted Photo
-                                </p>
+                            /*
+    |--------------------------------------------------------------------------
+    | Temporary Legacy Photo Fallback
+    |--------------------------------------------------------------------------
+    | Keep the old complaints.photo available only when this complaint has
+    | not yet been migrated to complaint_photos.
+    */
+                            $legacyPhoto = $supportingPhotos->isEmpty() ? $complaint->photo : null;
 
-                                <img src="{{ asset('storage/' . $complaint->photo) }}" alt="Complaint photo"
-                                    class="mt-2 max-h-[450px] w-full rounded-xl border
-                                    border-gray-200 object-cover">
+                            $supportingPhotoCount = $supportingPhotos->count() + ($legacyPhoto ? 1 : 0);
+                        @endphp
+
+                        @if ($supportingPhotoCount > 0)
+
+                            <div class="border-t border-gray-100 pt-5">
+
+                                <div
+                                    class="mb-4 flex flex-col gap-2
+                   sm:flex-row sm:items-center sm:justify-between">
+
+                                    <div>
+
+                                        <p
+                                            class="text-xs font-semibold uppercase
+                           tracking-wide text-gray-400">
+                                            Supporting Photos
+                                        </p>
+
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            Photos submitted with this complaint.
+                                        </p>
+
+                                    </div>
+
+                                    <span
+                                        class="inline-flex w-fit items-center gap-1.5
+                       rounded-full border border-gray-200
+                       bg-gray-50 px-2.5 py-1
+                       text-xs font-semibold text-gray-600">
+
+                                        <i class="fas fa-images"></i>
+
+                                        {{ $supportingPhotoCount }}
+                                        {{ $supportingPhotoCount === 1 ? 'Photo' : 'Photos' }}
+
+                                    </span>
+
+                                </div>
+
+
+                                <div
+                                    class="grid grid-cols-1 gap-4
+                   sm:grid-cols-2
+                   lg:grid-cols-3">
+
+                                    @foreach ($supportingPhotos as $photo)
+                                        <a href="{{ asset('storage/' . $photo->photo) }}" target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="group relative block overflow-hidden
+                           rounded-xl border border-gray-200
+                           bg-gray-50">
+
+                                            <img src="{{ asset('storage/' . $photo->photo) }}"
+                                                alt="Supporting photo {{ $loop->iteration }}" loading="lazy"
+                                                class="h-56 w-full object-cover
+                               transition duration-300
+                               group-hover:scale-[1.02]">
+
+                                            <div
+                                                class="absolute inset-x-0 bottom-0
+                               flex items-center justify-between
+                               bg-gradient-to-t from-black/70
+                               to-transparent px-3 pb-3 pt-8">
+
+                                                <span class="text-xs font-semibold text-white">
+                                                    Photo {{ $loop->iteration }}
+                                                </span>
+
+                                                <span
+                                                    class="flex h-8 w-8 items-center
+                                   justify-center rounded-lg
+                                   bg-white/20 text-white
+                                   backdrop-blur-sm">
+
+                                                    <i class="fas fa-up-right-from-square text-xs"></i>
+
+                                                </span>
+
+                                            </div>
+
+                                        </a>
+                                    @endforeach
+
+
+                                    @if ($legacyPhoto)
+                                        <a href="{{ asset('storage/' . $legacyPhoto) }}" target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="group relative block overflow-hidden
+                           rounded-xl border border-gray-200
+                           bg-gray-50">
+
+                                            <img src="{{ asset('storage/' . $legacyPhoto) }}" alt="Supporting photo"
+                                                loading="lazy"
+                                                class="h-56 w-full object-cover
+                               transition duration-300
+                               group-hover:scale-[1.02]">
+
+                                            <div
+                                                class="absolute inset-x-0 bottom-0
+                               flex items-center justify-between
+                               bg-gradient-to-t from-black/70
+                               to-transparent px-3 pb-3 pt-8">
+
+                                                <span class="text-xs font-semibold text-white">
+                                                    Photo 1
+                                                </span>
+
+                                                <span
+                                                    class="flex h-8 w-8 items-center
+                                   justify-center rounded-lg
+                                   bg-white/20 text-white
+                                   backdrop-blur-sm">
+
+                                                    <i class="fas fa-up-right-from-square text-xs"></i>
+
+                                                </span>
+
+                                            </div>
+
+                                        </a>
+                                    @endif
+
+                                </div>
 
                             </div>
+
                         @endif
 
                     </div>
@@ -1644,110 +1772,154 @@
                             @endif
 
 
-                            <div
-                                class="mb-4 flex items-center justify-between rounded-xl
-                                border border-blue-100 bg-blue-50 p-3">
-
-                                <p class="text-xs font-semibold text-blue-800">
-                                    Plumber Selection
-                                </p>
+                            <div class="mb-2 flex items-center justify-between">
+                                <label for="plumberDropdownTrigger" class="text-sm font-bold text-gray-900">
+                                    Select Plumbers
+                                </label>
 
                                 <span id="selectedCount"
-                                    class="inline-flex h-8 min-w-8 items-center justify-center
-                                    rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
-
+                                    class="inline-flex h-6 min-w-6 items-center justify-center rounded-full
+        bg-blue-600 px-2 text-xs font-bold text-white">
                                     0
-
                                 </span>
-
                             </div>
 
+                            <div id="plumberDropdown" class="rounded-xl border border-gray-300 bg-white shadow-sm">
 
-                            <div class="space-y-3">
+                                {{-- Trigger --}}
+                                <button type="button" id="plumberDropdownTrigger" aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    class="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3
+        text-left text-sm transition hover:bg-gray-50
+        focus:outline-none focus:ring-2 focus:ring-blue-500/30">
 
-                                @forelse ($technicians as $technician)
-                                    <label class="technician-card block cursor-pointer"
-                                        data-technician-name="{{ $technician->full_name }}">
+                                    <span class="flex min-w-0 items-center gap-2.5">
+                                        <span
+                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                            <i class="fas fa-users text-xs"></i>
+                                        </span>
+                                        <span id="plumberDropdownLabel" class="truncate text-gray-500">
+                                            Choose one or more plumbers
+                                        </span>
+                                    </span>
 
-                                        <input type="checkbox" id="plumber-checkbox-{{ $technician->id }}"
-                                            name="technician_ids[]" value="{{ $technician->id }}"
-                                            class="technician-checkbox peer sr-only">
+                                    <i id="plumberDropdownChevron"
+                                        class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
+                                </button>
 
-                                        <div
-                                            class="rounded-xl border-2 border-gray-200 bg-white p-3
-                                            transition-all hover:border-blue-300
-                                            peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                {{-- Panel --}}
+                                <div id="plumberDropdownPanel" class="hidden border-t border-gray-100">
 
-                                            <div class="flex items-center gap-3">
-
-                                                <div
-                                                    class="flex h-10 w-10 shrink-0 items-center justify-center
-                                                    rounded-xl bg-blue-100 text-xs font-bold text-blue-700">
-
-                                                    {{ strtoupper(substr($technician->first_name ?? '', 0, 1) . substr($technician->last_name ?? '', 0, 1)) }}
-
-                                                </div>
-
-                                                <div class="min-w-0 flex-1">
-
-                                                    <p class="text-sm font-semibold text-gray-900">
-                                                        {{ $technician->full_name }}
-                                                    </p>
-
-                                                    <div class="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500">
-                                                        <i class="fas fa-location-dot text-gray-400"></i>
-
-                                                        <span class="truncate">
-                                                            {{ $technician->serviceArea?->name ?? 'No permanent area assigned' }}
-                                                        </span>
-                                                    </div>
-
-                                                    @if ($technician->employee_id)
-                                                        <p class="mt-1 text-[11px] text-gray-500">
-                                                            Employee ID: {{ $technician->employee_id }}
-                                                        </p>
-                                                    @endif
-
-                                                    @if ($technician->position?->name)
-                                                        <p class="text-[11px] text-gray-400">
-                                                            {{ $technician->position->name }}
-                                                        </p>
-                                                    @endif
-
-                                                </div>
-
-                                                <div
-                                                    class="plumber-check-indicator flex h-6 w-6 shrink-0
-                                                    items-center justify-center rounded-full border-2
-                                                    border-gray-300 bg-white transition-all">
-
-                                                    <i class="fas fa-check hidden text-[10px] text-white"></i>
-
-                                                </div>
-
-                                            </div>
-
+                                    {{-- Search --}}
+                                    <div class="p-3 pb-2">
+                                        <div class="relative">
+                                            <i
+                                                class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400"></i>
+                                            <input type="text" id="plumberSearch"
+                                                placeholder="Search name, area, or ID..." autocomplete="off"
+                                                class="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-8 pr-3
+                    text-xs text-gray-700 placeholder-gray-400
+                    focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                                         </div>
-
-                                    </label>
-
-                                @empty
-
-                                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-5 text-center">
-                                        <p class="text-sm font-medium text-gray-700">
-                                            No active plumbers available.
-                                        </p>
                                     </div>
-                                @endforelse
 
+                                    {{-- Bulk actions --}}
+                                    <div class="flex items-center justify-between px-4 pb-2">
+                                        <button type="button" id="plumberSelectAll"
+                                            class="text-[11px] font-semibold text-blue-600 hover:text-blue-800">
+                                            Select all
+                                        </button>
+                                        <button type="button" id="plumberClearAll"
+                                            class="text-[11px] font-semibold text-gray-500 hover:text-red-600">
+                                            Clear
+                                        </button>
+                                    </div>
+
+                                    {{-- Options --}}
+                                    <div class="max-h-64 divide-y divide-gray-50 overflow-y-auto border-t border-gray-100"
+                                        role="listbox" aria-multiselectable="true">
+
+                                        @forelse ($technicians as $technician)
+                                            @php
+                                                $initials = strtoupper(
+                                                    substr($technician->first_name ?? '', 0, 1) .
+                                                        substr($technician->last_name ?? '', 0, 1),
+                                                );
+                                                $areaName =
+                                                    $technician->serviceArea?->name ?? 'No permanent area assigned';
+                                            @endphp
+
+                                            <label
+                                                class="plumber-option flex cursor-pointer items-center gap-3 px-4 py-2.5
+                    transition hover:bg-blue-50/60"
+                                                data-name="{{ $technician->full_name }}"
+                                                data-initials="{{ $initials }}"
+                                                data-search="{{ strtolower($technician->full_name . ' ' . $areaName . ' ' . $technician->employee_id) }}">
+
+                                                <input type="checkbox" id="plumber-checkbox-{{ $technician->id }}"
+                                                    name="technician_ids[]" value="{{ $technician->id }}"
+                                                    class="technician-checkbox h-4 w-4 shrink-0 rounded border-gray-300
+                        text-blue-600 focus:ring-blue-500">
+
+                                                <span
+                                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg
+                        bg-blue-100 text-xs font-bold text-blue-700">
+                                                    {{ $initials }}
+                                                </span>
+
+                                                <span class="min-w-0 flex-1">
+                                                    <span class="block truncate text-sm font-semibold text-gray-900">
+                                                        {{ $technician->full_name }}
+                                                    </span>
+
+                                                    <span
+                                                        class="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+                                                        <i class="fas fa-location-dot text-gray-400"></i>
+                                                        <span class="truncate">{{ $areaName }}</span>
+                                                    </span>
+
+                                                    @if ($technician->employee_id || $technician->position?->name)
+                                                        <span class="block truncate text-[11px] text-gray-400">
+                                                            {{ $technician->employee_id ? 'ID: ' . $technician->employee_id : '' }}
+                                                            {{ $technician->employee_id && $technician->position?->name ? '•' : '' }}
+                                                            {{ $technician->position?->name }}
+                                                        </span>
+                                                    @endif
+                                                </span>
+                                            </label>
+
+                                        @empty
+                                            <div class="p-5 text-center">
+                                                <p class="text-sm font-medium text-gray-700">No active plumbers available.
+                                                </p>
+                                            </div>
+                                        @endforelse
+
+                                    </div>
+
+                                    <div id="plumberNoResults" class="hidden p-5 text-center">
+                                        <p class="text-xs font-medium text-gray-500">No plumbers match your search.</p>
+                                    </div>
+
+                                    <div class="border-t border-gray-100 p-3">
+                                        <button type="button" id="plumberDropdownDone"
+                                            class="w-full rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold
+                text-white transition hover:bg-gray-800">
+                                            Done
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
+                            {{-- Selected chips --}}
+                            <div id="selectedChips" class="mt-3 flex flex-wrap gap-2"></div>
 
                             @error('technician_ids')
                                 <p class="mt-3 text-xs font-medium text-red-600">
                                     {{ $message }}
                                 </p>
                             @enderror
+
 
 
                             <button type="submit" id="assignButton" disabled
@@ -1877,215 +2049,175 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
-                const checkboxes =
-                    document.querySelectorAll('.technician-checkbox');
+                const checkboxes = document.querySelectorAll('.technician-checkbox');
+                const options = document.querySelectorAll('.plumber-option');
+                const selectedCount = document.getElementById('selectedCount');
+                const assignButton = document.getElementById('assignButton');
+                const aiButtons = document.querySelectorAll('.ai-select-plumber');
 
-                const selectedCount =
-                    document.getElementById('selectedCount');
+                const trigger = document.getElementById('plumberDropdownTrigger');
+                const panel = document.getElementById('plumberDropdownPanel');
+                const chevron = document.getElementById('plumberDropdownChevron');
+                const label = document.getElementById('plumberDropdownLabel');
+                const chipsBox = document.getElementById('selectedChips');
+                const search = document.getElementById('plumberSearch');
+                const noResults = document.getElementById('plumberNoResults');
+                const dropdown = document.getElementById('plumberDropdown');
 
-                const assignButton =
-                    document.getElementById('assignButton');
-
-                const aiButtons =
-                    document.querySelectorAll('.ai-select-plumber');
-
-
-                function updateAiButtons() {
-
-                    aiButtons.forEach(function(button) {
-
-                        const checkbox =
-                            document.getElementById(
-                                `plumber-checkbox-${button.dataset.plumberId}`
-                            );
-
-                        if (!checkbox) {
-                            return;
-                        }
-
-                        const text =
-                            button.querySelector('.ai-select-text');
-
-                        const icon =
-                            button.querySelector('i');
-
-                        if (checkbox.checked) {
-
-                            button.classList.remove(
-                                'bg-violet-600',
-                                'hover:bg-violet-700'
-                            );
-
-                            button.classList.add(
-                                'bg-emerald-600',
-                                'hover:bg-emerald-700'
-                            );
-
-                            if (text) {
-                                text.textContent = 'Selected';
-                            }
-
-                            if (icon) {
-                                icon.className = 'fas fa-circle-check';
-                            }
-
-                        } else {
-
-                            button.classList.remove(
-                                'bg-emerald-600',
-                                'hover:bg-emerald-700'
-                            );
-
-                            button.classList.add(
-                                'bg-violet-600',
-                                'hover:bg-violet-700'
-                            );
-
-                            if (text) {
-                                text.textContent = 'Select Plumber';
-                            }
-
-                            if (icon) {
-                                icon.className = 'fas fa-user-check';
-                            }
-
-                        }
-
-                    });
-
+                /* ---------- Dropdown open / close ---------- */
+                function setOpen(open) {
+                    panel.classList.toggle('hidden', !open);
+                    chevron.classList.toggle('rotate-180', open);
+                    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    if (open && search) search.focus();
                 }
 
+                trigger.addEventListener('click', () => setOpen(panel.classList.contains('hidden')));
+                document.getElementById('plumberDropdownDone')?.addEventListener('click', () => setOpen(false));
 
-                function updateSelection() {
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'Escape') setOpen(false);
+                });
 
-                    const selected =
-                        Array.from(checkboxes)
-                        .filter(checkbox => checkbox.checked);
+                /* ---------- Search ---------- */
+                search?.addEventListener('input', function() {
+                    const q = this.value.trim().toLowerCase();
+                    let visible = 0;
 
-                    const count = selected.length;
-
-                    checkboxes.forEach(function(checkbox) {
-
-                        const card =
-                            checkbox.closest('.technician-card');
-
-                        const indicator =
-                            card?.querySelector('.plumber-check-indicator');
-
-                        const checkIcon =
-                            indicator?.querySelector('i');
-
-                        if (!indicator || !checkIcon) {
-                            return;
-                        }
-
-                        if (checkbox.checked) {
-
-                            indicator.classList.remove(
-                                'border-gray-300',
-                                'bg-white'
-                            );
-
-                            indicator.classList.add(
-                                'border-blue-600',
-                                'bg-blue-600'
-                            );
-
-                            checkIcon.classList.remove('hidden');
-
-                        } else {
-
-                            indicator.classList.remove(
-                                'border-blue-600',
-                                'bg-blue-600'
-                            );
-
-                            indicator.classList.add(
-                                'border-gray-300',
-                                'bg-white'
-                            );
-
-                            checkIcon.classList.add('hidden');
-
-                        }
-
+                    options.forEach(opt => {
+                        const match = opt.dataset.search.includes(q);
+                        opt.classList.toggle('hidden', !match);
+                        if (match) visible++;
                     });
 
+                    noResults.classList.toggle('hidden', visible > 0);
+                });
 
-                    if (selectedCount) {
-                        selectedCount.textContent = count;
+                /* ---------- Bulk actions (only visible/filtered rows) ---------- */
+                function setVisible(checked) {
+                    options.forEach(opt => {
+                        if (opt.classList.contains('hidden')) return;
+                        const cb = opt.querySelector('.technician-checkbox');
+                        cb.checked = checked;
+                    });
+                    updateSelection();
+                }
+
+                document.getElementById('plumberSelectAll')?.addEventListener('click', () => setVisible(true));
+                document.getElementById('plumberClearAll')?.addEventListener('click', () => setVisible(false));
+
+                /* ---------- AI recommendation buttons ---------- */
+                function updateAiButtons() {
+                    aiButtons.forEach(function(button) {
+                        const checkbox = document.getElementById(
+                            `plumber-checkbox-${button.dataset.plumberId}`);
+                        if (!checkbox) return;
+
+                        const text = button.querySelector('.ai-select-text');
+                        const icon = button.querySelector('i');
+
+                        button.classList.toggle('bg-emerald-600', checkbox.checked);
+                        button.classList.toggle('hover:bg-emerald-700', checkbox.checked);
+                        button.classList.toggle('bg-violet-600', !checkbox.checked);
+                        button.classList.toggle('hover:bg-violet-700', !checkbox.checked);
+
+                        if (text) text.textContent = checkbox.checked ? 'Selected' : 'Select Plumber';
+                        if (icon) icon.className = checkbox.checked ? 'fas fa-circle-check' :
+                            'fas fa-user-check';
+                    });
+                }
+
+                /* ---------- Chips ---------- */
+                function renderChips(selected) {
+                    chipsBox.innerHTML = '';
+
+                    selected.forEach(cb => {
+                        const opt = cb.closest('.plumber-option');
+
+                        const chip = document.createElement('span');
+                        chip.className =
+                            'inline-flex items-center gap-1.5 rounded-full border border-blue-200 ' +
+                            'bg-blue-50 py-1 pl-1 pr-2 text-xs font-semibold text-blue-800';
+
+                        const avatar = document.createElement('span');
+                        avatar.className =
+                            'flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 ' +
+                            'text-[9px] font-bold text-white';
+                        avatar.textContent = opt.dataset.initials;
+
+                        const name = document.createElement('span');
+                        name.textContent = opt.dataset.name;
+
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'text-blue-400 transition hover:text-red-600';
+                        remove.setAttribute('aria-label', 'Remove ' + opt.dataset.name);
+                        remove.innerHTML = '<i class="fas fa-xmark text-[10px]"></i>';
+                        remove.addEventListener('click', () => {
+                            cb.checked = false;
+                            updateSelection();
+                        });
+
+                        chip.append(avatar, name, remove);
+                        chipsBox.appendChild(chip);
+                    });
+                }
+
+                /* ---------- Main update ---------- */
+                function updateSelection() {
+                    const selected = Array.from(checkboxes).filter(cb => cb.checked);
+                    const count = selected.length;
+
+                    options.forEach(opt => {
+                        const checked = opt.querySelector('.technician-checkbox').checked;
+                        opt.classList.toggle('bg-blue-50', checked);
+                    });
+
+                    if (selectedCount) selectedCount.textContent = count;
+
+                    // Trigger label
+                    if (count === 0) {
+                        label.textContent = 'Choose one or more plumbers';
+                        label.className = 'truncate text-gray-500';
+                    } else if (count === 1) {
+                        label.textContent = selected[0].closest('.plumber-option').dataset.name;
+                        label.className = 'truncate font-semibold text-gray-900';
+                    } else {
+                        label.textContent = `${count} plumbers selected`;
+                        label.className = 'truncate font-semibold text-gray-900';
                     }
 
+                    dropdown.classList.toggle('border-blue-400', count > 0);
+                    dropdown.classList.toggle('border-gray-300', count === 0);
+
+                    renderChips(selected);
 
                     if (assignButton) {
-
                         assignButton.disabled = count === 0;
-
-                        if (count > 0) {
-
-                            assignButton.innerHTML = `
-                                <i class="fas fa-users"></i>
-                                Assign ${count}
-                                Plumber${count > 1 ? 's' : ''}
-                            `;
-
-                        } else {
-
-                            assignButton.innerHTML = `
-                                <i class="fas fa-users"></i>
-                                Assign Maintenance Team
-                            `;
-
-                        }
-
+                        assignButton.innerHTML = count > 0 ?
+                            `<i class="fas fa-users"></i> Assign ${count} Plumber${count > 1 ? 's' : ''}` :
+                            `<i class="fas fa-users"></i> Assign Maintenance Team`;
                     }
 
                     updateAiButtons();
-
                 }
 
-
-                checkboxes.forEach(function(checkbox) {
-                    checkbox.addEventListener(
-                        'change',
-                        updateSelection
-                    );
-                });
-
+                checkboxes.forEach(cb => cb.addEventListener('change', updateSelection));
 
                 aiButtons.forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        const checkbox = document.getElementById(
+                            `plumber-checkbox-${this.dataset.plumberId}`);
+                        if (!checkbox) return;
 
-                    button.addEventListener(
-                        'click',
-                        function() {
-
-                            const checkbox =
-                                document.getElementById(
-                                    `plumber-checkbox-${this.dataset.plumberId}`
-                                );
-
-                            if (!checkbox) {
-                                return;
-                            }
-
-                            checkbox.checked = !checkbox.checked;
-
-                            checkbox.dispatchEvent(
-                                new Event(
-                                    'change', {
-                                        bubbles: true
-                                    }
-                                )
-                            );
-
-                        }
-                    );
-
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change', {
+                            bubbles: true
+                        }));
+                    });
                 });
 
-
                 updateSelection();
-
             });
         </script>
     @endif

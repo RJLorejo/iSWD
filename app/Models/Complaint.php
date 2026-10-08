@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Complaint extends Model
@@ -61,6 +62,13 @@ class Complaint extends Model
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(
+            ComplaintPhoto::class
+        )->orderBy('id');
     }
 
     public function technicians()

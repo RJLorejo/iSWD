@@ -229,12 +229,10 @@
                                         Password
                                     </label>
 
-                                    @if (Route::has('password.request'))
-                                        <a href="{{ route('password.request') }}"
-                                            class="text-xs font-semibold text-sky-700 transition hover:text-sky-800">
-                                            Forgot password?
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('password.request') }}"
+    class="text-xs font-semibold text-sky-700 transition hover:text-sky-800">
+    Forgot password?
+</a>
                                 </div>
 
                                 <div class="relative">

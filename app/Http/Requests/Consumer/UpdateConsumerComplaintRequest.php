@@ -85,11 +85,37 @@ class UpdateConsumerComplaintRequest extends FormRequest
                 'between:-180,180',
             ],
 
-            'photo' => [
+            'photos' => [
                 'nullable',
+                'array',
+                'max:5',
+            ],
+
+            'photos.*' => [
+                'required',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
                 'max:5120',
+            ],
+
+            'remove_photos' => [
+                'nullable',
+                'array',
+            ],
+
+            'remove_photos.*' => [
+                'integer',
+                Rule::exists('complaint_photos', 'id')
+                    ->where(function ($query) {
+                        $complaint = $this->route('complaint');
+
+                        if ($complaint) {
+                            $query->where(
+                                'complaint_id',
+                                $complaint->id
+                            );
+                        }
+                    }),
             ],
         ];
     }
@@ -139,14 +165,32 @@ class UpdateConsumerComplaintRequest extends FormRequest
             'longitude.between' =>
                 'The longitude must be between -180 and 180.',
 
-            'photo.image' =>
-                'The uploaded file must be an image.',
+            'photos.array' =>
+                'The supporting photos must be valid files.',
 
-            'photo.mimes' =>
-                'Please upload a JPG, JPEG, PNG, or WEBP image.',
+            'photos.max' =>
+                'You may upload a maximum of 5 supporting photos.',
 
-            'photo.max' =>
-                'The photo must not exceed 5 MB.',
+            'photos.*.required' =>
+                'Each supporting photo is required.',
+
+            'photos.*.image' =>
+                'Each supporting file must be an image.',
+
+            'photos.*.mimes' =>
+                'Supporting photos must be JPG, JPEG, PNG, or WEBP.',
+
+            'photos.*.max' =>
+                'Each supporting photo must not exceed 5 MB.',
+
+            'remove_photos.array' =>
+                'The selected photos to remove are invalid.',
+
+            'remove_photos.*.integer' =>
+                'The selected photo to remove is invalid.',
+
+            'remove_photos.*.exists' =>
+                'One of the selected photos could not be found.',
         ];
     }
 }

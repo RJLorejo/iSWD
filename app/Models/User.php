@@ -34,6 +34,8 @@ class User extends Authenticatable
 
         'email',
 
+        'email_verified_at',
+
         'password',
 
         'phone',
@@ -51,6 +53,8 @@ class User extends Authenticatable
         'last_login_at',
 
         'last_login_ip',
+
+
 
     ];
 

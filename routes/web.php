@@ -6,7 +6,6 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
 
-
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DepartmentController;
@@ -39,6 +38,9 @@ use App\Http\Controllers\Consumer\DashboardController as ConsumerDashboardContro
 use App\Http\Controllers\Consumer\ComplaintController as ConsumerComplaintController;
 use App\Http\Controllers\Consumer\Auth\LoginController as ConsumerLoginController;
 use App\Http\Controllers\Consumer\Auth\RegisterController as ConsumerRegisterController;
+use App\Http\Controllers\Consumer\Auth\VerifyEmailController;
+use App\Http\Controllers\Consumer\Auth\ForgotPasswordController;
+use App\Http\Controllers\Consumer\Auth\ResetPasswordController;
 use App\Http\Controllers\Consumer\ServiceAnnouncementController;
 use App\Http\Controllers\Consumer\AIController;
 use App\Http\Controllers\Consumer\RegistrationStatusController;
@@ -603,12 +605,38 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| CONSUMER AUTHENTICATION
+|--------------------------------------------------------------------------
+|
+| Consumers have a separate login and password recovery flow.
+| They still use the same users table and Consumer role.
+|
+*/
+
+/*
+|--------------------------------------------------------------------------
+| CONSUMER AUTHENTICATION
+|--------------------------------------------------------------------------
+|
+| Consumers use a separate authentication and password recovery flow.
+|
+*/
+
 Route::middleware('guest')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Login
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
         '/consumer/login',
         [ConsumerLoginController::class, 'create']
     )->name('consumer.login');
+
 
     Route::post(
         '/consumer/login',
@@ -616,10 +644,126 @@ Route::middleware('guest')->group(function () {
     )->name('consumer.login.store');
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Forgot Password
+    |--------------------------------------------------------------------------
+
+/*
+|--------------------------------------------------------------------------
+| Forgot Password
+|--------------------------------------------------------------------------
+*/
+
+    Route::get(
+        '/consumer/forgot-password',
+        [ForgotPasswordController::class, 'create']
+    )->name('consumer.password.request');
+
+    Route::post(
+        '/consumer/forgot-password',
+        [ForgotPasswordController::class, 'store']
+    )
+        ->middleware('throttle:10,1')
+        ->name('consumer.password.email');
+
+
+    /*
+|--------------------------------------------------------------------------
+| Password Reset OTP Verification
+|--------------------------------------------------------------------------
+*/
+
+    Route::get(
+        '/consumer/forgot-password/verify',
+        [ForgotPasswordController::class, 'showVerifyOtp']
+    )->name('consumer.password.verify');
+
+    Route::post(
+        '/consumer/forgot-password/verify',
+        [ForgotPasswordController::class, 'verifyOtp']
+    )
+        ->middleware('throttle:10,1')
+        ->name('consumer.password.verify.submit');
+
+
+    /*
+|--------------------------------------------------------------------------
+| Resend OTP
+|--------------------------------------------------------------------------
+*/
+
+    Route::post(
+        '/consumer/forgot-password/resend',
+        [ForgotPasswordController::class, 'resendOtp']
+    )
+        ->middleware('throttle:10,1')
+        ->name('consumer.password.resend');
+
+
+    /*
+|--------------------------------------------------------------------------
+| Create New Password
+|--------------------------------------------------------------------------
+*/
+
+    Route::get(
+        '/consumer/reset-password',
+        [ResetPasswordController::class, 'create']
+    )->name('consumer.password.reset');
+
+    Route::post(
+        '/consumer/reset-password',
+        [ResetPasswordController::class, 'store']
+    )
+        ->middleware('throttle:5,1')
+        ->name('consumer.password.update');
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consumer Registration
+    |--------------------------------------------------------------------------
+    */
+
     Route::get(
         '/consumer/register',
         [ConsumerRegisterController::class, 'create']
     )->name('consumer.register');
+
+
+    Route::get(
+        '/consumer/register/verify-email',
+        [VerifyEmailController::class, 'show']
+    )->name('consumer.register.verify-email');
+
+
+    Route::post(
+        '/consumer/register/verify-email',
+        [VerifyEmailController::class, 'verify']
+    )
+        ->middleware('throttle:10,1')
+        ->name('consumer.register.verify-email.submit');
+
+
+    Route::post(
+        '/consumer/register/verify-email/resend',
+        [VerifyEmailController::class, 'resend']
+    )
+        ->middleware('throttle:3,1')
+        ->name('consumer.register.verify-email.resend');
+
+
+    Route::post(
+        '/consumer/register/verify-email/change-email',
+        [VerifyEmailController::class, 'changeEmail']
+    )
+        ->middleware('throttle:3,1')
+        ->name(
+            'consumer.register.verify-email.change-email'
+        );
+
 
     Route::post(
         '/consumer/register',

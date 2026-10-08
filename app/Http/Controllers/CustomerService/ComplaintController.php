@@ -263,577 +263,304 @@ class ComplaintController extends Controller
     }
 
     public function store(
-
         StoreComplaintRequest $request,
-
         AIService $aiService
-
     ) {
-
         $validated = $request->validated();
 
         $division = Division::query()
-
             ->where(
-
                 'id',
-
                 $validated['division_id']
-
             )
-
             ->where(
-
                 'is_active',
-
                 true
-
             )
-
             ->firstOrFail();
 
         ComplaintCategory::query()
-
             ->where(
-
                 'id',
-
                 $validated['complaint_category_id']
-
             )
-
             ->where(
-
                 'division_id',
-
                 $division->id
-
             )
-
             ->where(
-
                 'is_active',
-
                 true
-
             )
-
             ->firstOrFail();
 
-        /*
-
-        |--------------------------------------------------------------------------
-
-        | Create Complaint
-
-        |--------------------------------------------------------------------------
-
-        */
-
         $complaint = DB::transaction(
-
             function () use (
-
                 $request,
-
                 $validated,
-
                 $division
-
             ) {
-
-                $photoPath = null;
-
-                if ($request->hasFile('photo')) {
-
-                    $photoPath = $request
-
-                        ->file('photo')
-
-                        ->store(
-
-                            'complaints',
-
-                            'public'
-
-                        );
-                }
-
                 $divisionName = strtolower(
-
                     trim((string) $division->name)
-
                 );
 
                 $isCommercial = str_contains(
-
                     $divisionName,
-
                     'commercial'
-
                 );
 
                 $hasLinkedConsumer =
-
                     !empty($validated['consumer_id']);
 
                 if ($isCommercial) {
-
                     $address = $hasLinkedConsumer
-
                         ? null
-
                         : ($validated['address'] ?? null);
 
                     $landmark = null;
-
                     $latitude = null;
-
                     $longitude = null;
                 } else {
-
                     $address =
-
                         $validated['address'] ?? null;
 
                     $landmark =
-
                         $validated['landmark'] ?? null;
 
                     $latitude =
-
                         $validated['latitude'] ?? null;
 
                     $longitude =
-
                         $validated['longitude'] ?? null;
                 }
 
-                return Complaint::create([
-
+                $complaint = Complaint::create([
                     'complaint_no' =>
-
                     Complaint::generateComplaintNo(),
 
                     'consumer_id' =>
-
                     $validated['consumer_id']
-
                         ?? null,
 
                     'complainant_name' =>
-
                     $validated['complainant_name'],
 
                     'complainant_phone' =>
-
                     $validated['complainant_phone']
-
                         ?? null,
 
                     'division_id' =>
-
                     $division->id,
 
                     'complaint_category_id' =>
-
                     $validated['complaint_category_id'],
 
                     'status' =>
-
                     'Pending',
 
                     'customer_service_id' =>
-
                     auth()->id(),
 
                     'description' =>
-
                     $validated['description'],
 
                     'address' =>
-
                     $address,
 
                     'landmark' =>
-
                     $landmark,
 
                     'latitude' =>
-
                     $latitude,
 
                     'longitude' =>
-
                     $longitude,
-
-                    'photo' =>
-
-                    $photoPath,
-
                 ]);
-            }
 
+                foreach (
+                    $request->file('photos', [])
+                    as $photo
+                ) {
+                    $photoPath = $photo->store(
+                        'complaints',
+                        'public'
+                    );
+
+                    $complaint->photos()->create([
+                        'photo' => $photoPath,
+                    ]);
+                }
+
+                return $complaint;
+            }
         );
 
-        /*
-
-        |--------------------------------------------------------------------------
-
-        | Automatic AI Analysis
-
-        |--------------------------------------------------------------------------
-
-        |
-
-        | Customer Service-created complaints do not use the consumer-facing
-
-        | "Analyze My Concern" button. We therefore analyze the description
-
-        | automatically after the complaint has been safely created.
-
-        |
-
-        | This gives every new complaint an urgency assessment regardless of
-
-        | whether it came from the Consumer Portal or Customer Service.
-
-        |
-
-        | AI failure must NEVER prevent complaint submission.
-
-        |
-
-        */
-
         try {
-
             $analysis = $aiService->analyzeComplaint(
-
                 $validated['description']
-
             );
 
             $predictedType = trim(
-
                 (string) (
-
                     data_get(
-
                         $analysis,
-
                         'classification.complaint_type'
-
                     )
-
                     ??
-
                     data_get(
-
                         $analysis,
-
                         'complaint_type'
-
                     )
-
                     ??
-
                     ''
-
                 )
-
             );
-
-            /*
-
-            |--------------------------------------------------------------------------
-
-            | Match AI Prediction To Real Complaint Category
-
-            |--------------------------------------------------------------------------
-
-            */
 
             $predictedCategory = null;
 
             if ($predictedType !== '') {
-
                 $predictedCategory =
-
                     ComplaintCategory::query()
-
                     ->with('division')
-
-                    ->where('is_active', true)
-
+                    ->where(
+                        'is_active',
+                        true
+                    )
                     ->whereHas(
-
                         'division',
-
                         function ($query) {
-
                             $query->where(
-
                                 'is_active',
-
                                 true
-
                             );
                         }
-
                     )
-
                     ->whereRaw(
-
                         'LOWER(TRIM(name)) = ?',
-
                         [
-
                             strtolower(
-
                                 $predictedType
-
                             ),
-
                         ]
-
                     )
-
                     ->first();
             }
 
-            /*
-
-            |--------------------------------------------------------------------------
-
-            | Save AI Audit + Urgency
-
-            |--------------------------------------------------------------------------
-
-            |
-
-            | consumer_accepted = NULL is intentional here.
-
-            |
-
-            | It means the complaint was analyzed automatically and the person
-
-            | submitting it did not interact with a consumer-facing AI
-
-            | recommendation.
-
-            |
-
-            */
-
             $complaint->aiAnalysis()->create([
-
                 'predicted_category_id' =>
-
                 $predictedCategory?->id,
 
                 'predicted_type' =>
-
                 $predictedType !== ''
-
                     ? $predictedType
-
                     : null,
 
                 'confidence' =>
-
                 data_get(
-
                     $analysis,
-
                     'classification.confidence'
-
                 ),
 
                 'confidence_level' =>
-
                 data_get(
-
                     $analysis,
-
                     'classification.confidence_level'
-
                 ),
 
                 'confidence_gap' =>
-
                 data_get(
-
                     $analysis,
-
                     'classification.confidence_gap'
-
                 ),
 
                 'ambiguous' =>
-
                 (bool) data_get(
-
                     $analysis,
-
                     'classification.ambiguous',
-
                     false
-
                 ),
 
                 'urgency_level' =>
-
                 data_get(
-
                     $analysis,
-
                     'urgency.level'
-
                 ),
 
                 'urgency_score' =>
-
                 data_get(
-
                     $analysis,
-
                     'urgency.score'
-
                 ),
 
                 'signals' =>
-
                 data_get(
-
                     $analysis,
-
                     'operational_analysis.signals',
-
                     []
-
                 ),
 
                 'evidence' =>
-
                 data_get(
-
                     $analysis,
-
                     'operational_analysis.evidence',
-
                     []
-
                 ),
 
                 'review_reasons' =>
-
                 data_get(
-
                     $analysis,
-
                     'review\.reasons',
-
                     []
-
                 ),
 
                 'verification_questions' =>
-
                 data_get(
-
                     $analysis,
-
                     'review\.verification_questions',
-
                     []
-
                 ),
 
                 'consumer_accepted' =>
-
                 null,
 
                 'consumer_category_id' =>
-
                 $validated['complaint_category_id'],
 
                 'verified_category_id' =>
-
                 null,
 
                 'final_category_id' =>
-
                 $validated['complaint_category_id'],
 
                 'raw_analysis' =>
-
                 $analysis,
 
                 'analyzed_at' =>
-
                 now(),
-
             ]);
         } catch (Throwable $exception) {
-
-            /*
-
-            |--------------------------------------------------------------------------
-
-            | Fail Gracefully
-
-            |--------------------------------------------------------------------------
-
-            |
-
-            | The complaint is already valid and saved. If FastAPI is offline
-
-            | or analysis fails, keep the complaint and show "Not Assessed"
-
-            | until analysis can be performed later.
-
-            |
-
-            */
-
             Log::warning(
-
                 'Automatic AI analysis failed for Customer Service complaint.',
-
                 [
-
                     'complaint_id' =>
-
                     $complaint->id,
 
                     'complaint_no' =>
-
                     $complaint->complaint_no,
 
                     'error' =>
-
                     $exception->getMessage(),
-
                 ]
-
             );
         }
 
         return redirect()
-
             ->route(
-
                 'customer-service.complaints.index'
-
             )
-
             ->with(
-
                 'success',
-
                 'Complaint submitted successfully.'
-
             );
     }
 
@@ -852,6 +579,8 @@ class ComplaintController extends Controller
             'division',
 
             'category',
+
+            'photos',
 
             'technicians',
 
@@ -996,6 +725,7 @@ class ComplaintController extends Controller
             'division',
 
             'category',
+            'photos',
 
             'technicians',
 
@@ -1023,230 +753,251 @@ class ComplaintController extends Controller
     }
 
     public function update(
-
         UpdateComplaintRequest $request,
-
         Complaint $complaint
-
     ) {
-
         $this->ensureCustomerServiceCanEdit(
-
             $complaint
-
         );
 
         $validated = $request->validated();
 
         $division = Division::query()
-
             ->where(
-
                 'id',
-
                 $validated['division_id']
-
             )
-
             ->where(
-
                 'is_active',
-
                 true
-
             )
-
             ->firstOrFail();
 
         ComplaintCategory::query()
-
             ->where(
-
                 'id',
-
                 $validated['complaint_category_id']
-
             )
-
             ->where(
-
                 'division_id',
-
                 $division->id
-
             )
-
             ->where(
-
                 'is_active',
-
                 true
-
             )
-
             ->firstOrFail();
 
+        $complaint->load('photos');
+
+        $removePhotoIds = collect(
+            $validated['remove_photos'] ?? []
+        )
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $existingPhotoCount =
+            $complaint->photos->count();
+
+        $removePhotoCount =
+            $complaint->photos
+            ->whereIn(
+                'id',
+                $removePhotoIds
+            )
+            ->count();
+
+        $newPhotos =
+            $request->file(
+                'photos',
+                []
+            );
+
+        if (!is_array($newPhotos)) {
+            $newPhotos = [$newPhotos];
+        }
+
+        $newPhotoCount =
+            count(
+                array_filter($newPhotos)
+            );
+
+        $finalPhotoCount =
+            $existingPhotoCount
+            - $removePhotoCount
+            + $newPhotoCount;
+
+        if ($finalPhotoCount < 1) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'photos' =>
+                    'At least one supporting photo is required. Keep an existing photo or upload a new one.',
+                ]);
+        }
+
+        if ($finalPhotoCount > 5) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'photos' =>
+                    'A complaint may have a maximum of 5 supporting photos.',
+                ]);
+        }
+
         DB::transaction(
-
             function () use (
-
-                $request,
-
                 $validated,
-
                 $complaint,
-
-                $division
-
+                $division,
+                $removePhotoIds,
+                $newPhotos
             ) {
-
                 $divisionName = strtolower(
-
-                    trim((string) $division->name)
-
+                    trim(
+                        (string) $division->name
+                    )
                 );
 
-                $isCommercial = str_contains(
+                $isCommercial =
+                    str_contains(
+                        $divisionName,
+                        'commercial'
+                    );
 
-                    $divisionName,
-
-                    'commercial'
-
-                );
-
-                $hasLinkedConsumer = !empty($validated['consumer_id']);
+                $hasLinkedConsumer =
+                    !empty($validated['consumer_id']);
 
                 if ($isCommercial) {
-
-                    $address = $hasLinkedConsumer
-
+                    $address =
+                        $hasLinkedConsumer
                         ? null
-
-                        : ($validated['address'] ?? null);
+                        : (
+                            $validated['address']
+                            ?? null
+                        );
 
                     $landmark = null;
-
                     $latitude = null;
-
                     $longitude = null;
                 } else {
-
                     $address =
-
-                        $validated['address'] ?? null;
+                        $validated['address']
+                        ?? null;
 
                     $landmark =
-
-                        $validated['landmark'] ?? null;
+                        $validated['landmark']
+                        ?? null;
 
                     $latitude =
-
-                        $validated['latitude'] ?? null;
+                        $validated['latitude']
+                        ?? null;
 
                     $longitude =
-
-                        $validated['longitude'] ?? null;
+                        $validated['longitude']
+                        ?? null;
                 }
 
                 $data = [
-
                     'consumer_id' =>
-
                     $validated['consumer_id']
-
                         ?? null,
 
                     'complainant_name' =>
-
                     $validated['complainant_name'],
 
                     'complainant_phone' =>
-
                     $validated['complainant_phone']
-
                         ?? null,
 
                     'division_id' =>
-
                     $division->id,
 
                     'complaint_category_id' =>
-
                     $validated['complaint_category_id'],
 
                     'description' =>
-
                     $validated['description'],
 
                     'address' =>
-
                     $address,
 
                     'landmark' =>
-
                     $landmark,
 
                     'latitude' =>
-
                     $latitude,
 
                     'longitude' =>
-
                     $longitude,
-
                 ];
 
-                if ($request->hasFile('photo')) {
+                $complaint->update($data);
 
-                    if (
+                if ($removePhotoIds->isNotEmpty()) {
+                    $photosToRemove =
+                        $complaint
+                        ->photos()
+                        ->whereIn(
+                            'id',
+                            $removePhotoIds
+                        )
+                        ->get();
 
-                        $complaint->photo &&
-
-                        Storage::disk('public')
-
-                        ->exists($complaint->photo)
-
+                    foreach (
+                        $photosToRemove
+                        as $photo
                     ) {
+                        if (
+                            $photo->photo &&
+                            Storage::disk('public')
+                            ->exists(
+                                $photo->photo
+                            )
+                        ) {
+                            Storage::disk('public')
+                                ->delete(
+                                    $photo->photo
+                                );
+                        }
 
-                        Storage::disk('public')
-
-                            ->delete($complaint->photo);
+                        $photo->delete();
                     }
-
-                    $data['photo'] = $request
-
-                        ->file('photo')
-
-                        ->store(
-
-                            'complaints',
-
-                            'public'
-
-                        );
                 }
 
-                $complaint->update($data);
-            }
+                foreach (
+                    $newPhotos
+                    as $photo
+                ) {
+                    if (!$photo) {
+                        continue;
+                    }
 
+                    $photoPath =
+                        $photo->store(
+                            'complaints',
+                            'public'
+                        );
+
+                    $complaint
+                        ->photos()
+                        ->create([
+                            'photo' =>
+                            $photoPath,
+                        ]);
+                }
+            }
         );
 
         return redirect()
-
             ->route(
-
                 'customer-service.complaints.show',
-
                 $complaint
-
             )
-
             ->with(
-
                 'success',
-
                 'Complaint updated successfully.'
-
             );
     }
 

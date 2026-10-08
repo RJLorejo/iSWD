@@ -1,41 +1,53 @@
+
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\StaffPasswordRecoveryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    //Route::get('register', [RegisteredUserController::class, 'create'])
-     //   ->name('register');
 
-    //Route::post('register', [RegisteredUserController::class, 'store']);
-
+    // Employee login
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
+    // Employee password recovery via OTP
+    Route::get('forgot-password', [StaffPasswordRecoveryController::class, 'create'])
         ->name('password.request');
 
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+    Route::post('forgot-password', [StaffPasswordRecoveryController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('password.email');
 
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
+    Route::get('forgot-password/verify', [StaffPasswordRecoveryController::class, 'showVerify'])
+        ->name('password.verify');
+
+    Route::post('forgot-password/verify', [StaffPasswordRecoveryController::class, 'verify'])
+        ->middleware('throttle:10,1')
+        ->name('password.verify.submit');
+
+    Route::post('forgot-password/resend', [StaffPasswordRecoveryController::class, 'resend'])
+        ->middleware('throttle:5,1')
+        ->name('password.resend');
+
+    Route::get('reset-password', [StaffPasswordRecoveryController::class, 'showReset'])
         ->name('password.reset');
 
-    Route::post('reset-password', [NewPasswordController::class, 'store'])
+    Route::post('reset-password', [StaffPasswordRecoveryController::class, 'reset'])
+        ->middleware('throttle:5,1')
         ->name('password.store');
 });
 
 Route::middleware('auth')->group(function () {
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
@@ -52,7 +64,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
-    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+    Route::put('password', [PasswordController::class, 'update'])
+        ->name('password.update');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

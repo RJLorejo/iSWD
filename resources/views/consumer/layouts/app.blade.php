@@ -9,15 +9,17 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@hasSection('title')@yield('title') | @endif iSWD</title>
+    <title>
+        @hasSection('title')
+            @yield('title') |
+        @endif iSWD
+    </title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
     <style>
         [x-cloak] {
@@ -29,17 +31,14 @@
 
 <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
 
-    <div
-        x-data="{
-            sidebarOpen: false,
-            sidebarMini: false
-        }"
-        class="min-h-screen">
+    <div x-data="{
+        sidebarOpen: false,
+        sidebarMini: false
+    }" class="min-h-screen">
 
         @include('consumer.layouts.sidebar')
 
-        <div
-            :class="sidebarMini ? 'lg:ml-20' : 'lg:ml-72'"
+        <div :class="sidebarMini ? 'lg:ml-20' : 'lg:ml-72'"
             class="flex min-h-screen flex-col transition-[margin] duration-300 ease-in-out">
 
             @include('consumer.layouts.navbar')
@@ -49,9 +48,7 @@
                 <div class="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
 
                     @if (session('success'))
-
-                        <div
-                            class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+                        <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
 
                             <div class="flex items-start gap-3">
 
@@ -77,13 +74,10 @@
                             </div>
 
                         </div>
-
                     @endif
 
                     @if (session('error'))
-
-                        <div
-                            class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
+                        <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
 
                             <div class="flex items-start gap-3">
 
@@ -109,13 +103,10 @@
                             </div>
 
                         </div>
-
                     @endif
 
                     @if (session('warning'))
-
-                        <div
-                            class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+                        <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
 
                             <div class="flex items-start gap-3">
 
@@ -141,7 +132,6 @@
                             </div>
 
                         </div>
-
                     @endif
 
                     @yield('content')
@@ -155,8 +145,12 @@
         </div>
 
     </div>
+    {{-- Chart.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     @stack('scripts')
+
+
 
 </body>
 

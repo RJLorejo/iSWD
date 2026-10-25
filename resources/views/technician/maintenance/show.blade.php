@@ -707,11 +707,67 @@
                             </p>
 
                             <p class="font-medium text-gray-900 mt-1">
-                                {{ $report->started_at?->format('M d, Y h:i A') ?? 'N/A' }}
+                                {{ \App\Models\MaintenanceWorkOrder::where('complaint_id', $complaint->id)->whereNotNull('started_at')->orderBy('visit_number')->first()?->started_at?->copy()->timezone('Asia/Manila')->format('M d, Y h:i:s A') ?? 'Not recorded' }}
                             </p>
 
                         </div>
 
+                        <div class="rounded-2xl border border-sky-200 bg-sky-50/40 p-4 sm:p-5 space-y-4">
+    <div>
+        <h3 class="font-bold text-slate-900">Maintenance Visit History</h3>
+        <p class="text-xs text-slate-500 mt-1">Recorded working time for each visit; gaps between visits are excluded.</p>
+    </div>
+    @php
+    // Each recorded visit contributes only its own active maintenance interval.
+    $maintenanceVisits = \App\Models\MaintenanceWorkOrder::with('schedule')
+        ->where('complaint_id', $complaint->id)
+        ->whereNotNull('started_at')
+        ->orderBy('visit_number')
+        ->get()
+        ->map(function ($order) {
+            $end = $order->status === 'Completed'
+                ? $order->completed_at
+                : $order->pending_recorded_at;
+            $seconds = ($order->started_at && $end)
+                ? $order->started_at->diffInSeconds($end, false)
+                : null;
+            $order->recorded_end = $end;
+            $order->recorded_seconds = $seconds !== null && $seconds >= 0
+                ? (int) round($seconds) : null;
+            return $order;
+        });
+    $timedVisits = $maintenanceVisits->filter(fn ($order) => $order->recorded_seconds !== null);
+    $totalMaintenanceSeconds = $timedVisits->sum('recorded_seconds');
+    $durationLabel = function ($seconds) {
+        return intdiv($seconds, 3600) . ' hr '
+            . intdiv($seconds % 3600, 60) . ' min '
+            . ($seconds % 60) . ' sec';
+    };
+@endphp
+    <div class="space-y-3">
+        @forelse ($maintenanceVisits as $visit)
+            <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+                <div class="flex flex-wrap justify-between gap-2">
+                    <strong class="text-sm text-slate-900">Visit {{ $visit->visit_number }}</strong>
+                    <span class="text-xs font-semibold text-sky-700">{{ $visit->status === 'Completed' ? 'Accomplished' : $visit->status }}</span>
+                </div>
+                <p class="text-xs text-slate-500">Scheduled: {{ $visit->schedule?->schedule_date ? \Carbon\Carbon::parse($visit->schedule->schedule_date)->format('M d, Y') : 'Not recorded' }}</p>
+                <div class="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                    <div><span class="text-slate-500">Started</span><p class="font-medium text-slate-900">{{ $visit->started_at?->copy()->timezone('Asia/Manila')->format('M d, Y h:i:s A') ?? 'Not recorded' }}</p></div>
+                    <div><span class="text-slate-500">Pending / Accomplished</span><p class="font-medium text-slate-900">{{ $visit->recorded_end?->copy()->timezone('Asia/Manila')->format('M d, Y h:i:s A') ?? 'Not recorded' }}</p></div>
+                </div>
+                <p class="text-sm font-semibold text-sky-700">Working Duration: {{ $visit->recorded_seconds !== null ? $durationLabel($visit->recorded_seconds) : 'Not available' }}</p>
+            </div>
+        @empty
+            <p class="text-sm text-slate-500">No started maintenance visits recorded.</p>
+        @endforelse
+    </div>
+    <div class="rounded-xl border border-sky-200 bg-white p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-sky-700">Total Recorded Maintenance Working Duration</p>
+        <p class="text-xl font-bold text-slate-900 mt-1">{{ $timedVisits->isNotEmpty() ? $durationLabel($totalMaintenanceSeconds) : 'Not available' }}</p>
+        <p class="text-xs text-slate-500 mt-2">Sum of completed working intervals only. Times in Philippine Time (PHT).</p>
+    </div>
+</div>
 
                         <div class="border-t border-gray-100 pt-4">
 
@@ -876,109 +932,6 @@
                     </div>
 
                 </div>
-
-
-                {{-- Management Review --}}
-                @if ($report->review_status === 'Approved' || $report->reviewed_at)
-
-                    <div
-                        class="bg-white rounded-2xl
-                               border border-gray-200 shadow-sm overflow-hidden">
-
-                        <div class="px-5 py-5 border-b border-green-100 bg-green-50/40">
-
-                            <div class="flex items-start gap-3">
-
-                                <div
-                                    class="w-11 h-11 rounded-xl
-                                           bg-green-100 text-green-700
-                                           flex items-center justify-center shrink-0">
-                                    <i class="fas fa-user-shield"></i>
-                                </div>
-
-                                <div>
-
-                                    <h2 class="font-semibold text-gray-900">
-                                        Management Review
-                                    </h2>
-
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Maintenance Manager review and decision.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="p-5 space-y-4">
-
-                            <div>
-
-                                <p class="text-xs text-gray-500">
-                                    Review Result
-                                </p>
-
-                                <p class="font-semibold text-gray-900 mt-1">
-                                    {{ $report->review_status }}
-                                </p>
-
-                            </div>
-
-
-                            @if ($report->reviewer)
-                                <div class="border-t border-gray-100 pt-4">
-
-                                    <p class="text-xs text-gray-500">
-                                        Reviewed By
-                                    </p>
-
-                                    <p class="font-medium text-gray-900 mt-1">
-                                        {{ $report->reviewer->full_name }}
-                                    </p>
-
-                                </div>
-                            @endif
-
-
-                            @if ($report->reviewed_at)
-                                <div class="border-t border-gray-100 pt-4">
-
-                                    <p class="text-xs text-gray-500">
-                                        Reviewed
-                                    </p>
-
-                                    <p class="font-medium text-gray-900 mt-1">
-                                        {{ $report->reviewed_at->format('M d, Y h:i A') }}
-                                    </p>
-
-                                </div>
-                            @endif
-
-
-                            @if ($report->review_remarks)
-                                <div class="border-t border-gray-100 pt-4">
-
-                                    <p class="text-xs text-gray-500">
-                                        Manager Remarks
-                                    </p>
-
-                                    <p
-                                        class="text-sm text-gray-700
-                                               mt-1 whitespace-pre-line">
-                                        {{ $report->review_remarks }}
-                                    </p>
-
-                                </div>
-                            @endif
-
-                        </div>
-
-                    </div>
-
-                @endif
 
             </div>
 

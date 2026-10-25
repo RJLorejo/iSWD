@@ -455,7 +455,16 @@
 
                                     <td class="px-5 py-4 text-center">
 
-                                        <a href="{{ route('maintenance-manager.complaints.show', $complaint) }}"
+                                        <a href="{{ route(
+                                            'maintenance-manager.complaints.show',
+                                            array_merge(
+                                                [
+                                                    'complaint' => $complaint,
+                                                    'source' => 'for-assignment',
+                                                ],
+                                                request()->only(['page', 'search', 'urgency', 'date_from', 'date_to']),
+                                            ),
+                                        ) }}"
                                             title="View Complaint" aria-label="View Complaint"
                                             class="inline-flex h-9 w-9 items-center justify-center
                                             rounded-lg border border-blue-100 bg-blue-50 text-blue-600
@@ -628,7 +637,16 @@
                                     Updated {{ $complaint->updated_at?->diffForHumans() }}
                                 </span>
 
-                                <a href="{{ route('maintenance-manager.complaints.show', $complaint) }}"
+                                <a href="{{ route(
+                                    'maintenance-manager.complaints.show',
+                                    array_merge(
+                                        [
+                                            'complaint' => $complaint,
+                                            'source' => 'for-assignment',
+                                        ],
+                                        request()->only(['page', 'search', 'urgency', 'date_from', 'date_to']),
+                                    ),
+                                ) }}"
                                     title="View Complaint" aria-label="View Complaint"
                                     class="inline-flex h-9 w-9 items-center justify-center
                                     rounded-lg border border-blue-100 bg-blue-50 text-blue-600

@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\MaintenanceReport;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class PlumberReportReturned extends Notification
+class PlumberReportReturned extends Notification implements ShouldQueue
 {
     use Queueable;
 

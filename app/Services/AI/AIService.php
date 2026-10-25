@@ -60,6 +60,7 @@ class AIService
         );
     }
 
+
     public function analyzeComplaint(
         string $description
     ): array {
@@ -72,10 +73,19 @@ class AIService
             ]
         );
 
-        return $this->handleResponse(
-            $response
-        );
+        // Return FastAPI validation responses so the
+        // controller can display the rejection message.
+        if ($response->status() === 422) {
+            $data = $response->json();
+
+            if (is_array($data)) {
+                return $data;
+            }
+        }
+
+        return $this->handleResponse($response);
     }
+
 
     public function findSimilarComplaints(
         array $complaint,

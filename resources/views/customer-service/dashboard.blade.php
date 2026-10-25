@@ -17,57 +17,41 @@
         ];
     @endphp
 
-    <div class="space-y-6">
+    <div class="space-y-5 sm:space-y-6">
 
-        <section
-            class="overflow-hidden rounded-3xl bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 shadow-sm">
-
-            <div class="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
-
-                <div
-                    class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10">
-                </div>
-
-                <div
-                    class="absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-white/5">
-                </div>
-
-                <div >
-                    <div class="flex flex-wrap gap-2">
-
-                        <a
-                            href="{{ route('customer-service.complaints.create') }}"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-sky-700 shadow-sm transition hover:bg-sky-50">
-
-                            <i class="fas fa-plus"></i>
-
-                            New Complaint
-
-                        </a>
-
-                        <a
-                            href="{{ route('customer-service.consumers.create') }}"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20">
-
-                            <i class="fas fa-user-plus"></i>
-
-                            Register Consumer
-
-                        </a>
-
-                    </div>
-
-                </div>
-
+        <section class="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-5">
+            <div class="min-w-0">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">Customer Service</p>
+                <h1 class="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Dashboard overview</h1>
+                <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500 sm:text-sm">
+                    Monitor consumer registrations, complaint activity, and feedback that needs attention.
+                </p>
+                <p class="mt-2 text-[11px] text-slate-400 sm:text-xs">
+                    <i class="far fa-calendar mr-1.5"></i>{{ now()->format('l, F j, Y') }}
+                </p>
             </div>
 
+            <div class="grid grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0">
+                <a
+                    href="{{ route('customer-service.complaints.create') }}"
+                    class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-sky-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 sm:min-h-10 sm:px-3.5 sm:text-sm">
+                    <i class="fas fa-plus"></i>
+                    New Complaint
+                </a>
+                <a
+                    href="{{ route('customer-service.consumers.create') }}"
+                    class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 sm:min-h-10 sm:px-3.5 sm:text-sm">
+                    <i class="fas fa-user-plus"></i>
+                    Register Consumer
+                </a>
+            </div>
         </section>
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
             <a
                 href="{{ route('customer-service.consumers.index') }}"
-                class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md">
+                class="group rounded-xl border border-slate-200/90 bg-white p-3 shadow-sm transition hover:border-sky-200 hover:shadow-md sm:p-4">
 
                 <div class="flex items-start justify-between gap-4">
 
@@ -77,7 +61,7 @@
                             Total Consumers
                         </p>
 
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                        <p class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                             {{ number_format($totalConsumers) }}
                         </p>
 
@@ -88,7 +72,7 @@
                     </div>
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition group-hover:bg-sky-100">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-sky-50 text-sky-600 transition group-hover:bg-sky-100">
 
                         <i class="fas fa-users"></i>
 
@@ -100,7 +84,7 @@
 
             <a
                 href="{{ route('customer-service.consumers.index') }}"
-                class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
+                class="group rounded-xl border border-slate-200/90 bg-white p-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md sm:p-4">
 
                 <div class="flex items-start justify-between gap-4">
 
@@ -110,7 +94,7 @@
                             New Today
                         </p>
 
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                        <p class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                             {{ number_format($newConsumers) }}
                         </p>
 
@@ -121,7 +105,7 @@
                     </div>
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-emerald-50 text-emerald-600">
 
                         <i class="fas fa-user-plus"></i>
 
@@ -133,7 +117,7 @@
 
             <a
                 href="{{ route('customer-service.complaint-verification.index') }}"
-                class="group rounded-2xl border {{ $pendingComplaints > 0 ? 'border-amber-200' : 'border-slate-200' }} bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                class="group rounded-xl border {{ $pendingComplaints > 0 ? 'border-amber-200' : 'border-slate-200/90' }} bg-white p-3 shadow-sm transition hover:shadow-md sm:p-4">
 
                 <div class="flex items-start justify-between gap-4">
 
@@ -143,7 +127,7 @@
                             Pending Verification
                         </p>
 
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                        <p class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                             {{ number_format($pendingComplaints) }}
                         </p>
 
@@ -154,7 +138,7 @@
                     </div>
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-amber-50 text-amber-600">
 
                         <i class="fas fa-shield-halved"></i>
 
@@ -166,7 +150,7 @@
 
             <a
                 href="{{ route('customer-service.feedback.index', ['handling_status' => 'New']) }}"
-                class="group rounded-2xl border {{ $newFeedback > 0 ? 'border-red-200' : 'border-slate-200' }} bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                class="group rounded-xl border {{ $newFeedback > 0 ? 'border-red-200' : 'border-slate-200/90' }} bg-white p-3 shadow-sm transition hover:shadow-md sm:p-4">
 
                 <div class="flex items-start justify-between gap-4">
 
@@ -176,7 +160,7 @@
                             New Feedback
                         </p>
 
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                        <p class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                             {{ number_format($newFeedback) }}
                         </p>
 
@@ -187,7 +171,7 @@
                     </div>
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-red-50 text-red-500">
 
                         <i class="fas fa-star"></i>
 
@@ -201,9 +185,9 @@
 
         <section class="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.5fr)]">
 
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
 
-                <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="border-b border-slate-100 px-4 py-4 sm:px-5">
 
                     <div class="flex items-start gap-3">
 
@@ -232,15 +216,15 @@
 
                 <div class="p-4 sm:p-6">
 
-                    <div class="h-[280px] sm:h-[320px]">
-                        <canvas id="complaintStatusChart"></canvas>
+                    <div class="relative h-[240px] w-full sm:h-[300px]">
+                        <canvas id="complaintStatusChart" role="img" aria-label="Bar chart showing the number of complaints by status"></canvas>
                     </div>
 
                 </div>
 
             </div>
 
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
 
                 <div class="border-b border-slate-100 px-5 py-5">
 
@@ -370,9 +354,9 @@
 
         </section>
 
-        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section class="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
 
-            <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
+            <div class="border-b border-slate-100 px-4 py-4 sm:px-5">
 
                 <h2 class="font-bold text-slate-900">
                     Quick Actions
@@ -391,7 +375,7 @@
                     class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:bg-sky-50/50">
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition group-hover:bg-sky-100">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-sky-50 text-sky-600 transition group-hover:bg-sky-100">
 
                         <i class="fas fa-user-plus"></i>
 
@@ -416,7 +400,7 @@
                     class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-blue-200 hover:bg-blue-50/50">
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-blue-50 text-blue-600">
 
                         <i class="fas fa-file-circle-plus"></i>
 
@@ -441,7 +425,7 @@
                     class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-amber-200 hover:bg-amber-50/50">
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-amber-50 text-amber-600">
 
                         <i class="fas fa-shield-halved"></i>
 
@@ -466,7 +450,7 @@
                     class="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 transition hover:border-cyan-200 hover:bg-cyan-50/50">
 
                     <span
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 bg-cyan-50 text-cyan-600">
 
                         <i class="fas fa-star"></i>
 
@@ -492,9 +476,9 @@
 
         <section class="grid gap-6 xl:grid-cols-2">
 
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
 
-                <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-5">
 
                     <div>
 
@@ -659,9 +643,9 @@
 
             </div>
 
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
 
-                <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-5">
 
                     <div>
 

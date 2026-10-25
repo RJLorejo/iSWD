@@ -1,0 +1,227 @@
+[
+  {
+    "text": "Naay dako nga buslot sa main pipe daplin sa highway, nagbaha ang dalan.",
+    "category": "Mainline Leakage",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "May grabe nga tagas sang mainline sa dalan, damo na ang tubig sa karsada.",
+    "category": "Mainline Leakage",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Main water line sa road nagburst, water is flowing everywhere.",
+    "category": "Mainline Leakage",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Nagatulo ang gamay nga tubo gikan sa metro pakadto sa kusina.",
+    "category": "Service Connection Leakage",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Naay leak sa service pipe nga mosulod sa among property.",
+    "category": "Service Connection Leakage",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "May tagas sa tubo papasok sa bahay namin after ng metro.",
+    "category": "Service Connection Leakage",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Basa ang meter stand kay may tubig nga naga-tulo sa ubos sang metro.",
+    "category": "Meter / Meter Stand Leakage",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Naay nagawas nga tubig sa palibot sa water meter.",
+    "category": "Meter / Meter Stand Leakage",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "May leak mismo sa metro namin, hindi sa linya papunta sa bahay.",
+    "category": "Meter / Meter Stand Leakage",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Walay agas sa tanan gripo sukad kagabii.",
+    "category": "No Water",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Wala gid tubig diri sa amon area since early morning.",
+    "category": "No Water",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Wala kaming tubig sa bahay, kahit isang gripo walang lumalabas.",
+    "category": "No Water",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Hinay kaayo ang agas pero naa pay gamay nga tubig.",
+    "category": "Low Water Pressure",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Gamay lang ang pressure sang tubig sa amon gripo.",
+    "category": "Low Water Pressure",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Mahina ang pressure ng tubig namin, pero hindi totally walang tubig.",
+    "category": "Low Water Pressure",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Brown ang tubig kag daw may lapok nga nagaguwa sa faucet.",
+    "category": "Dirty Water",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Hugaw ug cloudy ang tubig, murag naay balas.",
+    "category": "Dirty Water",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "May kalawang at buhangin sa tubig na lumalabas sa gripo.",
+    "category": "Dirty Water",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Naputol ang service line namon sa kilid sang balay.",
+    "category": "Damaged / Detached Service Connection",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Nabuak ang tubo nga nagasupply sa amon balay.",
+    "category": "Damaged / Detached Service Connection",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Natanggal ang pipe connection papunta sa bahay, kailangan ipaayos.",
+    "category": "Damaged / Detached Service Connection",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Natangtang ang metro sa fitting kag nagabitay na.",
+    "category": "Damaged / Detached Water Meter",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Nabuak ang among meter housing, dili na tarong ang pagkakabit.",
+    "category": "Damaged / Detached Water Meter",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Nasira at lumuwag ang pagkakabit ng water meter namin.",
+    "category": "Damaged / Detached Water Meter",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Nagadalagan ang metro bisan sirado tanan nga gripo.",
+    "category": "Malfunctioning Water Meter",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Dili molihok ang meter bisan naga gamit mi tubig.",
+    "category": "Malfunctioning Water Meter",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Hindi gumagalaw ang metro kahit gumagamit kami ng tubig.",
+    "category": "Malfunctioning Water Meter",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Indi pareho ang reading sa bill kag sa metro mismo.",
+    "category": "Erroneous Meter Reading",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Sayop ang basa sa meter, lain ang actual nga numero.",
+    "category": "Erroneous Meter Reading",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Mali ang nakalagay na meter reading sa bill namin.",
+    "category": "Erroneous Meter Reading",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Dako ang bill namon bisan pareho lang ang paggamit tubig.",
+    "category": "High / Unusual Consumption",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Kalit ug taas among consumption this month bisan same ra among use.",
+    "category": "High / Unusual Consumption",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Biglang tumaas ang konsumo sa bill kahit wala kaming binago.",
+    "category": "High / Unusual Consumption",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Gusto namon ipa-correct ang consumer classification sang account.",
+    "category": "Reclassification",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Pa-change unta sa classification sa among water account.",
+    "category": "Reclassification",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Gusto naming baguhin ang classification ng account dahil commercial na ang property.",
+    "category": "Reclassification",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Ablihi liwat ang connection namon nga gin-seal na.",
+    "category": "Re-open Sealed Connection",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Pa-reconnect sa among sealed water service palihog.",
+    "category": "Re-open Sealed Connection",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Paki-open ulit ang sealed connection namin para bumalik ang serbisyo.",
+    "category": "Re-open Sealed Connection",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "Temporary lang anay ipa-disconnect ang tubig sa balay.",
+    "category": "Temporary Disconnection",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Magpa temporary disconnect mi kay wala mi sa balay for months.",
+    "category": "Temporary Disconnection",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "Pansamantalang ipaputol ang tubig habang wala kami sa bahay.",
+    "category": "Temporary Disconnection",
+    "language_group": "Tagalog / mixed"
+  },
+  {
+    "text": "May seal ang metro namon, ngaa gin-seal ini? ipa-check tani.",
+    "category": "Sealed Water Meter Concern",
+    "language_group": "Cebuano / mixed"
+  },
+  {
+    "text": "Naay seal ang meter ug gusto namo mahibaw-an ang rason.",
+    "category": "Sealed Water Meter Concern",
+    "language_group": "Hiligaynon / mixed"
+  },
+  {
+    "text": "May seal ang water meter namin at gusto ko malaman kung bakit.",
+    "category": "Sealed Water Meter Concern",
+    "language_group": "Tagalog / mixed"
+  }
+]

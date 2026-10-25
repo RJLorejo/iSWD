@@ -1,714 +1,488 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.report')
 
-<head>
+@section('title', 'Complaint Report - ' . $complaint->complaint_no)
 
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>
-        Complaint Report - {{ $complaint->complaint_no }}
-    </title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        @page {
-            size: A4;
-            margin: 15mm;
-        }
-
-        body {
-            background: #f3f4f6;
-        }
-
-        @media print {
-
-            body {
-                background: white !important;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            .print-container {
-                max-width: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
-            .report-card {
-                box-shadow: none !important;
-                border: none !important;
-            }
-
-        }
-    </style>
-
-</head>
+@section('report-title', 'Individual Complaint and Maintenance Report')
+@section('report-subtitle', 'Complaint ' . $complaint->complaint_no . ' · Maintenance Management')
+@section('report-period', 'Submitted: ' . ($complaint->created_at?->format('M d, Y h:i A') ?? 'Not recorded'))
 
 
-<body>
+@section('prepared-by-name', auth()->user()?->full_name ?? (auth()->user()?->email ?? 'Maintenance Manager'))
 
-    <div class="max-w-4xl mx-auto py-8 px-4 print-container">
-
-
-        {{-- ========================================================= --}}
-        {{-- PRINT CONTROLS --}}
-        {{-- ========================================================= --}}
-
-        <div class="no-print mb-5 flex items-center justify-between gap-3">
-
-            <a href="{{ route('maintenance-manager.complaints.show', $complaint) }}"
-                class="inline-flex items-center gap-2 px-4 py-2.5
-                   rounded-xl bg-white border border-gray-200
-                   text-sm font-semibold text-gray-700 hover:bg-gray-50">
-
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-
-                Back
-
-            </a>
+@section('prepared-by-role', 'Maintenance Manager')
 
 
-            <button onclick="window.print()"
-                class="inline-flex items-center gap-2 px-4 py-2.5
-                   rounded-xl bg-blue-600 text-white
-                   text-sm font-semibold hover:bg-blue-700">
+@section('report-content')
 
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
-                </svg>
+    @php
 
-                Print Report
+        $report = $complaint->maintenanceReport;
+        $completedWorkOrder =
+            $completedWorkOrder ??
+            \App\Models\MaintenanceWorkOrder::with('schedule')
+                ->where('complaint_id', $complaint->id)
+                ->where('status', 'Completed')
+                ->orderByDesc('visit_number')
+                ->first();
+        $commercialResolution = $complaint->commercialResolution;
+        $isCommercial = str_contains(strtolower((string) $complaint->division?->name), 'commercial');
+        $serviceAddress =
+            $isCommercial && $complaint->consumer?->address?->full_address
+                ? $complaint->consumer->address->full_address
+                : ($complaint->address ?:
+                'Not recorded');
 
-            </button>
+        $displayStatus = $complaint->status === 'Completed' ? 'Accomplished' : $complaint->status;
+        $urgency = $complaint->aiAnalysis?->verified_urgency_level ?: $complaint->aiAnalysis?->urgency_level ?: null;
+        $consumerName = $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? 'N/A');
+
+        $maintenanceTeam = $complaint->technicians->pluck('full_name')->filter()->join(', ');
+
+        $maintenanceTeam = $maintenanceTeam ?: 'N/A';
+
+        $reviewerName = $report?->reviewer?->full_name ?? 'Maintenance Manager';
+
+    @endphp
+
+
+    @if (
+        $commercialResolution &&
+            ($commercialResolution->started_at ||
+                $commercialResolution->forwarded_to_maintenance_at ||
+                filled($commercialResolution->findings)))
+        <section class="report-section avoid-break">
+            <h3 class="report-section-title">Customer Service Processing / Maintenance Handoff</h3>
+            <div class="report-grid">
+                <div class="report-field">
+                    <div class="report-field-label">Processed By</div>
+                    <div class="report-field-value">{{ $commercialResolution->processor?->full_name ?? 'Customer Service' }}
+                    </div>
+                </div>
+                <div class="report-field">
+                    <div class="report-field-label">Forwarded to Maintenance</div>
+                    <div class="report-field-value">
+                        {{ $commercialResolution->forwarded_to_maintenance_at?->format('M d, Y h:i A') ?? 'Not forwarded' }}
+                    </div>
+                </div>
+                <div class="report-field" style="grid-column:1/-1">
+                    <div class="report-field-label">Findings</div>
+                    <div class="report-field-value" style="white-space:pre-line">
+                        {{ $commercialResolution->findings ?: 'Not recorded' }}</div>
+                </div>
+                <div class="report-field" style="grid-column:1/-1">
+                    <div class="report-field-label">Resolution / Recommendation</div>
+                    <div class="report-field-value" style="white-space:pre-line">
+                        {{ $commercialResolution->resolution_remarks ?: 'Not recorded' }}</div>
+                </div>
+            </div>
+        </section>
+    @endif
+
+    <section class="report-section avoid-break">
+
+        <h3 class="report-section-title">
+            Complaint Information
+        </h3>
+
+        <div class="report-grid">
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Complaint Number
+                </div>
+
+                <div class="report-field-value">
+                    {{ $complaint->complaint_no }}
+                </div>
+
+            </div>
+
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Status
+                </div>
+
+                <div class="report-field-value">
+                    {{ $displayStatus }}
+                </div>
+
+            </div>
+
+            <div class="report-field">
+                <div class="report-field-label">
+                    Urgency
+                </div>
+
+                <div class="report-field-value"
+                    style="font-weight:700; color: {{ $urgency === 'High' ? '#b91c1c' : ($urgency === 'Moderate' ? '#92400e' : ($urgency === 'Low' ? '#166534' : '#64748b')) }};">
+                    {{ $urgency ?? 'Not Assessed' }}
+                </div>
+            </div>
+
+
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Division
+                </div>
+
+                <div class="report-field-value">
+                    {{ $complaint->division?->name ?? 'N/A' }}
+                </div>
+
+            </div>
+
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Complaint Type
+                </div>
+
+                <div class="report-field-value">
+                    {{ $complaint->category?->name ?? 'N/A' }}
+                </div>
+
+            </div>
+
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Consumer
+                </div>
+
+                <div class="report-field-value">
+                    {{ $consumerName }}
+                </div>
+
+            </div>
+
+
+            <div class="report-field">
+
+                <div class="report-field-label">
+                    Account Number
+                </div>
+
+                <div class="report-field-value">
+                    {{ $complaint->consumer?->account_number ?? 'N/A' }}
+                </div>
+
+            </div>
+
+
+            <div class="report-field" style="grid-column: 1 / -1;">
+
+                <div class="report-field-label">
+                    Service Location
+                </div>
+
+                <div class="report-field-value">
+                    {{ $serviceAddress }}
+                </div>
+
+            </div>
+
+
+            @if ($complaint->landmark)
+                <div class="report-field" style="grid-column: 1 / -1;">
+
+                    <div class="report-field-label">
+                        Landmark
+                    </div>
+
+                    <div class="report-field-value">
+                        {{ $complaint->landmark }}
+                    </div>
+
+                </div>
+            @endif
 
         </div>
 
-
-        {{-- ========================================================= --}}
-        {{-- REPORT --}}
-        {{-- ========================================================= --}}
-
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 report-card overflow-hidden">
+    </section>
 
 
-            {{-- ===================================================== --}}
-            {{-- REPORT HEADER --}}
-            {{-- ===================================================== --}}
+    <section class="report-section avoid-break">
 
-            <div class="px-8 py-7 border-b border-gray-200">
+        <h3 class="report-section-title">
+            Maintenance Team
+        </h3>
 
-                <div class="flex items-start justify-between gap-5">
+        <div class="report-field">
 
-                    <div>
-
-                        <div class="flex items-center gap-3">
-
-                            <div
-                                class="w-12 h-12 rounded-xl bg-blue-600
-                                    text-white flex items-center
-                                    justify-center">
-
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 10h8M8 14h5m-9 6h16a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-
-                            </div>
-
-
-                            <div>
-
-                                <h1 class="text-xl font-bold text-gray-900">
-                                    Sagay Water District
-                                </h1>
-
-                                <p class="text-sm text-gray-500">
-                                    Maintenance Complaint Report
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    @php
-
-                        $statusClasses = match ($complaint->status) {
-                            'Verified' => 'bg-blue-50 text-blue-700 border-blue-200',
-
-                            'Assigned' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-
-                            'In Progress' => 'bg-amber-50 text-amber-700 border-amber-200',
-
-                            'Completed' => 'bg-green-50 text-green-700 border-green-200',
-
-                            'Closed' => 'bg-gray-100 text-gray-700 border-gray-200',
-
-                            default => 'bg-gray-50 text-gray-600 border-gray-200',
-                        };
-
-                    @endphp
-
-
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-2
-                             rounded-full border text-xs font-bold
-                             {{ $statusClasses }}">
-
-                        <span class="w-2 h-2 rounded-full bg-current"></span>
-
-                        {{ $complaint->status }}
-
-                    </span>
-
-                </div>
-
-
-                <div class="mt-6">
-
-                    <p class="text-xs uppercase tracking-wider
-                          font-semibold text-gray-400">
-                        Complaint Number
-                    </p>
-
-                    <p class="mt-1 text-lg font-bold text-blue-600">
-                        {{ $complaint->complaint_no }}
-                    </p>
-
-                </div>
-
+            <div class="report-field-label">
+                Assigned Plumber(s)
             </div>
 
-
-            {{-- ===================================================== --}}
-            {{-- COMPLAINT SUMMARY --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-7 border-b border-gray-200">
-
-                <h2 class="text-base font-bold text-gray-900">
-                    Complaint Information
-                </h2>
-
-
-                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Complaint Type
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->category?->name ?? 'Uncategorized' }}
-                        </p>
-
-                    </div>
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Submitted
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->created_at?->format('F d, Y h:i A') }}
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Last Updated
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->updated_at?->format('F d, Y h:i A') }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                {{-- DESCRIPTION --}}
-                <div class="mt-6">
-
-                    <p class="text-xs uppercase tracking-wide
-                          font-semibold text-gray-400">
-                        Description
-                    </p>
-
-                    <div class="mt-2 p-4 rounded-xl bg-gray-50
-                            border border-gray-100">
-
-                        <p class="text-sm text-gray-700 leading-6 whitespace-pre-line">
-                            {{ $complaint->description }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- CONSUMER INFORMATION --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-7 border-b border-gray-200">
-
-                <h2 class="text-base font-bold text-gray-900">
-                    Consumer Information
-                </h2>
-
-
-                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Consumer Name
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                            {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? '—') }}
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Account Number
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->consumer?->account_number ??  '—' }}
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Contact Number
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->complainant_phone ?? ($complaint->consumer?->phone ?? '—') }}
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Email
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->consumer?->email ?? '—' }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- LOCATION --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-7 border-b border-gray-200">
-
-                <h2 class="text-base font-bold text-gray-900">
-                    Service / Complaint Location
-                </h2>
-
-
-                <div class="mt-5">
-
-                    <p class="text-xs uppercase tracking-wide
-                          font-semibold text-gray-400">
-                        Address
-                    </p>
-
-                    <p class="mt-1 text-sm font-medium text-gray-900">
-                        {{ $complaint->address ?? '—' }}
-                    </p>
-
-                </div>
-
-
-                @if ($complaint->landmark)
-                    <div class="mt-4">
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Landmark
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-700">
-                            {{ $complaint->landmark }}
-                        </p>
-
-                    </div>
-                @endif
-
-
-                @if ($complaint->latitude && $complaint->longitude)
-                    <div class="mt-4 grid grid-cols-2 gap-4">
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                                  font-semibold text-gray-400">
-                                Latitude
-                            </p>
-
-                            <p class="mt-1 text-sm text-gray-700">
-                                {{ number_format($complaint->latitude, 6) }}
-                            </p>
-
-                        </div>
-
-
-                        <div>
-
-                            <p
-                                class="text-xs uppercase tracking-wide
-                                  font-semibold text-gray-400">
-                                Longitude
-                            </p>
-
-                            <p class="mt-1 text-sm text-gray-700">
-                                {{ number_format($complaint->longitude, 6) }}
-                            </p>
-
-                        </div>
-
-                    </div>
-                @endif
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- VERIFICATION --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-7 border-b border-gray-200">
-
-                <h2 class="text-base font-bold text-gray-900">
-                    Verification Information
-                </h2>
-
-
-                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Verified By
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                            {{ $complaint->verifier?->full_name ?? ($complaint->verifiedBy?->full_name ?? '—') }}
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Verification Date
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ $complaint->verified_at?->format('F d, Y h:i A') ?? '—' }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                @if ($complaint->verification_reason)
-                    <div class="mt-5">
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Verification Notes
-                        </p>
-
-                        <p class="mt-2 text-sm text-gray-700 leading-6">
-                            {{ $complaint->verification_reason }}
-                        </p>
-
-                    </div>
-                @endif
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- MAINTENANCE TEAM --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-7 border-b border-gray-200">
-
-                <div class="flex items-center justify-between">
-
-                    <div>
-
-                        <h2 class="text-base font-bold text-gray-900">
-                            Assigned Maintenance Team
-                        </h2>
-
-                        <p class="text-xs text-gray-500 mt-1">
-                            Technicians assigned to this complaint
-                        </p>
-
-                    </div>
-
-
-                    <span class="text-xs font-semibold text-gray-500">
-                        {{ $complaint->technicians->count() }}
-                        {{ $complaint->technicians->count() === 1 ? 'Technician' : 'Technicians' }}
-                    </span>
-
-                </div>
-
-
-                @if ($complaint->technicians->count())
-
-                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                        @foreach ($complaint->technicians as $technician)
-                            <div class="rounded-xl border border-gray-200
-                p-4 bg-gray-50">
-
-                                <div class="flex items-center gap-3">
-
-                                    <div
-                                        class="w-10 h-10 rounded-xl
-                        bg-blue-100 text-blue-700
-                        flex items-center justify-center
-                        text-xs font-bold shrink-0">
-
-                                        {{ strtoupper(substr($technician->first_name ?? '', 0, 1) . substr($technician->last_name ?? '', 0, 1)) }}
-
-                                    </div>
-
-                                    <div class="min-w-0">
-
-                                        <p class="text-sm font-semibold text-gray-900">
-                                            {{ $technician->full_name }}
-                                        </p>
-
-                                        @if ($technician->employee_id)
-                                            <p class="text-xs text-gray-500">
-                                                Employee ID: {{ $technician->employee_id }}
-                                            </p>
-                                        @endif
-
-                                    </div>
-
-                                </div>
-
-                                @if ($technician->pivot?->status)
-                                    <div class="mt-3 pt-3 border-t border-gray-200">
-
-                                        <p
-                                            class="text-[10px] uppercase tracking-wide
-                          font-semibold text-gray-400">
-                                            Assignment Status
-                                        </p>
-
-                                        <p class="mt-1 text-xs font-semibold text-gray-700">
-                                            {{ $technician->pivot->status }}
-                                        </p>
-
-                                    </div>
-                                @endif
-
-                            </div>
-                        @endforeach
-
-                    </div>
-                @else
-                    <div
-                        class="mt-5 rounded-xl border border-dashed
-                            border-gray-300 p-5 text-center">
-
-                        <p class="text-sm text-gray-500">
-                            No maintenance technician has been assigned.
-                        </p>
-
-                    </div>
-
-                @endif
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- MAINTENANCE REPORT --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-7 border-b border-gray-200">
-
-                <h2 class="text-base font-bold text-gray-900">
-                    Maintenance Report
-                </h2>
-
-
-                @if ($complaint->maintenanceReport)
-                    <div class="mt-5 rounded-xl border border-green-200
-                            bg-green-50 p-4">
-
-                        <div class="flex items-start gap-3">
-
-                            <svg class="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
-
-                            <div>
-
-                                <p class="text-sm font-semibold text-green-800">
-                                    Maintenance report available
-                                </p>
-
-                                <p class="text-xs text-green-700 mt-1">
-                                    A maintenance report has been submitted
-                                    for this complaint.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-                @else
-                    <div
-                        class="mt-5 rounded-xl border border-dashed
-                            border-gray-300 p-5 text-center">
-
-                        <p class="text-sm text-gray-500">
-                            No maintenance report has been submitted yet.
-                        </p>
-
-                    </div>
-                @endif
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- REPORT FOOTER --}}
-            {{-- ===================================================== --}}
-
-            <div class="px-8 py-6 bg-gray-50">
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-                    <div>
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Report Generated
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-700">
-                            {{ now()->format('F d, Y h:i A') }}
-                        </p>
-
-                    </div>
-
-
-                    <div class="sm:text-right">
-
-                        <p
-                            class="text-xs uppercase tracking-wide
-                              font-semibold text-gray-400">
-                            Prepared By
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ auth()->user()->full_name ?? auth()->user()->email }}
-                        </p>
-
-                        <p class="text-xs text-gray-500">
-                            Maintenance Manager
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="mt-6 pt-5 border-t border-gray-200">
-
-                    <p class="text-[11px] text-gray-400 leading-5">
-                        This document is an official system-generated complaint
-                        and maintenance monitoring report of Sagay Water District.
-                        The information contained herein is based on records
-                        maintained within the complaint management system.
-                    </p>
-
-                </div>
-
+            <div class="report-field-value">
+                {{ $maintenanceTeam }}
             </div>
 
         </div>
 
-    </div>
+    </section>
 
-</body>
 
-</html>
+    @if ($report && $report->submitted_at)
+        <section class="report-section avoid-break">
+
+            <h3 class="report-section-title">
+                Diagnosis / Findings
+            </h3>
+
+            <div class="report-text-block">
+                {{ $report->diagnosis ?: 'No diagnosis or findings recorded.' }}
+            </div>
+
+        </section>
+
+
+        <section class="report-section avoid-break">
+
+            <h3 class="report-section-title">
+                Root Cause
+            </h3>
+
+            <div class="report-text-block">
+                {{ $report->root_cause ?: 'No root cause recorded.' }}
+            </div>
+
+        </section>
+
+
+        <section class="report-section avoid-break">
+
+            <h3 class="report-section-title">
+                Materials / Parts
+            </h3>
+
+            <div class="report-text-block">
+                {{ $report->materials_parts ?: 'None recorded.' }}
+            </div>
+
+        </section>
+
+
+        <section class="report-section avoid-break">
+
+            <h3 class="report-section-title">
+                Plumber Notes
+            </h3>
+
+            <div class="report-text-block">
+                {{ $report->technician_notes ?: 'No additional notes.' }}
+            </div>
+
+        </section>
+
+
+        <section class="report-section">
+
+            <h3 class="report-section-title">
+                Before & After Photos
+            </h3>
+
+            <div class="report-image-grid">
+
+                <div class="report-image-box avoid-break">
+
+                    <div class="report-image-label">
+                        Before Maintenance
+                    </div>
+
+                    @if ($report->before_photo)
+                        <img src="{{ asset('storage/' . $report->before_photo) }}" alt="Before maintenance photo"
+                            class="report-image">
+                    @else
+                        <div class="report-empty-image">
+                            No before photo available
+                        </div>
+                    @endif
+
+                </div>
+
+
+                <div class="report-image-box avoid-break">
+
+                    <div class="report-image-label">
+                        After Maintenance
+                    </div>
+
+                    @if ($report->after_photo)
+                        <img src="{{ asset('storage/' . $report->after_photo) }}" alt="After maintenance photo"
+                            class="report-image">
+                    @else
+                        <div class="report-empty-image">
+                            No after photo available
+                        </div>
+                    @endif
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="report-section">
+            <h3 class="report-section-title">Maintenance Visit History and Working Duration</h3>
+            @php
+                // Each recorded visit contributes only its own active maintenance interval.
+                $maintenanceVisits = \App\Models\MaintenanceWorkOrder::with('schedule')
+                    ->where('complaint_id', $complaint->id)
+                    ->whereNotNull('started_at')
+                    ->orderBy('visit_number')
+                    ->get()
+                    ->map(function ($order) {
+                        $end = $order->status === 'Completed' ? $order->completed_at : $order->pending_recorded_at;
+                        $seconds = $order->started_at && $end ? $order->started_at->diffInSeconds($end, false) : null;
+                        $order->recorded_end = $end;
+                        $order->recorded_seconds = $seconds !== null && $seconds >= 0 ? (int) round($seconds) : null;
+                        return $order;
+                    });
+                $timedVisits = $maintenanceVisits->filter(fn($order) => $order->recorded_seconds !== null);
+                $totalMaintenanceSeconds = $timedVisits->sum('recorded_seconds');
+                $durationLabel = function ($seconds) {
+                    return intdiv($seconds, 3600) .
+                        ' hr ' .
+                        intdiv($seconds % 3600, 60) .
+                        ' min ' .
+                        $seconds % 60 .
+                        ' sec';
+                };
+            @endphp
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:9pt;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            @foreach (['Visit / Result', 'Scheduled Date', 'Maintenance Started At', 'Pending / Accomplished At', 'Working Duration'] as $heading)
+                                <th style="border:1px solid #cbd5e1;padding:7px;text-align:left;">{{ $heading }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($maintenanceVisits as $visit)
+                            <tr style="page-break-inside:avoid;">
+                                <td style="border:1px solid #cbd5e1;padding:7px;">Visit {{ $visit->visit_number }}<br>
+                                    <small>{{ $visit->status === 'Completed' ? 'Accomplished' : $visit->status }}</small>
+                                </td>
+                                <td style="border:1px solid #cbd5e1;padding:7px;">
+                                    {{ $visit->schedule?->schedule_date ? \Carbon\Carbon::parse($visit->schedule->schedule_date)->format('M d, Y') : 'N/A' }}
+                                </td>
+                                <td style="border:1px solid #cbd5e1;padding:7px;">
+                                    {{ $visit->started_at?->copy()->timezone('Asia/Manila')->format('M d, Y h:i:s A') ?? 'N/A' }}
+                                </td>
+                                <td style="border:1px solid #cbd5e1;padding:7px;">
+                                    {{ $visit->recorded_end?->copy()->timezone('Asia/Manila')->format('M d, Y h:i:s A') ?? 'Not recorded' }}
+                                </td>
+                                <td style="border:1px solid #cbd5e1;padding:7px;">
+                                    {{ $visit->recorded_seconds !== null ? $durationLabel($visit->recorded_seconds) : 'Not available' }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" style="border:1px solid #cbd5e1;padding:12px;text-align:center;">No
+                                    started maintenance visits recorded.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="report-field" style="margin-top:3mm;padding:3mm;border:1px solid #cbd5e1;">
+                <div class="report-field-label">Total Recorded Maintenance Working Duration</div>
+                <div class="report-field-value" style="font-weight:700;">
+                    {{ $timedVisits->isNotEmpty() ? $durationLabel($totalMaintenanceSeconds) : 'Not available' }}</div>
+            </div>
+            <p class="report-meta-secondary" style="margin-top:2mm;">Total is the sum of recorded Start-to-Pending and
+                Start-to-Accomplished intervals. Time between visits is excluded. Incomplete or invalid intervals are not
+                counted. Times shown in Philippine Time (PHT).</p>
+        </section>
+
+
+        @if ($report->submitted_at || $report->reviewed_at || $report->review_remarks)
+
+            <section class="report-section avoid-break">
+
+                <h3 class="report-section-title">
+                    Management Review
+                </h3>
+
+                <div class="report-grid">
+
+                    <div class="report-field">
+
+                        <div class="report-field-label">
+                            Report Submitted
+                        </div>
+
+                        <div class="report-field-value">
+
+                            {{ $report->submitted_at?->timezone('Asia/Manila')->format('F d, Y h:i:s A') ?? 'N/A' }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="report-field">
+
+                        <div class="report-field-label">
+                            Review Result
+                        </div>
+
+                        <div class="report-field-value">
+
+                            @if ($report->review_status === 'Approved')
+                                Approved by
+                                {{ $reviewerName }}
+                            @elseif ($report->review_status === 'Returned')
+                                Returned by
+                                {{ $reviewerName }}
+                            @else
+                                {{ $report->review_status ?? 'Pending Review' }}
+                            @endif
+
+                        </div>
+
+
+                        @if ($report->reviewed_at)
+                            <div class="report-meta-secondary" style="margin-top: 1mm;">
+                                {{ $report->reviewed_at->format('F d, Y h:i A') }}
+                            </div>
+                        @endif
+
+                    </div>
+
+                </div>
+
+
+                @if ($report->review_remarks)
+                    <div class="report-field" style="margin-top: 3mm;">
+
+                        <div class="report-field-label">
+                            Manager Remarks
+                        </div>
+
+                        <div class="report-text-block">
+                            {{ $report->review_remarks }}
+                        </div>
+
+                    </div>
+                @endif
+
+            </section>
+
+        @endif
+    @else
+        <section class="report-section avoid-break">
+            <h3 class="report-section-title">Maintenance Accomplishment</h3>
+            <p>No submitted maintenance accomplishment report is available.</p>
+        </section>
+    @endif
+@endsection

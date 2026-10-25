@@ -4,10 +4,7 @@
 
 @section('report-title', 'Technician Work Summary')
 
-@section(
-    'report-subtitle',
-    'Field Maintenance Accomplishment Summary'
-)
+@section('report-subtitle', 'Field Maintenance Accomplishment Summary')
 
 @section('report-period')
     Reporting Period:
@@ -17,18 +14,13 @@
 @endsection
 
 @section('prepared-by-name')
-    {{ auth()->user()->full_name
-        ?? auth()->user()->name
-        ?? 'N/A' }}
+    {{ auth()->user()->full_name ?? (auth()->user()->name ?? 'N/A') }}
 @endsection
 
 @section('prepared-by-role', 'Maintenance Technician')
 
-
 @push('styles')
-
     <style>
-
         .work-summary-cards {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -48,7 +40,6 @@
             font-size: 7pt;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
         }
 
         .work-summary-value {
@@ -56,32 +47,36 @@
             color: #111827;
             font-size: 14pt;
             font-weight: 700;
-            line-height: 1.2;
         }
 
-        .technician-work-table th:nth-child(1),
-        .technician-work-table td:nth-child(1) {
-            width: 19%;
+        .technician-work-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
         }
 
-        .technician-work-table th:nth-child(2),
-        .technician-work-table td:nth-child(2) {
-            width: 22%;
+        .technician-work-table th:nth-child(1) {
+            width: 15%;
         }
 
-        .technician-work-table th:nth-child(3),
-        .technician-work-table td:nth-child(3) {
-            width: 24%;
+        .technician-work-table th:nth-child(2) {
+            width: 18%;
         }
 
-        .technician-work-table th:nth-child(4),
-        .technician-work-table td:nth-child(4) {
-            width: 13%;
+        .technician-work-table th:nth-child(3) {
+            width: 20%;
         }
 
-        .technician-work-table th:nth-child(5),
-        .technician-work-table td:nth-child(5) {
-            width: 22%;
+        .technician-work-table th:nth-child(4) {
+            width: 12%;
+        }
+
+        .technician-work-table th:nth-child(5) {
+            width: 15%;
+        }
+
+        .technician-work-table th:nth-child(6) {
+            width: 20%;
         }
 
         .complaint-number {
@@ -105,7 +100,6 @@
         }
 
         @media print {
-
             .work-summary-cards {
                 display: grid !important;
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -133,222 +127,199 @@
             .technician-work-table th,
             .technician-work-table td {
                 padding: 1.7mm 1.5mm !important;
+                vertical-align: top;
+                overflow-wrap: anywhere;
             }
-
         }
-
     </style>
-
 @endpush
 
-
 @section('report-content')
+
+    @php
+        /*
+        |--------------------------------------------------------------------------
+        | Compatible with current print controller
+        |--------------------------------------------------------------------------
+        |
+        | The current print() method may still provide $complaints,
+        | $total and $averageCompletionHours.
+        |
+        | If $completedWorkOrders is supplied by the updated print()
+        | method, the table uses actual maintenance visit records.
+        |
+        */
+
+        $hasVisitRecords = isset($completedWorkOrders);
+
+        $records = $hasVisitRecords ? $completedWorkOrders : $complaints ?? collect();
+
+        $recordCount = $records->count();
+
+        $averageMinutes =
+            $averageCompletionMinutes ??
+            (isset($averageCompletionHours) && $averageCompletionHours !== null ? $averageCompletionHours * 60 : null);
+
+        $averageDisplay =
+            $averageMinutes === null
+                ? 'N/A'
+                : ($averageMinutes < 60
+                    ? number_format($averageMinutes, 1) . ' mins'
+                    : number_format($averageMinutes / 60, 2) . ' hrs');
+    @endphp
+
+    {{-- ===================================================== --}}
+    {{-- SUMMARY --}}
+    {{-- ===================================================== --}}
 
     <section class="report-section avoid-break">
 
         <div class="work-summary-cards">
 
             <div class="work-summary-card">
-
                 <div class="work-summary-label">
-                    Accomplished Work
+                    Accomplished {{ $hasVisitRecords ? 'Visits' : 'Complaints' }}
                 </div>
 
                 <div class="work-summary-value">
-                    {{ $total }}
+                    {{ $recordCount }}
                 </div>
-
             </div>
 
-
             <div class="work-summary-card">
-
                 <div class="work-summary-label">
                     Average Completion Time
                 </div>
 
                 <div class="work-summary-value">
-                    {{ $averageCompletionHours }} hrs
+                    {{ $averageDisplay }}
                 </div>
-
             </div>
 
         </div>
 
     </section>
 
+    {{-- ===================================================== --}}
+    {{-- ACCOMPLISHED WORK --}}
+    {{-- ===================================================== --}}
 
     <section class="report-section">
 
         <div class="report-section-heading-row">
 
             <h3 class="report-section-title">
-                Accomplished Work
+                Accomplished Maintenance Work
             </h3>
 
             <div class="report-record-count">
-
                 Total Records:
-
-                <strong>
-                    {{ $complaints->count() }}
-                </strong>
-
+                <strong>{{ $recordCount }}</strong>
             </div>
 
         </div>
 
-
-        @if ($complaints->count())
+        @if ($recordCount > 0)
 
             <div class="report-table-wrapper">
 
                 <table class="report-table technician-work-table">
 
                     <thead>
-
                         <tr>
-
-                            <th>
-                                Complaint
-                            </th>
-
-                            <th>
-                                Consumer
-                            </th>
-
-                            <th>
-                                Complaint Type
-                            </th>
-
-                            <th>
-                                AI Urgency
-                            </th>
-
-                            <th>
-                                Accomplished
-                            </th>
-
+                            <th>Complaint / Visit</th>
+                            <th>Consumer</th>
+                            <th>Complaint Type</th>
+                            <th>Urgency</th>
+                            <th>Duration</th>
+                            <th>Accomplished</th>
                         </tr>
-
                     </thead>
-
 
                     <tbody>
 
-                        @foreach ($complaints as $complaint)
-
+                        @foreach ($records as $record)
                             @php
+                                $complaint = $hasVisitRecords ? $record->complaint : $record;
 
-                                $urgency =
-                                    strtoupper(
-                                        trim(
-                                            $complaint
-                                                ->aiAnalysis
-                                                ?->urgency_level
-                                            ?? ''
-                                        )
-                                    );
+                                $urgency = strtoupper(
+                                    trim((string) ($complaint?->aiAnalysis?->verified_urgency_level ?? '')),
+                                );
 
+                                $startedAt = $hasVisitRecords ? $record->started_at : null;
+
+                                $completedAt = $hasVisitRecords ? $record->completed_at : $complaint?->completed_at;
+
+                                $durationDisplay = 'N/A';
+
+                                if ($startedAt && $completedAt) {
+                                    $seconds = $startedAt->diffInSeconds($completedAt, false);
+
+                                    if ($seconds >= 0) {
+                                        $durationDisplay =
+                                            $seconds < 3600
+                                                ? number_format($seconds / 60, 1) . ' mins'
+                                                : number_format($seconds / 3600, 2) . ' hrs';
+                                    }
+                                }
                             @endphp
-
 
                             <tr>
 
                                 <td>
-
                                     <div class="complaint-number">
-                                        {{ $complaint->complaint_no }}
+                                        {{ $complaint?->complaint_no ?? 'N/A' }}
                                     </div>
 
-                                    <div class="table-secondary">
-
-                                        Submitted:
-
-                                        {{ $complaint->created_at
-                                            ?->format('M d, Y h:i A')
-                                            ?? '—' }}
-
-                                    </div>
-
+                                    @if ($hasVisitRecords)
+                                        <div class="table-secondary">
+                                            Visit {{ $record->visit_number ?? '—' }}
+                                        </div>
+                                    @endif
                                 </td>
 
-
                                 <td>
-
-                                    @if ($complaint->consumer)
-
+                                    @if ($complaint?->consumer)
                                         <div>
                                             {{ $complaint->consumer->full_name }}
                                         </div>
 
                                         @if ($complaint->consumer->account_number)
-
                                             <div class="table-secondary">
-
                                                 Account:
                                                 {{ $complaint->consumer->account_number }}
-
                                             </div>
-
                                         @endif
-
-                                    @elseif ($complaint->complainant_name)
-
+                                    @elseif ($complaint?->complainant_name)
                                         <div>
                                             {{ $complaint->complainant_name }}
                                         </div>
-
-                                        @if ($complaint->complainant_phone)
-
-                                            <div class="table-secondary">
-                                                {{ $complaint->complainant_phone }}
-                                            </div>
-
-                                        @endif
-
                                     @else
-
                                         <span class="table-secondary">
                                             No complainant information
                                         </span>
-
                                     @endif
-
                                 </td>
 
-
                                 <td>
-
-                                    {{ $complaint->category?->name
-                                        ?? 'Uncategorized' }}
-
+                                    {{ $complaint?->category?->name ?? 'Uncategorized' }}
                                 </td>
 
-
                                 <td>
-
                                     <span class="urgency-value">
-
-                                        {{ $urgency !== ''
-                                            ? $urgency
-                                            : 'NOT ASSESSED' }}
-
+                                        {{ in_array($urgency, ['HIGH', 'MODERATE', 'LOW'], true) ? $urgency : 'NOT ASSESSED' }}
                                     </span>
-
                                 </td>
 
+                                <td>
+                                    {{ $durationDisplay }}
+                                </td>
 
                                 <td>
-
-                                    {{ $complaint->completed_at
-                                        ?->format('M d, Y h:i A')
-                                        ?? '—' }}
-
+                                    {{ $completedAt?->format('M d, Y') ?? '—' }}
                                 </td>
 
                             </tr>
-
                         @endforeach
 
                     </tbody>
@@ -356,14 +327,10 @@
                 </table>
 
             </div>
-
         @else
-
             <div class="report-text-block text-center">
-
                 No accomplished maintenance work was found
                 for the selected reporting period.
-
             </div>
 
         @endif
@@ -371,4 +338,3 @@
     </section>
 
 @endsection
-

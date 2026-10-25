@@ -17,9 +17,15 @@ class UpdateConsumerComplaintRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'description' => trim($this->description ?? ''),
-            'address' => trim($this->address ?? ''),
-            'landmark' => trim($this->landmark ?? ''),
+            'description' => trim(
+                (string) $this->input('description', '')
+            ),
+            'address' => trim(
+                (string) $this->input('address', '')
+            ),
+            'landmark' => trim(
+                (string) $this->input('landmark', '')
+            ),
         ]);
     }
 
@@ -30,7 +36,8 @@ class UpdateConsumerComplaintRequest extends FormRequest
             ->first();
 
         $isEngineering = $engineeringDivision
-            && (int) $this->input('division_id') === (int) $engineeringDivision->id;
+            && (int) $this->input('division_id')
+            === (int) $engineeringDivision->id;
 
         return [
             'division_id' => [
@@ -57,7 +64,7 @@ class UpdateConsumerComplaintRequest extends FormRequest
             'description' => [
                 'required',
                 'string',
-                'min:10',
+                'min:1',
                 'max:5000',
             ],
 
@@ -74,13 +81,13 @@ class UpdateConsumerComplaintRequest extends FormRequest
             ],
 
             'latitude' => [
-                'nullable',
+                $isEngineering ? 'required' : 'nullable',
                 'numeric',
                 'between:-90,90',
             ],
 
             'longitude' => [
-                'nullable',
+                $isEngineering ? 'required' : 'nullable',
                 'numeric',
                 'between:-180,180',
             ],
@@ -124,73 +131,79 @@ class UpdateConsumerComplaintRequest extends FormRequest
     {
         return [
             'division_id.required' =>
-                'Please select the division responsible for your concern.',
+            'Please select the division responsible for your concern.',
 
             'division_id.exists' =>
-                'The selected division is invalid or inactive.',
+            'The selected division is invalid or inactive.',
 
             'complaint_category_id.required' =>
-                'Please select the type of concern you want to report.',
+            'Please select the type of concern you want to report.',
 
             'complaint_category_id.exists' =>
-                'The selected complaint type does not belong to the selected division or is no longer available.',
+            'The selected complaint type does not belong to the selected division or is no longer available.',
 
             'description.required' =>
-                'Please describe your concern.',
+            'Please describe your concern.',
 
             'description.min' =>
-                'Please provide at least 10 characters describing your concern.',
+            'Please describe your water-service concern.',
 
             'description.max' =>
-                'The description must not exceed 5,000 characters.',
+            'The description must not exceed 5,000 characters.',
 
             'address.required' =>
-                'Please provide the location where the reported concern occurred.',
+            'Please provide the location where the reported concern occurred.',
 
             'address.max' =>
-                'The address must not exceed 500 characters.',
+            'The address must not exceed 500 characters.',
 
             'landmark.max' =>
-                'The landmark must not exceed 255 characters.',
+            'The landmark must not exceed 255 characters.',
+
+            'latitude.required' =>
+            'Please select the complaint location on the map.',
 
             'latitude.numeric' =>
-                'The selected map location is invalid.',
+            'The selected map latitude is invalid.',
 
             'latitude.between' =>
-                'The latitude must be between -90 and 90.',
+            'The latitude must be between -90 and 90.',
+
+            'longitude.required' =>
+            'Please select the complaint location on the map.',
 
             'longitude.numeric' =>
-                'The selected map location is invalid.',
+            'The selected map longitude is invalid.',
 
             'longitude.between' =>
-                'The longitude must be between -180 and 180.',
+            'The longitude must be between -180 and 180.',
 
             'photos.array' =>
-                'The supporting photos must be valid files.',
+            'The supporting photos must be valid files.',
 
             'photos.max' =>
-                'You may upload a maximum of 5 supporting photos.',
+            'You may upload a maximum of 5 supporting photos.',
 
             'photos.*.required' =>
-                'Each supporting photo is required.',
+            'Each supporting photo is required.',
 
             'photos.*.image' =>
-                'Each supporting file must be an image.',
+            'Each supporting file must be an image.',
 
             'photos.*.mimes' =>
-                'Supporting photos must be JPG, JPEG, PNG, or WEBP.',
+            'Supporting photos must be JPG, JPEG, PNG, or WEBP.',
 
             'photos.*.max' =>
-                'Each supporting photo must not exceed 5 MB.',
+            'Each supporting photo must not exceed 5 MB.',
 
             'remove_photos.array' =>
-                'The selected photos to remove are invalid.',
+            'The selected photos to remove are invalid.',
 
             'remove_photos.*.integer' =>
-                'The selected photo to remove is invalid.',
+            'The selected photo to remove is invalid.',
 
             'remove_photos.*.exists' =>
-                'One of the selected photos could not be found.',
+            'One of the selected photos could not be found.',
         ];
     }
 }

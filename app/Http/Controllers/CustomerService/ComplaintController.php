@@ -21,6 +21,7 @@ use App\Models\Consumer;
 use App\Models\Division;
 
 use App\Models\CommercialResolution;
+use App\Notifications\ComplaintCompleted;
 
 use Illuminate\Http\Request;
 
@@ -31,8 +32,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 use App\Services\AI\AIService;
+use App\Services\AuditLogger;
 
 use Throwable;
+
 
 use Illuminate\Database\Eloquent\Builder;
 
@@ -509,14 +512,14 @@ class ComplaintController extends Controller
                 'review_reasons' =>
                 data_get(
                     $analysis,
-                    'review\.reasons',
+                    'review.reasons',
                     []
                 ),
 
                 'verification_questions' =>
                 data_get(
                     $analysis,
-                    'review\.verification_questions',
+                    'review.verification_questions',
                     []
                 ),
 
@@ -760,6 +763,19 @@ class ComplaintController extends Controller
             $complaint
         );
 
+        $oldValues = [
+            'complainant_name' => $complaint->complainant_name,
+            'complainant_phone' => $complaint->complainant_phone,
+            'consumer_id' => $complaint->consumer_id,
+            'division_id' => $complaint->division_id,
+            'complaint_category_id' => $complaint->complaint_category_id,
+            'description' => $complaint->description,
+            'address' => $complaint->address,
+            'landmark' => $complaint->landmark,
+            'latitude' => $complaint->latitude,
+            'longitude' => $complaint->longitude,
+        ];
+
         $validated = $request->validated();
 
         $division = Division::query()
@@ -990,6 +1006,33 @@ class ComplaintController extends Controller
             }
         );
 
+        $complaint->refresh();
+
+        $newValues = [
+            'complainant_name' => $complaint->complainant_name,
+            'complainant_phone' => $complaint->complainant_phone,
+            'consumer_id' => $complaint->consumer_id,
+            'division_id' => $complaint->division_id,
+            'complaint_category_id' => $complaint->complaint_category_id,
+            'description' => $complaint->description,
+            'address' => $complaint->address,
+            'landmark' => $complaint->landmark,
+            'latitude' => $complaint->latitude,
+            'longitude' => $complaint->longitude,
+        ];
+
+        // Only log an update when complaint details actually changed.
+        if ($oldValues !== $newValues) {
+            AuditLogger::log(
+                action: 'updated',
+                module: 'Customer Service',
+                description: 'Updated complaint details for complaint ' . $complaint->complaint_no . '.',
+                subject: $complaint,
+                oldValues: $oldValues,
+                newValues: $newValues,
+            );
+        }
+
         return redirect()
             ->route(
                 'customer-service.complaints.show',
@@ -1085,6 +1128,21 @@ class ComplaintController extends Controller
         }
 
         $validated = $request->validated();
+
+        // Customer Service makes the final urgency decision.
+        // The AI suggestion is retained separately for audit and comparison.
+        // Complaints without AI analysis can still follow the existing workflow.
+        $urgencyRules = $complaint->aiAnalysis
+            ? ['required', 'in:Low,Moderate,High']
+            : ['nullable', 'in:Low,Moderate,High'];
+
+        $urgencyDecision = $request->validate([
+            'verified_urgency_level' => $urgencyRules,
+        ]);
+
+        $validated['verified_urgency_level'] =
+            $urgencyDecision['verified_urgency_level'] ?? null;
+        $validated['verification_reason'] = null;
 
         /*
 
@@ -1218,6 +1276,7 @@ class ComplaintController extends Controller
 
                     $category->id,
 
+
                     'status' =>
 
                     'Verified',
@@ -1265,19 +1324,15 @@ class ComplaintController extends Controller
                 if ($complaint->aiAnalysis) {
 
                     $complaint->aiAnalysis->update([
+                        // Existing category verification is preserved.
+                        'verified_category_id' => $category->id,
+                        'verified_by' => $verifiedBy,
+                        'verified_at' => $verifiedAt,
 
-                        'verified_category_id' =>
-
-                        $category->id,
-
-                        'verified_by' =>
-
-                        $verifiedBy,
-
-                        'verified_at' =>
-
-                        $verifiedAt,
-
+                        // New independent urgency verification.
+                        'verified_urgency_level' => $validated['verified_urgency_level'],
+                        'urgency_verified_by' => $verifiedBy,
+                        'urgency_verified_at' => $verifiedAt,
                     ]);
                 }
             }
@@ -1331,8 +1386,7 @@ class ComplaintController extends Controller
         return redirect()
 
             ->route(
-
-                'customer-service.complaints.show',
+                'customer-service.complaint-verification.index',
 
                 $complaint
 
@@ -1394,7 +1448,7 @@ class ComplaintController extends Controller
 
             ->route(
 
-                'customer-service.complaints.show',
+                'customer-service.complaint-verification.index',
 
                 $complaint
 
@@ -1611,61 +1665,267 @@ class ComplaintController extends Controller
             );
     }
 
+
     public function closeCommercialComplaint(Complaint $complaint)
     {
-        if (!$this->isCommercialComplaint($complaint)) {
-            return back()->with(
-                'error',
-                'Only Commercial Services complaints can use this action.'
-            );
-        }
+        $result = DB::transaction(function () use ($complaint) {
 
-        if ($complaint->status !== 'CS Processing') {
-            return back()->with(
-                'error',
-                'Only requests under initial processing can be closed by Customer Service.'
-            );
-        }
+            // Lock the complaint to prevent simultaneous closure requests.
+            $lockedComplaint = Complaint::query()
+                ->lockForUpdate()
+                ->findOrFail($complaint->id);
 
-        $complaint->loadMissing('commercialResolution');
+            if ($lockedComplaint->status === 'Closed') {
+                return 'already_closed';
+            }
 
-        $resolution = $complaint->commercialResolution;
+            if (!$this->isCommercialComplaint($lockedComplaint)) {
+                return 'not_commercial';
+            }
 
-        if (!$resolution || !$resolution->initial_processing_completed_at) {
-            return back()->with(
-                'error',
-                'Complete the initial processing before closing this request.'
-            );
-        }
+            if ($lockedComplaint->status !== 'CS Processing') {
+                return 'invalid_status';
+            }
 
-        if (
-            blank($resolution->findings) ||
-            blank($resolution->resolution_remarks)
-        ) {
-            return back()->with(
-                'error',
-                'Findings and resolution/recommendation are required before closing this request.'
-            );
-        }
+            $resolution = CommercialResolution::query()
+                ->where('complaint_id', $lockedComplaint->id)
+                ->first();
 
-        DB::transaction(function () use ($complaint, $resolution) {
+            if (
+                !$resolution ||
+                !$resolution->initial_processing_completed_at
+            ) {
+                return 'processing_incomplete';
+            }
+
+            if (
+                blank($resolution->findings) ||
+                blank($resolution->resolution_remarks)
+            ) {
+                return 'missing_findings';
+            }
+
+            // Forwarded complaints require maintenance approval
+            // and must use the separate maintenance closure action.
+            if ($resolution->forwarded_to_maintenance_at) {
+                return 'forwarded_to_maintenance';
+            }
+
+            $closedAt = now();
+
             $resolution->update([
-                'completed_at' => now(),
+                'completed_at' => $closedAt,
             ]);
 
-            $complaint->update([
+            $lockedComplaint->update([
                 'status' => 'Closed',
-                'completed_at' => now(),
+                'completed_at' => $closedAt,
+                'closed_at' => $closedAt,
             ]);
+
+            return 'closed';
         });
+
+        if ($result === 'already_closed') {
+            return redirect()
+                ->route('customer-service.complaints.show', $complaint)
+                ->with(
+                    'success',
+                    'This request is already closed. No duplicate closure was performed.'
+                );
+        }
+
+        if ($result !== 'closed') {
+            $message = match ($result) {
+                'not_commercial' =>
+                'Only Commercial Services complaints can use this action.',
+
+                'invalid_status' =>
+                'Only requests under initial processing can be closed by Customer Service.',
+
+                'processing_incomplete' =>
+                'Complete the initial processing before closing this request.',
+
+                'missing_findings' =>
+                'Findings and resolution/recommendation are required before closing this request.',
+
+                'forwarded_to_maintenance' =>
+                'This request was forwarded to Maintenance and requires Manager approval before final closure.',
+
+                default =>
+                'This request cannot be closed at this time.',
+            };
+
+            return redirect()
+                ->route('customer-service.complaints.show', $complaint)
+                ->with('error', $message);
+        }
+
+        // Only the request that successfully transitions
+        // this complaint to Closed reaches notification dispatch.
+        try {
+            $complaint->refresh();
+            $complaint->load('consumer.user');
+
+            $consumerUser = $complaint->consumer?->user;
+
+            if ($consumerUser && filled($consumerUser->email)) {
+                $consumerUser->notify(
+                    new ComplaintCompleted($complaint)
+                );
+            }
+        } catch (Throwable $exception) {
+            Log::error(
+                'Failed to queue commercial complaint closure notification.',
+                [
+                    'complaint_id' => $complaint->id,
+                    'error' => $exception->getMessage(),
+                ]
+            );
+        }
 
         return redirect()
             ->route('customer-service.complaints.show', $complaint)
             ->with(
                 'success',
-                'Request closed successfully. No maintenance assignment is required.'
+                'Commercial request officially closed. The consumer notification has been queued when an eligible account was available.'
             );
     }
+
+
+
+    /**
+     * Close a maintenance complaint after Manager approval.
+     * Only Customer Service can access this through the role-protected route.
+     */
+    public function closeMaintenanceComplaint(
+        Request $request,
+        Complaint $complaint
+    ) {
+        $result = DB::transaction(function () use ($complaint) {
+
+            // Lock the complaint to prevent simultaneous closure requests.
+            $lockedComplaint = Complaint::query()
+                ->lockForUpdate()
+                ->findOrFail($complaint->id);
+
+            if ($lockedComplaint->status === 'Closed') {
+                return 'already_closed';
+            }
+
+            if ($lockedComplaint->status !== 'Completed') {
+                return 'not_completed';
+            }
+
+            $lockedComplaint->load([
+                'division',
+                'maintenanceReport',
+                'commercialResolution',
+            ]);
+
+            $isCommercial = $this->isCommercialComplaint(
+                $lockedComplaint
+            );
+
+            // Commercial complaints may reach Maintenance through forwarding.
+            // Direct Commercial resolution must use its existing closure action.
+            if (
+                $isCommercial &&
+                !$lockedComplaint->commercialResolution?->forwarded_to_maintenance_at
+            ) {
+                return 'commercial_only';
+            }
+
+            $report = $lockedComplaint->maintenanceReport;
+
+            if (
+                !$report ||
+                !$report->submitted_at ||
+                $report->review_status !== 'Approved'
+            ) {
+                return 'report_not_approved';
+            }
+
+            $lockedComplaint->update([
+                'status' => 'Closed',
+                'closed_at' => now(),
+            ]);
+
+            return 'closed';
+        });
+
+        if ($result === 'already_closed') {
+            return redirect()
+                ->route('customer-service.complaints.show', $complaint)
+                ->with(
+                    'success',
+                    'This complaint has already been closed. No duplicate closure was performed.'
+                );
+        }
+
+        if ($result !== 'closed') {
+            $message = match ($result) {
+                'not_completed' =>
+                'Only accomplished maintenance complaints can be closed.',
+
+                'commercial_only' =>
+                'Use the Commercial Services closure process for this complaint.',
+
+                'report_not_approved' =>
+                'The Maintenance Manager must approve the submitted accomplishment report before Customer Service can close this complaint.',
+
+                default =>
+                'This complaint cannot be closed at this time.',
+            };
+
+            return redirect()
+                ->route('customer-service.complaints.show', $complaint)
+                ->with('error', $message);
+        }
+
+        // Only the request that successfully changes the status
+        // from Completed to Closed can dispatch this notification.
+        try {
+            $complaint->refresh();
+            $complaint->load('consumer.user');
+
+            $consumerUser = $complaint->consumer?->user;
+
+            if ($consumerUser && filled($consumerUser->email)) {
+                $consumerUser->notify(
+                    new ComplaintCompleted($complaint)
+                );
+            }
+        } catch (Throwable $exception) {
+            Log::error(
+                'Failed to queue consumer complaint closure notification.',
+                [
+                    'complaint_id' => $complaint->id,
+                    'error' => $exception->getMessage(),
+                ]
+            );
+        }
+
+        // Return to Pending Final Closure when the complaint
+        // was opened from that page.
+        if ($request->query('return_to') === 'final-closures') {
+            return redirect()
+                ->route('customer-service.final-closures.index')
+                ->with(
+                    'success',
+                    'Maintenance complaint officially closed successfully. The consumer notification has been queued when an eligible account was available.'
+                );
+        }
+
+        // Preserve the original redirect for other entry points.
+        return redirect()
+            ->route('customer-service.complaints.show', $complaint)
+            ->with(
+                'success',
+                'Maintenance complaint officially closed. The consumer notification has been queued when an eligible account was available.'
+            );
+    }
+
 
     private function isCommercialComplaint(
 
@@ -2298,105 +2558,53 @@ class ComplaintController extends Controller
                 );
             }
         }
+
         /*
-
-    |--------------------------------------------------------------------------
-
-    | AI Urgency
-
-    |--------------------------------------------------------------------------
-
-    */
-
+        |--------------------------------------------------------------------------
+        | Final Urgency (CS-verified first, AI suggestion as fallback)
+        |--------------------------------------------------------------------------
+        */
         if ($request->filled('urgency')) {
+            $urgency = $request->input('urgency');
 
-            $urgency = $request->urgency;
-
-            if (
-
-                in_array(
-
-                    $urgency,
-
-                    [
-
-                        'High',
-
-                        'Moderate',
-
-                        'Low',
-
-                    ],
-
-                    true
-
-                )
-
-            ) {
-
+            if (in_array($urgency, ['High', 'Moderate', 'Low'], true)) {
                 $query->whereHas(
-
                     'aiAnalysis',
-
                     function (Builder $aiQuery) use ($urgency) {
-
-                        $aiQuery->where(
-
-                            'urgency_level',
-
-                            $urgency
-
-                        );
-                    }
-
-                );
-            } elseif (
-
-                $urgency === 'not_assessed'
-
-            ) {
-
-                $query->where(
-
-                    function (Builder $urgencyQuery) {
-
-                        $urgencyQuery
-
-                            ->whereDoesntHave(
-
-                                'aiAnalysis'
-
-                            )
-
-                            ->orWhereHas(
-
-                                'aiAnalysis',
-
-                                function (Builder $aiQuery) {
-
-                                    $aiQuery
-
-                                        ->whereNull(
-
-                                            'urgency_level'
-
-                                        )
-
-                                        ->orWhere(
-
-                                            'urgency_level',
-
-                                            ''
-
-                                        );
-                                }
-
+                        $aiQuery->where(function (Builder $finalQuery) use ($urgency) {
+                            // Match the final CS decision first.
+                            $finalQuery->where(
+                                'verified_urgency_level',
+                                $urgency
                             );
-                    }
 
+                            // Fall back to AI only when CS has not verified urgency.
+                            $finalQuery->orWhere(function (Builder $fallbackQuery) use ($urgency) {
+                                $fallbackQuery
+                                    ->whereNull('verified_urgency_level')
+                                    ->where('urgency_level', $urgency);
+                            });
+                        });
+                    }
                 );
+            } elseif ($urgency === 'not_assessed') {
+                $query->where(function (Builder $urgencyQuery) {
+                    // No AI analysis exists.
+                    $urgencyQuery->whereDoesntHave('aiAnalysis');
+
+                    // Or neither CS nor AI has an urgency value.
+                    $urgencyQuery->orWhereHas(
+                        'aiAnalysis',
+                        function (Builder $aiQuery) {
+                            $aiQuery
+                                ->whereNull('verified_urgency_level')
+                                ->whereNull('urgency_level');
+                        }
+                    );
+                });
             }
         }
+
 
         if ($request->filled('date_from')) {
 

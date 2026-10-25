@@ -545,7 +545,10 @@
                                     default => $complaint->status,
                                 };
 
-                                $urgency = $complaint->aiAnalysis?->urgency_level;
+                                $verifiedUrgency = $complaint->aiAnalysis?->verified_urgency_level;
+                                $aiUrgency = $complaint->aiAnalysis?->urgency_level;
+
+                                $urgency = $verifiedUrgency ?: $aiUrgency;
 
                                 $urgencyClasses = match ($urgency) {
                                     'High' => 'bg-red-50 text-red-700 border-red-200',
@@ -871,7 +874,10 @@
                             default => $complaint->status,
                         };
 
-                        $urgency = $complaint->aiAnalysis?->urgency_level;
+                        $verifiedUrgency = $complaint->aiAnalysis?->verified_urgency_level;
+                        $aiUrgency = $complaint->aiAnalysis?->urgency_level;
+
+                        $urgency = $verifiedUrgency ?: $aiUrgency;
 
                         $urgencyClasses = match ($urgency) {
                             'High' => 'bg-red-50 text-red-700 border-red-200',
@@ -923,7 +929,6 @@
                                             </span>
 
                                             {{ strtoupper($urgency) }}
-
                                         </span>
                                     @else
                                         <span

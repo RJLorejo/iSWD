@@ -228,4 +228,33 @@ class ComplaintCategoryController extends Controller
                 'Complaint category deleted successfully.'
             );
     }
+    public function print(\Illuminate\Http\Request $request)
+    {
+        $query = \App\Models\ComplaintCategory::query()
+            ->with('division');
+
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where(
+                'is_active',
+                $request->input('status') === '1'
+            );
+        }
+
+        $categories = $query->orderBy('name')->get();
+
+        return view(
+            'customer-service.complaint-categories.print',
+            compact('categories')
+        );
+    }
 }

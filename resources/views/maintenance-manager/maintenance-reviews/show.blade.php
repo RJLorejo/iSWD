@@ -7,7 +7,9 @@
     @php
         $complaint = $maintenanceReport->complaint;
 
-        $urgency = strtoupper(trim($complaint?->aiAnalysis?->urgency_level ?? ''));
+        $urgency = strtoupper(
+            trim($complaint?->aiAnalysis?->verified_urgency_level ?: $complaint?->aiAnalysis?->urgency_level ?: ''),
+        );
 
         $urgencyClasses = match ($urgency) {
             'HIGH' => 'bg-red-50 text-red-700 border-red-200',
@@ -103,16 +105,28 @@
             </div>
 
 
-            @if ($isClosed)
-                <span
-                    class="inline-flex items-center gap-2
-                           px-3 py-2 rounded-xl
-                           bg-slate-100 text-slate-700
-                           text-sm font-semibold">
-                    <i class="fas fa-lock"></i>
-                    Complaint Closed
-                </span>
-            @endif
+            <div class="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
+                @if ($complaint)
+                    <a href="{{ route('maintenance-manager.complaints.report', $complaint) }}" target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800 sm:flex-none">
+                        <i class="fas fa-print" aria-hidden="true"></i>
+                        Print Accomplishment
+                    </a>
+                    <a href="{{ route('maintenance-manager.complaints.show', $complaint) }}"
+                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:flex-none">
+                        <i class="fas fa-file-lines" aria-hidden="true"></i>
+                        Complaint Details
+                    </a>
+                @endif
+                @if ($isClosed)
+                    <span
+                        class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2.5 text-sm font-semibold text-slate-700">
+                        <i class="fas fa-lock" aria-hidden="true"></i>
+                        Complaint Closed
+                    </span>
+                @endif
+            </div>
 
         </div>
 
@@ -199,8 +213,9 @@
             </div>
 
 
-            <div class="p-5 sm:p-6
-                       grid grid-cols-2
+            <div
+                class="p-5 sm:p-6
+                       grid grid-cols-1 sm:grid-cols-2
                        lg:grid-cols-4 gap-5">
 
                 <div>
@@ -531,7 +546,7 @@
             </div>
 
 
-            <div class="p-5 sm:p-6 grid grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
                 <div>
 
@@ -734,21 +749,21 @@
             </div>
 
 
-            <div class="grid md:grid-cols-2 gap-5 p-5 sm:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-5 sm:p-6">
 
                 <div>
 
-                    <p class="text-sm font-semibold text-slate-800 mb-3">
+                    <p class="text-center text-sm font-semibold text-slate-800 mb-3">
                         Before Maintenance
                     </p>
 
                     @if ($maintenanceReport->before_photo)
                         <a href="{{ asset('storage/' . $maintenanceReport->before_photo) }}" target="_blank"
-                            rel="noopener noreferrer">
+                            rel="noopener noreferrer" class="flex justify-center">
 
                             <img src="{{ asset('storage/' . $maintenanceReport->before_photo) }}"
                                 alt="Before maintenance"
-                                class="w-full h-72
+                                class="w-full max-w-lg h-64 sm:h-72
                                        object-contain
                                        rounded-xl border
                                        bg-slate-50">
@@ -769,16 +784,16 @@
 
                 <div>
 
-                    <p class="text-sm font-semibold text-slate-800 mb-3">
+                    <p class="text-center text-sm font-semibold text-slate-800 mb-3">
                         After Maintenance
                     </p>
 
                     @if ($maintenanceReport->after_photo)
                         <a href="{{ asset('storage/' . $maintenanceReport->after_photo) }}" target="_blank"
-                            rel="noopener noreferrer">
+                            rel="noopener noreferrer" class="flex justify-center">
 
                             <img src="{{ asset('storage/' . $maintenanceReport->after_photo) }}" alt="After maintenance"
-                                class="w-full h-72
+                                class="w-full max-w-lg h-64 sm:h-72
                                        object-contain
                                        rounded-xl border
                                        bg-slate-50">
@@ -1051,60 +1066,67 @@
             </div>
 
 
-            {{-- Approved but not Closed --}}
+
+            {{-- Approved - Awaiting Customer Service Closure --}}
         @elseif ($isApproved && !$isClosed)
-            <div class="rounded-2xl border border-green-200
-                       bg-green-50 p-5 sm:p-6">
+            <div class="rounded-2xl border border-emerald-200
+                bg-emerald-50 p-5 sm:p-6">
 
-                <div class="flex flex-col lg:flex-row
-                           lg:items-center lg:justify-between gap-5">
+                <div class="flex items-start gap-3">
 
-                    <div class="flex items-start gap-3">
+                    <div
+                        class="flex h-11 w-11 shrink-0
+                        items-center justify-center
+                        rounded-xl bg-emerald-100 text-emerald-700">
 
-                        <div
-                            class="w-10 h-10 rounded-xl
-                                   bg-green-100 text-green-600
-                                   flex items-center justify-center shrink-0">
-                            <i class="fas fa-circle-check"></i>
-                        </div>
+                        <i class="fas fa-circle-check"></i>
 
-                        <div>
+                    </div>
 
-                            <h2 class="font-semibold text-green-800">
-                                Accomplishment Approved
-                            </h2>
+                    <div>
 
-                            <p class="text-sm text-green-700 mt-1">
-                                The accomplishment report has been approved.
-                                The complaint remains Accomplished until you finalize and close the maintenance workflow.
-                            </p>
+                        <h2 class="text-base font-bold text-emerald-900">
+                            Accomplishment Report Approved
+                        </h2>
+
+                        <p class="mt-2 text-sm leading-6 text-emerald-800">
+                            The accomplishment report has been reviewed
+                            and approved by the Maintenance Manager.
+                        </p>
+
+                        <div class="mt-4 rounded-xl border border-amber-200
+                            bg-white p-4">
+
+                            <div class="flex items-start gap-3">
+
+                                <i class="fas fa-clock mt-0.5 text-amber-600"></i>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-slate-800">
+                                        Awaiting Customer Service Final Closure
+                                    </p>
+
+                                    <p class="mt-1 text-sm leading-6 text-slate-600">
+                                        Maintenance work is accomplished and
+                                        the report is approved.
+
+                                        Customer Service is responsible for
+                                        officially closing this complaint.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
                     </div>
 
-
-                    <form method="POST"
-                        action="{{ route('maintenance-manager.maintenance-reviews.close', $maintenanceReport) }}"
-                        onsubmit="return confirm('Finalize and close this complaint? This will complete the maintenance workflow.');"
-                        class="shrink-0">
-                        @csrf
-
-                        <button type="submit"
-                            class="inline-flex items-center justify-center
-                                   gap-2 px-5 py-3 rounded-xl
-                                   bg-slate-900 text-white
-                                   text-sm font-semibold
-                                   hover:bg-slate-800 transition">
-                            <i class="fas fa-lock"></i>
-                            Finalize & Close Complaint
-                        </button>
-
-                    </form>
-
                 </div>
 
             </div>
+
 
 
             {{-- Closed --}}
@@ -1129,7 +1151,9 @@
                         </h2>
 
                         <p class="text-sm text-slate-600 mt-1">
-                            The accomplishment report was approved and this complaint has been finalized by management.
+                            The accomplishment report was approved by the Maintenance Manager, and the complaint was
+                            officially closed by Customer Service.
+
                         </p>
 
                     </div>

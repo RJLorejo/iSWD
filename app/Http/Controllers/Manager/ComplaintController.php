@@ -6,17 +6,28 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Manager\AssignComplaintRequest;
 use App\Models\Complaint;
 use App\Models\User;
-use App\Notifications\PlumberComplaintAssigned;
 use App\Services\AI\AIService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use App\Services\MaintenanceSchedulingService;
+use Carbon\CarbonImmutable;
+use App\Services\MaintenancePlanningQueueService;
 
 class ComplaintController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'string', 'in:For Assignment,Verified,For Maintenance,Assigned,In Progress,Completed,Closed'],
+            'urgency' => ['nullable', 'string', 'in:High,Moderate,Low,not_assessed'],
+            'complaint_type_id' => ['nullable', 'integer', 'exists:complaint_categories,id'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
+
         $query = Complaint::query()
             ->with([
                 'consumer.address',
@@ -35,9 +46,14 @@ class ComplaintController extends Controller
                 'In Progress',
                 'Completed',
                 'Closed',
-            ]);
+            ])
+            ->where(fn($scope) => $this->applyMaintenanceOnlyScope($scope));
 
         $this->applySearch($query, $request);
+
+        if ($request->filled('complaint_type_id')) {
+            $query->where('complaints.complaint_category_id', $request->integer('complaint_type_id'));
+        }
 
         $allowedStatuses = [
             'For Assignment',
@@ -87,20 +103,26 @@ class ComplaintController extends Controller
             $this->forAssignmentBaseQuery()->count();
 
         $assignedCount = Complaint::query()
-            ->where('status', 'Assigned')
+            ->where('complaints.status', 'Assigned')
+            ->where(fn($scope) => $this->applyMaintenanceOnlyScope($scope))
             ->count();
 
         $inProgressCount = Complaint::query()
-            ->where('status', 'In Progress')
+            ->where('complaints.status', 'In Progress')
+            ->where(fn($scope) => $this->applyMaintenanceOnlyScope($scope))
             ->count();
 
         $completedCount = Complaint::query()
-            ->where('status', 'Completed')
+            ->where('complaints.status', 'Completed')
+            ->where(fn($scope) => $this->applyMaintenanceOnlyScope($scope))
             ->count();
 
         $closedCount = Complaint::query()
-            ->where('status', 'Closed')
+            ->where('complaints.status', 'Closed')
+            ->where(fn($scope) => $this->applyMaintenanceOnlyScope($scope))
             ->count();
+
+        $complaintTypes = \App\Models\ComplaintCategory::query()->orderBy('name')->get(['id', 'name']);
 
         return view(
             'maintenance-manager.complaints.index',
@@ -110,13 +132,23 @@ class ComplaintController extends Controller
                 'assignedCount',
                 'inProgressCount',
                 'completedCount',
-                'closedCount'
+                'closedCount',
+                'complaintTypes'
             )
         );
     }
 
     public function printReport(Request $request)
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'string', 'in:For Assignment,Verified,For Maintenance,Assigned,In Progress,Completed,Closed'],
+            'urgency' => ['nullable', 'string', 'in:High,Moderate,Low,not_assessed'],
+            'complaint_type_id' => ['nullable', 'integer', 'exists:complaint_categories,id'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
+
         $query = Complaint::query()
             ->with([
                 'consumer.address',
@@ -135,15 +167,13 @@ class ComplaintController extends Controller
                 'In Progress',
                 'Completed',
                 'Closed',
-            ]);
+            ])
+            ->where(fn($scope) => $this->applyMaintenanceOnlyScope($scope));
 
         $this->applySearch($query, $request);
 
-        if ($request->filled('division_id')) {
-            $query->where(
-                'division_id',
-                $request->division_id
-            );
+        if ($request->filled('complaint_type_id')) {
+            $query->where('complaints.complaint_category_id', $request->integer('complaint_type_id'));
         }
 
         $allowedStatuses = [
@@ -192,9 +222,13 @@ class ComplaintController extends Controller
             ->latest()
             ->get();
 
+        $selectedComplaintType = $request->filled('complaint_type_id')
+            ? \App\Models\ComplaintCategory::find($request->integer('complaint_type_id'))
+            : null;
+
         return view(
             'maintenance-manager.complaints.print-report',
-            compact('complaints')
+            compact('complaints', 'selectedComplaintType')
         );
     }
 
@@ -226,11 +260,11 @@ class ComplaintController extends Controller
                             ) use ($request) {
                                 $engineeringQuery
                                     ->where(
-                                        'status',
+                                        'complaints.status',
                                         'Verified'
                                     )
                                     ->whereDate(
-                                        'verified_at',
+                                        'complaints.verified_at',
                                         '>=',
                                         $request->date_from
                                     );
@@ -242,7 +276,7 @@ class ComplaintController extends Controller
                             ) use ($request) {
                                 $forwardedQuery
                                     ->where(
-                                        'status',
+                                        'complaints.status',
                                         'For Maintenance'
                                     )
                                     ->whereHas(
@@ -274,11 +308,11 @@ class ComplaintController extends Controller
                             ) use ($request) {
                                 $engineeringQuery
                                     ->where(
-                                        'status',
+                                        'complaints.status',
                                         'Verified'
                                     )
                                     ->whereDate(
-                                        'verified_at',
+                                        'complaints.verified_at',
                                         '<=',
                                         $request->date_to
                                     );
@@ -290,7 +324,7 @@ class ComplaintController extends Controller
                             ) use ($request) {
                                 $forwardedQuery
                                     ->where(
-                                        'status',
+                                        'complaints.status',
                                         'For Maintenance'
                                     )
                                     ->whereHas(
@@ -318,44 +352,61 @@ class ComplaintController extends Controller
         $totalForAssignment =
             (clone $baseQueue)->count();
 
-        $highUrgencyCount =
-            (clone $baseQueue)
-            ->whereHas(
-                'aiAnalysis',
-                function ($query) {
-                    $query->where(
-                        'urgency_level',
-                        'High'
-                    );
-                }
-            )
+
+        $highUrgencyCount = (clone $baseQueue)
+            ->whereHas('aiAnalysis', function ($query) {
+                $query->where(function ($urgency) {
+                    $urgency
+                        ->where('verified_urgency_level', 'High')
+                        ->orWhere(function ($fallback) {
+                            $fallback
+                                ->where(function ($verified) {
+                                    $verified
+                                        ->whereNull('verified_urgency_level')
+                                        ->orWhere('verified_urgency_level', '');
+                                })
+                                ->where('urgency_level', 'High');
+                        });
+                });
+            })
             ->count();
 
-        $moderateUrgencyCount =
-            (clone $baseQueue)
-            ->whereHas(
-                'aiAnalysis',
-                function ($query) {
-                    $query->where(
-                        'urgency_level',
-                        'Moderate'
-                    );
-                }
-            )
+        $moderateUrgencyCount = (clone $baseQueue)
+            ->whereHas('aiAnalysis', function ($query) {
+                $query->where(function ($urgency) {
+                    $urgency
+                        ->where('verified_urgency_level', 'Moderate')
+                        ->orWhere(function ($fallback) {
+                            $fallback
+                                ->where(function ($verified) {
+                                    $verified
+                                        ->whereNull('verified_urgency_level')
+                                        ->orWhere('verified_urgency_level', '');
+                                })
+                                ->where('urgency_level', 'Moderate');
+                        });
+                });
+            })
             ->count();
 
-        $lowUrgencyCount =
-            (clone $baseQueue)
-            ->whereHas(
-                'aiAnalysis',
-                function ($query) {
-                    $query->where(
-                        'urgency_level',
-                        'Low'
-                    );
-                }
-            )
+        $lowUrgencyCount = (clone $baseQueue)
+            ->whereHas('aiAnalysis', function ($query) {
+                $query->where(function ($urgency) {
+                    $urgency
+                        ->where('verified_urgency_level', 'Low')
+                        ->orWhere(function ($fallback) {
+                            $fallback
+                                ->where(function ($verified) {
+                                    $verified
+                                        ->whereNull('verified_urgency_level')
+                                        ->orWhere('verified_urgency_level', '');
+                                })
+                                ->where('urgency_level', 'Low');
+                        });
+                });
+            })
             ->count();
+
 
         $complaints = $query
             ->leftJoin(
@@ -365,14 +416,19 @@ class ComplaintController extends Controller
                 'complaint_ai_analyses.complaint_id'
             )
             ->select('complaints.*')
+
             ->orderByRaw("
-                CASE complaint_ai_analyses.urgency_level
-                    WHEN 'High' THEN 1
-                    WHEN 'Moderate' THEN 2
-                    WHEN 'Low' THEN 3
-                    ELSE 4
-                END
-            ")
+    CASE COALESCE(
+        NULLIF(complaint_ai_analyses.verified_urgency_level, ''),
+        NULLIF(complaint_ai_analyses.urgency_level, '')
+    )
+        WHEN 'High' THEN 1
+        WHEN 'Moderate' THEN 2
+        WHEN 'Low' THEN 3
+        ELSE 4
+    END
+")
+
             ->orderByRaw("
                 CASE
                     WHEN complaints.status = 'For Maintenance'
@@ -400,9 +456,79 @@ class ComplaintController extends Controller
     }
 
     public function show(
+        Request $request,
         Complaint $complaint,
         AIService $aiService
     ) {
+        /*
+    |--------------------------------------------------------------------------
+    | Context-aware return navigation
+    |--------------------------------------------------------------------------
+    */
+
+        $source = $request->query('source', 'complaints');
+
+        $backUrl = route('maintenance-manager.complaints.index');
+        $backLabel = 'Back';
+
+        if ($source === 'for-assignment') {
+
+            $validated = $request->validate([
+                'page' => ['nullable', 'integer', 'min:1'],
+                'search' => ['nullable', 'string', 'max:255'],
+                'urgency' => ['nullable', 'string', 'max:100'],
+                'date_from' => ['nullable', 'date_format:Y-m-d'],
+                'date_to' => ['nullable', 'date_format:Y-m-d'],
+            ]);
+
+            $backUrl = route(
+                'maintenance-manager.complaints.for-assignment',
+                $validated
+            );
+
+            $backLabel = 'Back to For Assignment';
+        } elseif ($source === 'schedule') {
+
+            $validated = $request->validate([
+                'date' => ['nullable', 'date_format:Y-m-d'],
+                'section' => [
+                    'nullable',
+                    'in:today,scheduled,ready,backlog',
+                ],
+            ]);
+
+            $parameters = [];
+
+            if (!empty($validated['date'])) {
+                $parameters['date'] = $validated['date'];
+            }
+
+            $section = $validated['section'] ?? 'scheduled';
+
+            $backUrl = route(
+                'maintenance-manager.schedules.index',
+                $parameters
+            ) . '#' . $section;
+
+            $backLabel = 'Back to Daily Maintenance Planning';
+        } else {
+
+            $validated = $request->validate([
+                'page' => ['nullable', 'integer', 'min:1'],
+                'search' => ['nullable', 'string', 'max:255'],
+                'status' => ['nullable', 'string', 'max:100'],
+                'urgency' => ['nullable', 'string', 'max:100'],
+                'date_from' => ['nullable', 'date_format:Y-m-d'],
+                'date_to' => ['nullable', 'date_format:Y-m-d'],
+            ]);
+
+            $backUrl = route(
+                'maintenance-manager.complaints.index',
+                $validated
+            );
+        }
+
+
         $complaint->load([
             'consumer.address',
             'division',
@@ -418,16 +544,36 @@ class ComplaintController extends Controller
             'commercialResolution.forwarder',
         ]);
 
+        $workOrders = \App\Models\MaintenanceWorkOrder::query()
+            ->with([
+                'schedule',
+                'technicians',
+            ])
+            ->where('complaint_id', $complaint->id)
+            ->orderBy('visit_number')
+            ->orderBy('id')
+            ->get();
+
+        $workOrderIds = $workOrders->pluck('id');
+
+        $plumberReplacementHistories = \App\Models\MaintenanceScheduleHistory::query()
+            ->with('performer')
+            ->whereIn('maintenance_work_order_id', $workOrderIds)
+            ->where('action', 'Plumber Replaced')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('maintenance_work_order_id');
+
+
         $isEngineering =
             $this->isEngineering($complaint);
 
-        $canAssign = (
-            (
-                $isEngineering &&
-                $complaint->status === 'Verified'
-            ) ||
-            $complaint->status === 'For Maintenance'
-        ) && $complaint->technicians->isEmpty();
+
+        $canAssign = app(MaintenancePlanningQueueService::class)
+            ->unassigned()
+            ->whereKey($complaint->id)
+            ->exists();
+
 
         $technicians = collect();
 
@@ -471,7 +617,11 @@ class ComplaintController extends Controller
                 'plumberRecommendations',
                 'plumberRecommendationError',
                 'isEngineering',
-                'canAssign'
+                'canAssign',
+                'backUrl',
+                'backLabel',
+                'workOrders',
+                'plumberReplacementHistories'
             )
         );
     }
@@ -480,204 +630,12 @@ class ComplaintController extends Controller
         AssignComplaintRequest $request,
         Complaint $complaint
     ) {
-        $complaint->loadMissing([
-            'division',
-            'technicians',
-            'commercialResolution',
-        ]);
-
-        $isEngineering =
-            $this->isEngineering($complaint);
-
-        $isDirectEngineeringAssignment =
-            $isEngineering &&
-            $complaint->status === 'Verified';
-
-        $isForwardedMaintenanceRequest =
-            $complaint->status === 'For Maintenance';
-
-        if (
-            !$isDirectEngineeringAssignment &&
-            !$isForwardedMaintenanceRequest
-        ) {
-            return redirect()
-                ->route(
-                    'maintenance-manager.complaints.show',
-                    $complaint
-                )
-                ->with(
-                    'error',
-                    'This complaint or service request is not currently available for maintenance assignment.'
-                );
-        }
-
-        if ($complaint->technicians->isNotEmpty()) {
-            return back()->with(
-                'error',
-                'A maintenance team has already been assigned to this complaint or service request.'
-            );
-        }
-
-        if (
-            $isForwardedMaintenanceRequest &&
-            !$complaint
-                ->commercialResolution
-                ?->forwarded_to_maintenance_at
-        ) {
-            return back()->with(
-                'error',
-                'This service request does not have a valid Customer Service maintenance handoff.'
-            );
-        }
-
-        $technicianIds = collect(
-            $request->input(
-                'technician_ids',
-                []
-            )
-        )
-            ->map(
-                fn($id) => (int) $id
-            )
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($technicianIds->isEmpty()) {
-            return back()->with(
-                'error',
-                'Please select at least one maintenance technician.'
-            );
-        }
-
-        $technicians =
-            User::role('Maintenance Technician')
-            ->where('is_active', true)
-            ->whereIn(
-                'id',
-                $technicianIds
-            )
-            ->orderBy('first_name')
-            ->orderBy('last_name')
-            ->get();
-
-        if (
-            $technicians->count() !==
-            $technicianIds->count()
-        ) {
-            return back()->with(
-                'error',
-                'One or more selected technicians are invalid or inactive.'
-            );
-        }
-
-        DB::transaction(
-            function () use (
-                $complaint,
-                $technicians
-            ) {
-                $assignments = [];
-
-                $assignedAt = now();
-
-                foreach ($technicians as $technician) {
-                    $assignments[$technician->id] = [
-                        'status' => 'Assigned',
-                        'assigned_at' => $assignedAt,
-                        'started_at' => null,
-                        'completed_at' => null,
-                    ];
-                }
-
-                $complaint
-                    ->technicians()
-                    ->sync($assignments);
-
-                $complaint->update([
-                    'status' => 'Assigned',
-                    'completed_at' => null,
-                ]);
-            }
-        );
-
-        $complaint->refresh();
-
-        $complaint->loadMissing([
-            'division',
-            'category',
-            'aiAnalysis',
-        ]);
-
-        $emailsSent = 0;
-        $emailsFailed = 0;
-
-        foreach ($technicians as $technician) {
-
-            if (!$technician->email) {
-                continue;
-            }
-
-            try {
-
-                $technician->notify(
-                    new PlumberComplaintAssigned(
-                        $complaint
-                    )
-                );
-
-                $emailsSent++;
-            } catch (Throwable $exception) {
-
-                $emailsFailed++;
-
-                Log::error(
-                    'Plumber assignment email failed.',
-                    [
-                        'complaint_id' =>
-                        $complaint->id,
-
-                        'complaint_no' =>
-                        $complaint->complaint_no,
-
-                        'technician_id' =>
-                        $technician->id,
-
-                        'email' =>
-                        $technician->email,
-
-                        'error' =>
-                        $exception->getMessage(),
-                    ]
-                );
-            }
-        }
-
-        $message =
-            $technicians->count() .
-            ' maintenance technician(s) successfully assigned.';
-
-        if ($emailsSent > 0) {
-            $message .=
-                ' ' .
-                $emailsSent .
-                ' plumber email notification(s) sent.';
-        }
-
-        if ($emailsFailed > 0) {
-            $message .=
-                ' ' .
-                $emailsFailed .
-                ' email notification(s) could not be sent.';
-        }
-
         return redirect()
-            ->route(
-                'maintenance-manager.complaints.show',
-                $complaint
-            )
+            ->route('maintenance-manager.schedules.index')
             ->with(
-                'success',
-                $message
+                'error',
+                'Technician assignment has moved to Daily Maintenance Planning. '
+                    . 'Please select the complaint and its work date there.'
             );
     }
 
@@ -704,117 +662,41 @@ class ComplaintController extends Controller
         );
     }
 
-    private function forAssignmentBaseQuery()
+
+    /**
+     * Manager complaint records include Engineering cases and Commercial
+     * cases explicitly forwarded to Maintenance by Customer Service.
+     * A commercial complaint that remains within Commercial Services is
+     * excluded, regardless of its status.
+     */
+    private function applyMaintenanceOnlyScope($query): void
     {
-        return Complaint::query()
-            ->whereDoesntHave('technicians')
-            ->where(
-                function ($query) {
-                    $query
-                        ->where(
-                            function (
-                                $engineeringQuery
-                            ) {
-                                $engineeringQuery
-                                    ->where(
-                                        'status',
-                                        'Verified'
-                                    )
-                                    ->whereHas(
-                                        'division',
-                                        function (
-                                            $divisionQuery
-                                        ) {
-                                            $divisionQuery
-                                                ->whereRaw(
-                                                    'LOWER(TRIM(name)) LIKE ?',
-                                                    ['%engineering%']
-                                                );
-                                        }
-                                    );
-                            }
-                        )
-                        ->orWhere(
-                            function (
-                                $forwardedQuery
-                            ) {
-                                $forwardedQuery
-                                    ->where(
-                                        'status',
-                                        'For Maintenance'
-                                    )
-                                    ->whereHas(
-                                        'commercialResolution',
-                                        function (
-                                            $resolutionQuery
-                                        ) {
-                                            $resolutionQuery
-                                                ->whereNotNull(
-                                                    'forwarded_to_maintenance_at'
-                                                );
-                                        }
-                                    );
-                            }
-                        );
-                }
-            );
+        $query->where(function ($eligible) {
+            $eligible->whereHas('division', function ($division) {
+                $division->whereRaw('LOWER(name) LIKE ?', ['%engineering%']);
+            })->orWhere(function ($forwarded) {
+                $forwarded->whereHas('division', function ($division) {
+                    $division->whereRaw('LOWER(name) LIKE ?', ['%commercial%']);
+                })->whereHas('commercialResolution', function ($resolution) {
+                    $resolution->whereNotNull('forwarded_to_maintenance_at');
+                });
+            });
+        });
     }
 
-    private function applyForAssignmentScope(
-        $query
-    ): void {
-        $query
-            ->whereDoesntHave('technicians')
-            ->where(
-                function ($scopeQuery) {
-                    $scopeQuery
-                        ->where(
-                            function (
-                                $engineeringQuery
-                            ) {
-                                $engineeringQuery
-                                    ->where(
-                                        'status',
-                                        'Verified'
-                                    )
-                                    ->whereHas(
-                                        'division',
-                                        function (
-                                            $divisionQuery
-                                        ) {
-                                            $divisionQuery
-                                                ->whereRaw(
-                                                    'LOWER(TRIM(name)) LIKE ?',
-                                                    ['%engineering%']
-                                                );
-                                        }
-                                    );
-                            }
-                        )
-                        ->orWhere(
-                            function (
-                                $forwardedQuery
-                            ) {
-                                $forwardedQuery
-                                    ->where(
-                                        'status',
-                                        'For Maintenance'
-                                    )
-                                    ->whereHas(
-                                        'commercialResolution',
-                                        function (
-                                            $resolutionQuery
-                                        ) {
-                                            $resolutionQuery
-                                                ->whereNotNull(
-                                                    'forwarded_to_maintenance_at'
-                                                );
-                                        }
-                                    );
-                            }
-                        );
-                }
-            );
+    private function forAssignmentBaseQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return app(MaintenancePlanningQueueService::class)
+            ->unassigned();
+    }
+
+
+    private function applyForAssignmentScope($query): void
+    {
+        $eligibleIds = $this->forAssignmentBaseQuery()
+            ->select('complaints.id');
+
+        $query->whereIn('complaints.id', $eligibleIds);
     }
 
     private function applySearch(
@@ -918,6 +800,7 @@ class ComplaintController extends Controller
         );
     }
 
+
     private function applyUrgencyFilter(
         $query,
         Request $request
@@ -926,60 +809,57 @@ class ComplaintController extends Controller
             return;
         }
 
-        $urgency = $request->urgency;
+        $urgency = $request->input('urgency');
 
-        if (
-            in_array(
-                $urgency,
-                [
-                    'High',
-                    'Moderate',
-                    'Low',
-                ],
-                true
-            )
-        ) {
-            $query->whereHas(
-                'aiAnalysis',
-                function (
-                    $aiQuery
-                ) use ($urgency) {
-                    $aiQuery->where(
-                        'urgency_level',
+        if (in_array($urgency, ['High', 'Moderate', 'Low'], true)) {
+            $query->whereHas('aiAnalysis', function ($aiQuery) use ($urgency) {
+                $aiQuery->where(function ($effectiveUrgency) use ($urgency) {
+                    // Use the urgency confirmed by Customer Service first.
+                    $effectiveUrgency->where(
+                        'verified_urgency_level',
                         $urgency
-                    );
-                }
-            );
+                    )
+
+                        // Otherwise, fall back to the original AI prediction.
+                        ->orWhere(function ($aiFallback) use ($urgency) {
+                            $aiFallback
+                                ->where(function ($verified) {
+                                    $verified
+                                        ->whereNull('verified_urgency_level')
+                                        ->orWhere('verified_urgency_level', '');
+                                })
+                                ->where('urgency_level', $urgency);
+                        });
+                });
+            });
 
             return;
         }
 
         if ($urgency === 'not_assessed') {
-            $query->where(
-                function ($urgencyQuery) {
-                    $urgencyQuery
-                        ->whereDoesntHave(
-                            'aiAnalysis'
-                        )
-                        ->orWhereHas(
-                            'aiAnalysis',
-                            function (
-                                $aiQuery
-                            ) {
-                                $aiQuery
-                                    ->whereNull(
-                                        'urgency_level'
-                                    )
-                                    ->orWhere(
-                                        'urgency_level',
-                                        ''
-                                    );
-                            }
-                        );
-                }
-            );
+            $query->where(function ($scope) {
+                $scope
+                    ->whereDoesntHave('aiAnalysis')
+                    ->orWhereHas('aiAnalysis', function ($aiQuery) {
+                        $aiQuery->where(function ($effectiveUrgency) {
+                            // Not assessed only when both values are empty.
+                            $effectiveUrgency
+                                ->where(function ($verified) {
+                                    $verified
+                                        ->whereNull('verified_urgency_level')
+                                        ->orWhere('verified_urgency_level', '');
+                                })
+                                ->where(function ($ai) {
+                                    $ai
+                                        ->whereNull('urgency_level')
+                                        ->orWhere('urgency_level', '');
+                                });
+                        });
+                    });
+            });
         }
     }
+
 
     private function isEngineering(
         Complaint $complaint

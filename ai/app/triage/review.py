@@ -1,455 +1,251 @@
+
 class ReviewAnalyzer:
+    """
+    Recommends human verification and asks targeted follow-up questions.
+
+    This component does not approve, reject, or finalize a complaint.
+    Customer Service remains responsible for the final decision.
+    """
 
     def analyze(
         self,
         classification: dict,
         signals: dict,
-    ):
+    ) -> dict:
+        classification = classification or {}
+        signals = signals or {}
+
         reasons = []
         verification_questions = []
 
-        complaint_type = classification.get(
-            "complaint_type"
-        )
+        complaint_type = classification.get("complaint_type")
+        confidence_level = classification.get("confidence_level", "Low")
+        ambiguous = bool(classification.get("ambiguous", False))
 
-        confidence_level = classification.get(
-            "confidence_level",
-            "Low",
-        )
-
-        ambiguous = classification.get(
-            "ambiguous",
-            False,
-        )
-
-        classifier_review_reason = (
-            classification.get(
-                "review_reason"
-            )
-        )
+        classifier_review_reason = classification.get("review_reason")
 
         if classifier_review_reason:
+            reasons.append(str(classifier_review_reason))
+
+        if ambiguous:
             reasons.append(
-                classifier_review_reason
+                "The complaint may fit more than one complaint type. "
+                "Customer Service should verify the suggested category."
             )
+
+        if str(confidence_level).lower() == "low":
+            reasons.append(
+                "The classifier reports low confidence in the suggested category."
+            )
+
+        # A category prediction is not enough to verify the physical condition.
+        if complaint_type in {
+            "Mainline Leakage",
+            "Service Connection Leakage",
+            "Meter / Meter Stand Leakage",
+        }:
+            if signals.get("possible_leakage"):
+                verification_questions.extend([
+                    "Where exactly is the reported leak located?",
+                    "Which pipe, connection, meter, or fitting appears to be affected?",
+                    "Is water continuously flowing from the reported location?",
+                ])
+
+            if complaint_type == "Mainline Leakage":
+                verification_questions.append(
+                    "What evidence indicates that the affected pipe is a "
+                    "distribution main rather than a service connection?"
+                )
+
+            elif complaint_type == "Service Connection Leakage":
+                verification_questions.append(
+                    "Does the affected pipe serve an individual property, "
+                    "and can its location be identified?"
+                )
+
+            elif complaint_type == "Meter / Meter Stand Leakage":
+                verification_questions.append(
+                    "Is the water coming directly from the meter, meter stand, "
+                    "valve, or a nearby fitting?"
+                )
+
+        # Potentially serious leakage or public-area impact.
+        if signals.get("possible_large_leak"):
+            reasons.append(
+                "The complaint contains possible significant-leak indicators. "
+                "The actual severity and location need verification."
+            )
+            verification_questions.extend([
+                "Is water flowing forcefully or in a large volume?",
+                "Is the leak on a road or another public-access area?",
+                "Are multiple households or a wider area affected?",
+            ])
+
+        if signals.get("possible_flooding"):
+            reasons.append(
+                "Possible flooding or overflow was reported. Verify the "
+                "condition and assess whether prompt field attention is needed."
+            )
+            verification_questions.extend([
+                "Is flooding or overflow currently occurring?",
+                "Is water affecting a road, property, or another public area?",
+            ])
 
         if (
-            ambiguous
-            and not classifier_review_reason
+            signals.get("possible_leakage")
+            and signals.get("complete_service_loss")
         ):
             reasons.append(
-                "The complaint may fit more than one "
-                "complaint type and should be confirmed "
-                "by Customer Service."
+                "The complaint contains both possible leakage and complete "
+                "service-loss indicators. Confirm whether these refer to "
+                "the same incident."
             )
+            verification_questions.extend([
+                "Is any water currently coming from the consumer's taps?",
+                "Where is the reported leakage located?",
+                "Are nearby households experiencing the service interruption?",
+            ])
+
+        # Water-service availability.
+        if signals.get("complete_service_loss"):
+            verification_questions.extend([
+                "Is there no water at all, or is water still flowing weakly?",
+                "When did the interruption begin?",
+                "Are nearby households experiencing the same problem?",
+            ])
+
+        if signals.get("weak_water_supply"):
+            verification_questions.extend([
+                "Is water still flowing from the tap but at weak pressure?",
+                "Does the problem affect one property or nearby households too?",
+                "When did the low-pressure problem begin?",
+            ])
 
         if (
-            confidence_level == "Low"
-            and not classifier_review_reason
+            signals.get("multiple_households")
+            or signals.get("area_wide_impact")
         ):
-            reasons.append(
-                "The classifier has low confidence in "
-                "the suggested complaint type."
-            )
+            verification_questions.extend([
+                "Approximately how many households are affected?",
+                "Which streets, purok, or barangay are affected, if known?",
+            ])
 
+        # Water quality.
+        if signals.get("dirty_water"):
+            verification_questions.extend([
+                "What color or appearance does the water have?",
+                "Does the water contain visible sand, sediment, or particles?",
+                "When was the abnormal water first observed?",
+                "Are nearby households experiencing the same concern?",
+            ])
+
+        # Meter reading and consumption.
         if (
             signals.get("meter_issue")
-            and signals.get(
-                "abnormal_consumption"
-            )
-            and signals.get(
-                "reading_discrepancy"
-            )
+            and signals.get("abnormal_consumption")
+            and signals.get("reading_discrepancy")
         ):
             reasons.append(
-                "The complaint contains overlapping "
-                "meter, consumption, and meter-reading "
-                "indicators."
+                "The complaint contains overlapping meter, consumption, "
+                "and reading-discrepancy indicators."
             )
-
             verification_questions.extend([
-                (
-                    "What is the meter reading printed "
-                    "on the current bill?"
-                ),
-                (
-                    "What is the current reading shown "
-                    "on the physical water meter?"
-                ),
-                (
-                    "Is the current bill or recorded "
-                    "consumption significantly higher "
-                    "than previous months?"
-                ),
-                (
-                    "Has the consumer observed unusual "
-                    "behavior or a visible physical "
-                    "problem with the water meter?"
-                ),
+                "What reading appears on the current bill?",
+                "What reading is currently displayed on the physical meter?",
+                "How does the current consumption compare with previous bills?",
+                "Has the consumer noticed a physical meter problem or possible leakage?",
             ])
 
         elif (
             signals.get("meter_issue")
-            and signals.get(
-                "reading_discrepancy"
-            )
+            and signals.get("reading_discrepancy")
         ):
             verification_questions.extend([
-                (
-                    "What reading appears on the "
-                    "current bill?"
-                ),
-                (
-                    "What reading is currently displayed "
-                    "on the physical water meter?"
-                ),
-                (
-                    "Has the consumer noticed any "
-                    "physical problem with the meter?"
-                ),
+                "What reading appears on the current bill?",
+                "What reading is currently displayed on the physical meter?",
+                "Has the consumer noticed a physical problem with the meter?",
             ])
 
-        elif signals.get(
-            "abnormal_consumption"
-        ):
+        elif signals.get("reading_discrepancy"):
             verification_questions.extend([
-                (
-                    "Is the current bill or consumption "
-                    "significantly higher than the "
-                    "consumer's previous usage?"
-                ),
-                (
-                    "Has the consumer noticed any "
-                    "visible leakage in the property?"
-                ),
-                (
-                    "Does the water meter continue "
-                    "moving when all faucets and water "
-                    "fixtures are closed?"
-                ),
+                "What reading appears on the current bill?",
+                "What reading is currently displayed on the physical meter?",
             ])
 
-        if (
-            signals.get(
-                "complete_service_loss"
-            )
-            and signals.get(
-                "possible_leakage"
-            )
-        ):
-            reasons.append(
-                "The complaint reports both complete "
-                "water-service interruption and possible "
-                "leakage, which may indicate overlapping "
-                "Engineering concerns."
-            )
-
+        if signals.get("abnormal_consumption"):
             verification_questions.extend([
-                (
-                    "Is the consumer currently receiving "
-                    "any water?"
-                ),
-                (
-                    "Are nearby households experiencing "
-                    "the same problem?"
-                ),
-                (
-                    "Where exactly is the reported water "
-                    "leakage located?"
-                ),
-                (
-                    "Is water continuously flowing from "
-                    "the reported location?"
-                ),
+                "How does the current bill compare with previous billing periods?",
+                "Has the consumer noticed a change in water usage or possible leakage?",
             ])
 
-        elif signals.get(
-            "complete_service_loss"
-        ):
+        # Meter-related category checks.
+        if complaint_type == "Damaged / Detached Service Connection":
             verification_questions.extend([
-                (
-                    "Is the consumer completely without "
-                    "water or only experiencing weak "
-                    "water pressure?"
-                ),
-                (
-                    "Are nearby households experiencing "
-                    "the same problem?"
-                ),
-                (
-                    "When did the water-service "
-                    "interruption begin?"
-                ),
+                "What part of the service connection appears damaged or detached?",
+                "Is there visible leakage from that connection?",
             ])
 
-        if (
-            signals.get("weak_water_supply")
-            and not signals.get(
-                "complete_service_loss"
-            )
-        ):
+        if complaint_type == "Damaged / Detached Water Meter":
             verification_questions.extend([
-                (
-                    "Is water still flowing from the "
-                    "faucet but at weak pressure?"
-                ),
-                (
-                    "Are nearby households also "
-                    "experiencing low water pressure?"
-                ),
-                (
-                    "When did the low-pressure problem "
-                    "begin?"
-                ),
+                "Is the meter physically damaged, loose, or detached?",
+                "Is there visible leakage around the meter?",
             ])
 
-        if signals.get(
-            "possible_large_leak"
-        ):
+        if complaint_type == "Malfunctioning Water Meter":
             verification_questions.extend([
-                (
-                    "Where exactly is the reported "
-                    "leakage located?"
-                ),
-                (
-                    "Is the leakage located on a road "
-                    "or other public area?"
-                ),
-                (
-                    "Is the water flow continuous or "
-                    "increasing?"
-                ),
-                (
-                    "Are several households or a wider "
-                    "area affected?"
-                ),
+                "Does the meter appear stopped, stuck, reversed, or otherwise abnormal?",
+                "Has the meter behavior been checked by authorized personnel?",
             ])
 
-        if signals.get(
-            "multiple_households"
-        ):
+        if complaint_type == "Erroneous Meter Reading":
             verification_questions.extend([
-                (
-                    "Approximately how many nearby "
-                    "households are experiencing the "
-                    "same water-service problem?"
-                ),
-                (
-                    "Does the concern appear to affect "
-                    "only one property or a wider area?"
-                ),
+                "What reading appears on the current bill?",
+                "What reading is currently shown on the physical meter?",
             ])
 
-        if signals.get(
-            "dirty_water"
-        ):
+        if complaint_type == "High / Unusual Consumption":
             verification_questions.extend([
-                (
-                    "What color or appearance does the "
-                    "water have?"
-                ),
-                (
-                    "Does the water contain visible "
-                    "sand, sediment, or other particles?"
-                ),
-                (
-                    "When was the dirty water first "
-                    "observed?"
-                ),
-                (
-                    "Are nearby households experiencing "
-                    "the same water-quality concern?"
-                ),
+                "How does the current consumption compare with previous billing periods?",
+                "Has water usage changed, or is a possible leak suspected?",
             ])
 
-        if signals.get(
-            "classification_request"
-        ):
+        # Account and connection requests.
+        if signals.get("classification_request"):
             verification_questions.extend([
-                (
-                    "What is the consumer's current "
-                    "account classification?"
-                ),
-                (
-                    "What classification is the "
-                    "consumer requesting?"
-                ),
-                (
-                    "What information supports the "
-                    "requested classification change?"
-                ),
+                "What is the consumer's current account classification?",
+                "What classification is the consumer requesting?",
+                "What information supports the requested change?",
             ])
 
-        if (
-            complaint_type
-            == "Damaged / Detached Service Connection"
-        ):
+        if complaint_type == "Re-open Sealed Connection":
             verification_questions.extend([
-                (
-                    "What part of the service connection "
-                    "appears damaged or detached?"
-                ),
-                (
-                    "Is water currently leaking from "
-                    "the damaged connection?"
-                ),
+                "Is the service connection currently sealed?",
+                "Is the consumer requesting reconnection, and what is the reason?",
+                "Have applicable SWD requirements for reconnection been checked?",
             ])
 
-        if (
-            complaint_type
-            == "Damaged / Detached Water Meter"
-        ):
+        if complaint_type == "Temporary Disconnection":
             verification_questions.extend([
-                (
-                    "Is the water meter physically "
-                    "damaged, loose, or detached?"
-                ),
-                (
-                    "Is there visible leakage around "
-                    "the water meter?"
-                ),
+                "Is the consumer requesting a temporary disconnection?",
+                "What is the reason and intended duration of the request?",
             ])
 
-        if (
-            complaint_type
-            == "Meter / Meter Stand Leakage"
-        ):
+        if complaint_type == "Sealed Water Meter Concern":
             verification_questions.extend([
-                (
-                    "Is the leakage coming directly "
-                    "from the meter, meter stand, or "
-                    "nearby fitting?"
-                ),
-                (
-                    "Is the leakage continuous even "
-                    "when water is not being used?"
-                ),
+                "What concern does the consumer have about the sealed meter?",
+                "Is the meter currently sealed, and is the seal visibly damaged?",
             ])
 
-        if (
-            complaint_type
-            == "Malfunctioning Water Meter"
-        ):
-            verification_questions.extend([
-                (
-                    "Does the meter continue moving "
-                    "when all faucets and fixtures are "
-                    "closed?"
-                ),
-                (
-                    "Is the meter stopped, reversed, "
-                    "stuck, or behaving unusually?"
-                ),
-            ])
-
-        if (
-            complaint_type
-            == "Erroneous Meter Reading"
-        ):
-            verification_questions.extend([
-                (
-                    "What reading appears on the "
-                    "consumer's current bill?"
-                ),
-                (
-                    "What reading is currently shown "
-                    "on the physical water meter?"
-                ),
-            ])
-
-        if (
-            complaint_type
-            == "High / Unusual Consumption"
-        ):
-            verification_questions.extend([
-                (
-                    "How does the current consumption "
-                    "compare with the consumer's "
-                    "previous billing periods?"
-                ),
-                (
-                    "Has there been any significant "
-                    "change in water usage?"
-                ),
-            ])
-
-        if (
-            complaint_type
-            == "Re-open Sealed Connection"
-        ):
-            verification_questions.extend([
-                (
-                    "Is the service connection "
-                    "currently sealed?"
-                ),
-                (
-                    "What is the reason for requesting "
-                    "the connection to be reopened?"
-                ),
-            ])
-
-        if (
-            complaint_type
-            == "Temporary Disconnection"
-        ):
-            verification_questions.extend([
-                (
-                    "What is the reason for requesting "
-                    "temporary disconnection?"
-                ),
-                (
-                    "Has the consumer confirmed that "
-                    "the request is temporary?"
-                ),
-            ])
-
-        if (
-            complaint_type
-            == "Sealed Water Meter Concern"
-        ):
-            verification_questions.extend([
-                (
-                    "What concern does the consumer "
-                    "have regarding the sealed water "
-                    "meter?"
-                ),
-                (
-                    "Is the meter currently sealed or "
-                    "has the seal been damaged or "
-                    "disturbed?"
-                ),
-            ])
-
-        verification_questions = list(
-            dict.fromkeys(
-                verification_questions
-            )
-        )
-
-        reasons = list(
-            dict.fromkeys(
-                reasons
-            )
-        )
+        # Retain order while removing duplicate questions and reasons.
+        verification_questions = list(dict.fromkeys(verification_questions))
+        reasons = list(dict.fromkeys(reasons))
 
         return {
             "required": True,
-
-            "recommended_complaint_type":
-                complaint_type,
-
-            "confidence_level":
-                confidence_level,
-
-            "ambiguous":
-                ambiguous,
-
-            "reasons":
-                reasons,
-
-            "verification_questions":
-                verification_questions,
-
-            "human_confirmation_required":
-                True,
+            "recommended_complaint_type": complaint_type,
+            "confidence_level": confidence_level,
+            "ambiguous": ambiguous,
+            "reasons": reasons,
+            "verification_questions": verification_questions,
+            "human_confirmation_required": True,
         }

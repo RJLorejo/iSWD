@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ComplaintAiAnalysis extends Model
 {
     protected $fillable = [
-
         'complaint_id',
 
         'predicted_category_id',
@@ -21,6 +20,10 @@ class ComplaintAiAnalysis extends Model
 
         'urgency_level',
         'urgency_score',
+
+        'verified_urgency_level',
+        'urgency_verified_by',
+        'urgency_verified_at',
 
         'signals',
         'evidence',
@@ -41,11 +44,8 @@ class ComplaintAiAnalysis extends Model
         'analyzed_at',
     ];
 
-
     protected $casts = [
-
         'confidence' => 'float',
-
         'confidence_gap' => 'float',
 
         'ambiguous' => 'boolean',
@@ -53,21 +53,19 @@ class ComplaintAiAnalysis extends Model
         'urgency_score' => 'integer',
 
         'signals' => 'array',
-
         'evidence' => 'array',
-
         'review_reasons' => 'array',
-
         'verification_questions' => 'array',
 
         'consumer_accepted' => 'boolean',
+
         'verified_at' => 'datetime',
+        'urgency_verified_at' => 'datetime',
 
         'raw_analysis' => 'array',
 
         'analyzed_at' => 'datetime',
     ];
-
 
     /*
     |--------------------------------------------------------------------------
@@ -77,11 +75,8 @@ class ComplaintAiAnalysis extends Model
 
     public function complaint(): BelongsTo
     {
-        return $this->belongsTo(
-            Complaint::class
-        );
+        return $this->belongsTo(Complaint::class);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -96,7 +91,6 @@ class ComplaintAiAnalysis extends Model
             'predicted_category_id'
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -120,7 +114,6 @@ class ComplaintAiAnalysis extends Model
         );
     }
 
-
     public function verifiedCategory(): BelongsTo
     {
         return $this->belongsTo(
@@ -129,12 +122,31 @@ class ComplaintAiAnalysis extends Model
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Category Verifier
+    |--------------------------------------------------------------------------
+    */
 
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(
             User::class,
             'verified_by'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Urgency Verifier
+    |--------------------------------------------------------------------------
+    */
+
+    public function urgencyVerifier(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'urgency_verified_by'
         );
     }
 }

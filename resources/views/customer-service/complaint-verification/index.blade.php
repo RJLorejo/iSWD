@@ -4,6 +4,24 @@
 
 @section('content')
 
+@if (session('success'))
+    <div role="alert"
+        class="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-800">
+
+        <i class="fas fa-circle-check mt-0.5 text-lg text-green-600"></i>
+
+        <div>
+            <p class="text-sm font-semibold">
+                Complaint Verified Successfully
+            </p>
+
+            <p class="mt-1 text-sm">
+                {{ session('success') }}
+            </p>
+        </div>
+    </div>
+@endif
+
     <div class="max-w-7xl mx-auto space-y-5">
 
         {{-- ========================================================= --}}
@@ -86,9 +104,7 @@
         <div class="bg-white rounded-2xl
                     border border-gray-200 shadow-sm">
 
-            <form method="GET"
-                action="{{ route('customer-service.complaint-verification.index') }}"
-                class="p-4 sm:p-5">
+            <form method="GET" action="{{ route('customer-service.complaint-verification.index') }}" class="p-4 sm:p-5">
 
                 <div
                     class="grid grid-cols-1
@@ -475,7 +491,10 @@
 
                                 <td class="px-5 py-4 text-center">
 
-                                    <a href="{{ route('customer-service.complaints.show', $complaint) }}"
+                                    <a href="{{ route('customer-service.complaints.show', [
+                                        'complaint' => $complaint,
+                                        'return_to' => 'verification',
+                                    ]) }}"
                                         title="Review Complaint"
                                         class="inline-flex w-9 h-9
                                                items-center justify-center
@@ -693,7 +712,10 @@
                             </span>
 
 
-                            <a href="{{ route('customer-service.complaints.show', $complaint) }}"
+                            <a href="{{ route('customer-service.complaints.show', [
+                                'complaint' => $complaint,
+                                'return_to' => 'verification',
+                            ]) }}"
                                 title="Review Complaint"
                                 class="inline-flex w-9 h-9
                                        items-center justify-center

@@ -2,14 +2,14 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use App\Models\Complaint;
-use App\Observers\ComplaintObserver;
 use App\Models\MaintenanceReport;
-use App\Observers\MaintenanceReportObserver;
 use App\Models\ServiceAnnouncement;
+use App\Observers\ComplaintObserver;
+use App\Observers\MaintenanceReportObserver;
+use App\Services\MailSettingsService;
 use Illuminate\Support\Facades\View;
-
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Register Model Observers
+        |--------------------------------------------------------------------------
+        */
+
         Complaint::observe(
             ComplaintObserver::class
         );
@@ -33,6 +39,32 @@ class AppServiceProvider extends ServiceProvider
         MaintenanceReport::observe(
             MaintenanceReportObserver::class
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Apply Database-Backed SMTP Settings
+        |--------------------------------------------------------------------------
+        |
+        | This applies the saved SMTP configuration so the application can
+        | use it for emails, including OTP verification and password resets.
+        |
+        */
+
+        try {
+            app(MailSettingsService::class)->apply();
+        } catch (\Throwable $exception) {
+            /*
+             * Keep the application running if the mail settings table
+             * has not been created yet or the database settings fail.
+             */
+            report($exception);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Consumer Announcement Navbar
+        |--------------------------------------------------------------------------
+        */
 
         View::composer(
             'consumer.layouts.navbar',
@@ -48,16 +80,16 @@ class AppServiceProvider extends ServiceProvider
                     if ($consumer) {
                         $newAnnouncementCount =
                             ServiceAnnouncement::published()
-                            ->whereDoesntHave(
-                                'reads',
-                                function ($query) use ($consumer) {
-                                    $query->where(
-                                        'consumer_id',
-                                        $consumer->id
-                                    );
-                                }
-                            )
-                            ->count();
+                                ->whereDoesntHave(
+                                    'reads',
+                                    function ($query) use ($consumer) {
+                                        $query->where(
+                                            'consumer_id',
+                                            $consumer->id
+                                        );
+                                    }
+                                )
+                                ->count();
                     }
                 }
 

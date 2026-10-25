@@ -249,4 +249,41 @@ class ServiceAnnouncementController extends Controller
             ],
         ]);
     }
+
+    public function print(Request $request)
+    {
+        $query = ServiceAnnouncement::query();
+
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%")
+                    ->orWhere(
+                        'affected_barangay',
+                        'like',
+                        "%{$search}%"
+                    );
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Fetch every matching record, not just one pagination page.
+        $announcements = $query
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view(
+            'customer-service.announcements.print',
+            compact('announcements')
+        );
+    }
 }

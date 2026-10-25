@@ -49,70 +49,84 @@
         @endif
 
 
-        {{-- Stats --}}
-        <div class="grid grid-cols-3 gap-2 sm:gap-4">
+        {{-- Clickable review status filter cards; preserve search and date range. --}}
+        @php
+            $selectedReviewStatus = request('status', 'Pending Review');
+            $reviewCards = [
+                [
+                    'label' => 'All Reports',
+                    'status' => 'All',
+                    'count' => $pendingCount + $returnedCount + $approvedCount,
+                    'icon' => 'fa-layer-group',
+                    'color' => 'sky',
+                    'description' => 'Every submitted report',
+                ],
+                [
+                    'label' => 'Pending Review',
+                    'status' => 'Pending Review',
+                    'count' => $pendingCount,
+                    'icon' => 'fa-clock',
+                    'color' => 'amber',
+                    'description' => 'Awaiting decision',
+                ],
+                [
+                    'label' => 'Returned',
+                    'status' => 'Returned',
+                    'count' => $returnedCount,
+                    'icon' => 'fa-rotate-left',
+                    'color' => 'rose',
+                    'description' => 'For correction',
+                ],
+                [
+                    'label' => 'Approved',
+                    'status' => 'Approved',
+                    'count' => $approvedCount,
+                    'icon' => 'fa-circle-check',
+                    'color' => 'emerald',
+                    'description' => 'Reviewed and approved',
+                ],
+            ];
+        @endphp
 
-            <div
-                class="bg-white rounded-xl sm:rounded-2xl
-                       border border-slate-200 shadow-sm
-                       p-3 sm:p-5">
-
-                <p class="text-[10px] sm:text-sm text-slate-500">
-                    Pending Review
-                </p>
-
-                <p class="text-xl sm:text-3xl font-bold text-amber-600 mt-1">
-                    {{ $pendingCount }}
-                </p>
-
-                <p class="hidden sm:block text-xs text-slate-400 mt-2">
-                    Waiting for review
-                </p>
-
-            </div>
-
-
-            <div
-                class="bg-white rounded-xl sm:rounded-2xl
-                       border border-slate-200 shadow-sm
-                       p-3 sm:p-5">
-
-                <p class="text-[10px] sm:text-sm text-slate-500">
-                    Returned
-                </p>
-
-                <p class="text-xl sm:text-3xl font-bold text-red-600 mt-1">
-                    {{ $returnedCount }}
-                </p>
-
-                <p class="hidden sm:block text-xs text-slate-400 mt-2">
-                    Awaiting correction
-                </p>
-
-            </div>
-
-
-            <div
-                class="bg-white rounded-xl sm:rounded-2xl
-                       border border-slate-200 shadow-sm
-                       p-3 sm:p-5">
-
-                <p class="text-[10px] sm:text-sm text-slate-500">
-                    Approved
-                </p>
-
-                <p class="text-xl sm:text-3xl font-bold text-green-600 mt-1">
-                    {{ $approvedCount }}
-                </p>
-
-                <p class="hidden sm:block text-xs text-slate-400 mt-2">
-                    Validated by management
-                </p>
-
-            </div>
-
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            @foreach ($reviewCards as $card)
+                @php
+                    $selected = $selectedReviewStatus === $card['status'];
+                    $cardUrl = route(
+                        'maintenance-manager.maintenance-reviews.index',
+                        array_merge(request()->except(['status', 'page']), ['status' => $card['status']]),
+                    );
+                    $activeClass = match ($card['color']) {
+                        'amber' => 'border-amber-400 bg-amber-50 ring-2 ring-amber-100',
+                        'rose' => 'border-rose-400 bg-rose-50 ring-2 ring-rose-100',
+                        'emerald' => 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-100',
+                        default => 'border-sky-400 bg-sky-50 ring-2 ring-sky-100',
+                    };
+                    $numberClass = match ($card['color']) {
+                        'amber' => 'text-amber-700',
+                        'rose' => 'text-rose-700',
+                        'emerald' => 'text-emerald-700',
+                        default => 'text-sky-700',
+                    };
+                @endphp
+                <a href="{{ $cardUrl }}" aria-current="{{ $selected ? 'page' : 'false' }}"
+                    class="group flex min-w-0 flex-col justify-between gap-3 rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 sm:p-5 {{ $selected ? $activeClass : 'border-slate-200 bg-white hover:border-sky-200' }}">
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-xs font-semibold leading-5 text-slate-600 sm:text-sm">{{ $card['label'] }}</span>
+                        <i class="fas {{ $card['icon'] }} text-slate-400" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-extrabold tabular-nums sm:text-3xl {{ $numberClass }}">
+                            {{ number_format($card['count']) }}</p>
+                        <p class="mt-1 hidden text-xs text-slate-500 sm:block">{{ $card['description'] }}</p>
+                    </div>
+                    @if ($selected)
+                        <span class="text-[11px] font-semibold text-slate-600"><i class="fas fa-check mr-1"></i>Current
+                            filter</span>
+                    @endif
+                </a>
+            @endforeach
         </div>
-
 
         {{-- Filters --}}
         <div class="bg-white rounded-2xl
@@ -123,7 +137,7 @@
                 <div
                     class="grid grid-cols-1
                            sm:grid-cols-2
-                           lg:grid-cols-[minmax(240px,1.5fr)_minmax(170px,0.8fr)_minmax(150px,0.7fr)_minmax(150px,0.7fr)_auto]
+                           lg:grid-cols-[minmax(260px,1.7fr)_minmax(150px,0.8fr)_minmax(150px,0.8fr)_auto]
                            gap-3">
 
                     <div>
@@ -153,38 +167,7 @@
                     </div>
 
 
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-500 mb-1.5">
-                            Review Status
-                        </label>
-
-                        <select name="status"
-                            class="w-full rounded-xl
-                                   border-slate-300 text-sm
-                                   focus:border-sky-500
-                                   focus:ring-sky-500">
-
-                            <option value="Pending Review" @selected(request('status', 'Pending Review') === 'Pending Review')>
-                                Pending Review
-                            </option>
-
-                            <option value="Returned" @selected(request('status') === 'Returned')>
-                                Returned
-                            </option>
-
-                            <option value="Approved" @selected(request('status') === 'Approved')>
-                                Approved
-                            </option>
-
-                            <option value="All" @selected(request('status') === 'All')>
-                                All
-                            </option>
-
-                        </select>
-
-                    </div>
-
+                    <input type="hidden" name="status" value="{{ $selectedReviewStatus }}">
 
                     <div>
 
@@ -244,6 +227,22 @@
 
         </div>
 
+
+
+        {{-- Print every matching report, not only the current page --}}
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div>
+                <p class="text-sm font-bold text-slate-900">Maintenance Accomplishment Register</p>
+                <p class="mt-1 text-xs text-slate-500">Print all submitted reports matching the current search, status, and
+                    date filters.</p>
+            </div>
+            <a href="{{ route('maintenance-manager.maintenance-reviews.print', request()->only(['search', 'status', 'from', 'to'])) }}"
+                target="_blank" rel="noopener noreferrer"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 sm:w-auto">
+                <i class="fas fa-print"></i> Print Report
+            </a>
+        </div>
 
         {{-- Reports --}}
         <div
@@ -330,7 +329,13 @@
                             @php
                                 $complaint = $report->complaint;
 
-                                $urgency = strtoupper(trim($complaint?->aiAnalysis?->urgency_level ?? ''));
+                                $urgency = strtoupper(
+                                    trim(
+                                        $complaint?->aiAnalysis?->verified_urgency_level ?:
+                                        $complaint?->aiAnalysis?->urgency_level ?:
+                                        '',
+                                    ),
+                                );
 
                                 $urgencyClasses = match ($urgency) {
                                     'HIGH' => 'bg-red-50 text-red-700 border-red-200',
@@ -501,7 +506,13 @@
                     @php
                         $complaint = $report->complaint;
 
-                        $urgency = strtoupper(trim($complaint?->aiAnalysis?->urgency_level ?? ''));
+                        $urgency = strtoupper(
+                            trim(
+                                $complaint?->aiAnalysis?->verified_urgency_level ?:
+                                $complaint?->aiAnalysis?->urgency_level ?:
+                                '',
+                            ),
+                        );
 
                         $urgencyClasses = match ($urgency) {
                             'HIGH' => 'bg-red-50 text-red-700 border-red-200',

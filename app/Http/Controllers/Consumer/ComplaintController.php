@@ -365,14 +365,6 @@ class ComplaintController extends Controller
             $validated['longitude'] = null;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Remove Photo Inputs From Complaint Data
-        |--------------------------------------------------------------------------
-        |
-        | Photos are now stored in complaint_photos, not complaints.photo.
-        |
-        */
 
         unset(
             $validated['photos'],
@@ -380,10 +372,47 @@ class ComplaintController extends Controller
         );
 
         /*
-        |--------------------------------------------------------------------------
-        | Create Complaint
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| Validate Complaint Description With AI
+|--------------------------------------------------------------------------
+|
+| This must run BEFORE Complaint::create().
+| Invalid descriptions must never be saved.
+|
+*/
+
+        $preflightAnalysis = null;
+
+        try {
+            $aiService = app(AIService::class);
+
+            $preflightAnalysis = $aiService->analyzeComplaint(
+                $validated['description']
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'description' =>
+                    'We could not validate your description because the AI service is unavailable. Please try again shortly.',
+                ]);
+        }
+
+        if (
+            data_get($preflightAnalysis, 'valid_complaint') !== true
+        ) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'description' => data_get(
+                        $preflightAnalysis,
+                        'message',
+                        'Please describe a valid water-service concern.'
+                    ),
+                ]);
+        }
 
         $complaint = Complaint::create($validated);
 
@@ -414,7 +443,7 @@ class ComplaintController extends Controller
             'ai_analysis_token'
         );
 
-        $analysis = null;
+        $analysis = $preflightAnalysis;
         $predictedCategoryId = null;
         $analyzedAt = now();
         $consumerUsedAiAssistance = false;
@@ -562,6 +591,44 @@ class ComplaintController extends Controller
             }
         }
 
+
+        /*
+|--------------------------------------------------------------------------
+| Match Predicted Type To Complaint Category
+|--------------------------------------------------------------------------
+*/
+
+        if (
+            is_array($analysis)
+            && !empty($analysis)
+            && $predictedCategoryId === null
+        ) {
+            $predictedTypeForMatching = trim(
+                (string) data_get(
+                    $analysis,
+                    'classification.complaint_type',
+                    ''
+                )
+            );
+
+            if ($predictedTypeForMatching !== '') {
+                $matchedCategory = ComplaintCategory::query()
+                    ->where('is_active', true)
+                    ->whereHas('division', function ($query) {
+                        $query->where('is_active', true);
+                    })
+                    ->whereRaw(
+                        'LOWER(TRIM(name)) = ?',
+                        [
+                            strtolower($predictedTypeForMatching),
+                        ]
+                    )
+                    ->first();
+
+                $predictedCategoryId = $matchedCategory?->id;
+            }
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Save AI Analysis
@@ -665,14 +732,14 @@ class ComplaintController extends Controller
                 'review_reasons' =>
                 data_get(
                     $analysis,
-                    'review\.reasons',
+                    'review.reasons',
                     []
                 ),
 
                 'verification_questions' =>
                 data_get(
                     $analysis,
-                    'review\.verification_questions',
+                    'review.verification_questions',
                     []
                 ),
 
@@ -886,6 +953,81 @@ class ComplaintController extends Controller
             $validated['remove_photos']
         );
 
+
+        /*
+|--------------------------------------------------------------------------
+| Reanalyze Changed Complaint Description Before Saving
+|--------------------------------------------------------------------------
+*/
+
+        $descriptionChanged = trim(
+            (string) $complaint->description
+        ) !== trim(
+            (string) $validated['description']
+        );
+
+        $freshAnalysis = null;
+        $freshPredictedCategoryId = null;
+        $freshAnalyzedAt = null;
+
+        if ($descriptionChanged) {
+            try {
+                $aiService = app(AIService::class);
+
+                $freshAnalysis = $aiService->analyzeComplaint(
+                    $validated['description']
+                );
+
+                if (
+                    data_get($freshAnalysis, 'valid_complaint') !== true
+                ) {
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'description' => data_get(
+                                $freshAnalysis,
+                                'message',
+                                'Please describe a valid water-service concern.'
+                            ),
+                        ]);
+                }
+
+                $predictedType = trim(
+                    (string) data_get(
+                        $freshAnalysis,
+                        'classification.complaint_type',
+                        ''
+                    )
+                );
+
+                if ($predictedType !== '') {
+                    $matchedCategory = ComplaintCategory::query()
+                        ->where('is_active', true)
+                        ->whereHas('division', function ($query) {
+                            $query->where('is_active', true);
+                        })
+                        ->whereRaw(
+                            'LOWER(TRIM(name)) = ?',
+                            [strtolower($predictedType)]
+                        )
+                        ->first();
+
+                    $freshPredictedCategoryId = $matchedCategory?->id;
+                }
+
+                $freshAnalyzedAt = now();
+            } catch (Throwable $exception) {
+                report($exception);
+
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'description' =>
+                        'We could not reanalyze your updated description because the AI service is unavailable. Your complaint was not updated. Please try again shortly.',
+                    ]);
+            }
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Update Complaint
@@ -936,215 +1078,135 @@ class ComplaintController extends Controller
             ]);
         }
 
+
         /*
-        |--------------------------------------------------------------------------
-        | Update AI Analysis
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| Update AI Analysis For Changed Description
+|--------------------------------------------------------------------------
+|
+| Always use the fresh server-side result when the description changes.
+| Do not depend on the optional browser AI analysis token.
+|
+*/
 
-        $analysisToken = $request->input(
-            'ai_analysis_token'
-        );
+        if (
+            $descriptionChanged
+            && is_array($freshAnalysis)
+            && !empty($freshAnalysis)
+        ) {
+            $predictedType = data_get(
+                $freshAnalysis,
+                'classification.complaint_type'
+            );
 
-        if ($analysisToken) {
-            $sessionKey =
-                "complaint_ai_analysis.{$analysisToken}";
+            $confidence = data_get(
+                $freshAnalysis,
+                'classification.confidence'
+            );
 
-            $storedAiAnalysis =
-                $request->session()->pull(
-                    $sessionKey
-                );
+            $confidenceLevel = data_get(
+                $freshAnalysis,
+                'classification.confidence_level'
+            );
 
-            if ($storedAiAnalysis) {
-                $sameConsumer =
-                    (int) data_get(
-                        $storedAiAnalysis,
-                        'consumer_id'
-                    )
-                    ===
-                    (int) $consumer->id;
+            $confidenceGap = data_get(
+                $freshAnalysis,
+                'classification.confidence_gap'
+            );
 
-                $currentDescriptionHash = hash(
-                    'sha256',
-                    trim($validated['description'])
-                );
+            $ambiguous = (bool) data_get(
+                $freshAnalysis,
+                'classification.ambiguous',
+                false
+            );
 
-                $storedDescriptionHash =
-                    (string) data_get(
-                        $storedAiAnalysis,
-                        'description_hash',
-                        ''
-                    );
+            $consumerAccepted = null;
 
-                $sameDescription =
-                    $storedDescriptionHash !== ''
-                    &&
-                    hash_equals(
-                        $storedDescriptionHash,
-                        $currentDescriptionHash
-                    );
+            if ($freshPredictedCategoryId !== null) {
+                $consumerAccepted =
+                    (int) $freshPredictedCategoryId
+                    === (int) $validated['complaint_category_id'];
+            }
 
-                if (
-                    $sameConsumer
-                    &&
-                    $sameDescription
-                ) {
-                    $analysis = data_get(
-                        $storedAiAnalysis,
-                        'analysis',
-                        []
-                    );
+            $aiAnalysisData = [
+                'predicted_category_id' =>
+                $freshPredictedCategoryId,
 
-                    $predictedCategoryId =
-                        data_get(
-                            $storedAiAnalysis,
-                            'predicted_category_id'
-                        );
+                'predicted_type' =>
+                $predictedType,
 
-                    $analyzedAt =
-                        data_get(
-                            $storedAiAnalysis,
-                            'analyzed_at'
-                        )
-                        ?? now();
+                'confidence' =>
+                $confidence,
 
-                    if (
-                        is_array($analysis)
-                        &&
-                        !empty($analysis)
-                    ) {
-                        $predictedType =
-                            data_get(
-                                $analysis,
-                                'classification.complaint_type'
-                            );
+                'confidence_level' =>
+                $confidenceLevel,
 
-                        $confidence =
-                            data_get(
-                                $analysis,
-                                'classification.confidence'
-                            );
+                'confidence_gap' =>
+                $confidenceGap,
 
-                        $confidenceLevel =
-                            data_get(
-                                $analysis,
-                                'classification.confidence_level'
-                            );
+                'ambiguous' =>
+                $ambiguous,
 
-                        $confidenceGap =
-                            data_get(
-                                $analysis,
-                                'classification.confidence_gap'
-                            );
+                'urgency_level' => data_get(
+                    $freshAnalysis,
+                    'urgency.level'
+                ),
 
-                        $ambiguous =
-                            (bool) data_get(
-                                $analysis,
-                                'classification.ambiguous',
-                                false
-                            );
+                'urgency_score' => data_get(
+                    $freshAnalysis,
+                    'urgency.score'
+                ),
 
-                        $consumerAccepted = null;
+                'signals' => data_get(
+                    $freshAnalysis,
+                    'operational_analysis.signals',
+                    []
+                ),
 
-                        if ($predictedCategoryId !== null) {
-                            $consumerAccepted =
-                                (int) $predictedCategoryId
-                                ===
-                                (int) $validated['complaint_category_id'];
-                        }
+                'evidence' => data_get(
+                    $freshAnalysis,
+                    'operational_analysis.evidence',
+                    []
+                ),
 
-                        $aiAnalysisData = [
-                            'predicted_category_id' =>
-                            $predictedCategoryId,
+                'review_reasons' => data_get(
+                    $freshAnalysis,
+                    'review.reasons',
+                    []
+                ),
 
-                            'predicted_type' =>
-                            $predictedType,
+                'verification_questions' => data_get(
+                    $freshAnalysis,
+                    'review.verification_questions',
+                    []
+                ),
 
-                            'confidence' =>
-                            $confidence,
+                'consumer_accepted' =>
+                $consumerAccepted,
 
-                            'confidence_level' =>
-                            $confidenceLevel,
+                'consumer_category_id' =>
+                $validated['complaint_category_id'],
 
-                            'confidence_gap' =>
-                            $confidenceGap,
+                'final_category_id' =>
+                $validated['complaint_category_id'],
 
-                            'ambiguous' =>
-                            $ambiguous,
+                'raw_analysis' =>
+                $freshAnalysis,
 
-                            'urgency_level' =>
-                            data_get(
-                                $analysis,
-                                'urgency.level'
-                            ),
+                'analyzed_at' =>
+                $freshAnalyzedAt,
+            ];
 
-                            'urgency_score' =>
-                            data_get(
-                                $analysis,
-                                'urgency.score'
-                            ),
+            // Reload the relationship so we use the current database record.
+            $existingAnalysis = $complaint->aiAnalysis()->first();
 
-                            'signals' =>
-                            data_get(
-                                $analysis,
-                                'operational_analysis.signals',
-                                []
-                            ),
-
-                            'evidence' =>
-                            data_get(
-                                $analysis,
-                                'operational_analysis.evidence',
-                                []
-                            ),
-
-                            'review_reasons' =>
-                            data_get(
-                                $analysis,
-                                'review\.reasons',
-                                []
-                            ),
-
-                            'verification_questions' =>
-                            data_get(
-                                $analysis,
-                                'review\.verification_questions',
-                                []
-                            ),
-
-                            'consumer_accepted' =>
-                            $consumerAccepted,
-
-                            'consumer_category_id' =>
-                            $validated['complaint_category_id'],
-
-                            'final_category_id' =>
-                            $validated['complaint_category_id'],
-
-                            'raw_analysis' =>
-                            $analysis,
-
-                            'analyzed_at' =>
-                            $analyzedAt,
-                        ];
-
-                        if ($complaint->aiAnalysis) {
-                            $complaint
-                                ->aiAnalysis
-                                ->update(
-                                    $aiAnalysisData
-                                );
-                        } else {
-                            $complaint
-                                ->aiAnalysis()
-                                ->create(
-                                    $aiAnalysisData
-                                );
-                        }
-                    }
-                }
+            if ($existingAnalysis) {
+                $existingAnalysis->update($aiAnalysisData);
+            } else {
+                $complaint->aiAnalysis()->create($aiAnalysisData);
             }
         }
+
 
         return redirect()
             ->route(
@@ -1170,7 +1232,7 @@ class ComplaintController extends Controller
             'description' => [
                 'required',
                 'string',
-                'min:10',
+                'min:1',
                 'max:5000',
             ],
         ]);
@@ -1185,6 +1247,62 @@ class ComplaintController extends Controller
             $analysis = $aiService->analyzeComplaint(
                 $validated['description']
             );
+
+
+            if (
+                data_get($analysis, 'valid_complaint') !== true
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'valid_complaint' => false,
+                    'status' => data_get(
+                        $analysis,
+                        'status',
+                        'invalid_input'
+                    ),
+                    'message' => data_get(
+                        $analysis,
+                        'message',
+                        'Please describe a valid water-service concern.'
+                    ),
+                    'matched_terms' => data_get(
+                        $analysis,
+                        'matched_terms',
+                        []
+                    ),
+                ], 422);
+            }
+
+
+            /*
+|--------------------------------------------------------------------------
+| Reject Invalid Complaint Descriptions
+|--------------------------------------------------------------------------
+*/
+
+            if (
+                data_get($analysis, 'valid_complaint') !== true
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'valid_complaint' => false,
+                    'status' => data_get(
+                        $analysis,
+                        'status',
+                        'invalid_input'
+                    ),
+                    'message' => data_get(
+                        $analysis,
+                        'message',
+                        'Please describe a valid water-service concern.'
+                    ),
+                    'matched_terms' => data_get(
+                        $analysis,
+                        'matched_terms',
+                        []
+                    ),
+                ], 422);
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -1365,11 +1483,128 @@ class ComplaintController extends Controller
             'maintenanceReport',
             'feedback',
             'commercialResolution',
+            'aiAnalysis',
         ]);
 
         return view(
             'consumer.complaints.show',
             compact('complaint')
         );
+    }
+
+    /**
+     * Return a change signature for the authenticated consumer's complaints.
+     * Used by the complaints index auto-refresh.
+     */
+    public function refreshIndexState(): JsonResponse
+    {
+        $consumer = $this->consumer();
+
+        $complaints = Complaint::query()
+            ->where('consumer_id', $consumer->id)
+            ->orderBy('id')
+            ->get([
+                'id',
+                'status',
+                'updated_at',
+            ]);
+
+        $signatureData = $complaints->map(function ($complaint) {
+            return [
+                'id' => $complaint->id,
+                'status' => $complaint->status,
+                'updated_at' => $complaint->updated_at?->toISOString(),
+            ];
+        });
+
+        return response()->json([
+            'signature' => hash(
+                'sha256',
+                $signatureData->toJson()
+            ),
+        ]);
+    }
+
+    /**
+     * Return a change signature for one complaint owned by the consumer.
+     * Used by the complaint details auto-refresh.
+     */
+
+    public function refreshShowState(Complaint $complaint): JsonResponse
+    {
+        $consumer = $this->consumer();
+
+        abort_unless(
+            (int) $complaint->consumer_id === (int) $consumer->id,
+            404
+        );
+
+        $complaint->refresh();
+
+        $complaint->load([
+            'maintenanceReport',
+            'feedback',
+            'commercialResolution',
+            'technicians',
+        ]);
+
+        $resolution = $complaint->commercialResolution;
+        $report = $complaint->maintenanceReport;
+        $feedback = $complaint->feedback;
+
+        $signatureData = [
+            'id' => $complaint->id,
+            'status' => $complaint->status,
+            'updated_at' => $complaint->updated_at?->toISOString(),
+            'verified_at' => $complaint->verified_at?->toISOString(),
+            'completed_at' => $complaint->completed_at?->toISOString(),
+            'closed_at' => $complaint->closed_at?->toISOString(),
+
+            'commercial_resolution' => [
+                'updated_at' => $resolution?->updated_at?->toISOString(),
+                'started_at' => $resolution?->started_at?->toISOString(),
+                'initial_processing_completed_at' =>
+                $resolution?->initial_processing_completed_at?->toISOString(),
+                'forwarded_to_maintenance_at' =>
+                $resolution?->forwarded_to_maintenance_at?->toISOString(),
+                'completed_at' => $resolution?->completed_at?->toISOString(),
+            ],
+
+            'maintenance_report' => [
+                'updated_at' => $report?->updated_at?->toISOString(),
+                'status' => $report?->status,
+            ],
+
+            'feedback' => [
+                'updated_at' => $feedback?->updated_at?->toISOString(),
+            ],
+
+            'technicians' => $complaint->technicians
+                ->map(function ($technician) {
+                    return [
+                        'id' => $technician->id,
+                        'assigned_at' => $technician->pivot?->assigned_at,
+                        'started_at' => $technician->pivot?->started_at,
+                        'completed_at' => $technician->pivot?->completed_at,
+                        'status' => $technician->pivot?->status,
+                    ];
+                })
+                ->sortBy('id')
+                ->values()
+                ->all(),
+        ];
+
+        return response()
+            ->json([
+                'signature' => hash(
+                    'sha256',
+                    json_encode(
+                        $signatureData,
+                        JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+                    )
+                ),
+            ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 }

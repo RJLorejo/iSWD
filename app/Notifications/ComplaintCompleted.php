@@ -4,16 +4,18 @@ namespace App\Notifications;
 
 use App\Models\Complaint;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ComplaintCompleted extends Notification
+class ComplaintCompleted extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(
         public Complaint $complaint
     ) {
+        $this->afterCommit();
     }
 
     public function via(object $notifiable): array
@@ -45,7 +47,7 @@ class ComplaintCompleted extends Notification
             ->subject(
                 'Complaint ' .
                 $this->complaint->complaint_no .
-                ' Has Been Completed'
+                ' - Officially Closed'
             )
             ->greeting(
                 'Hello ' .
@@ -53,7 +55,7 @@ class ComplaintCompleted extends Notification
                 ','
             )
             ->line(
-                'Your complaint with Sagay Water District has been completed.'
+                'Your complaint submitted to Sagay Water District has been officially resolved and closed by Customer Service.'
             )
             ->line(
                 'Complaint Number: ' .
@@ -68,20 +70,23 @@ class ComplaintCompleted extends Notification
                 $complaintType
             )
             ->line(
-                'Status: Completed'
+                'Final Status: Closed'
             );
 
         if ($isCommercial) {
             $mail->line(
-                'The findings and resolution from Customer Service are now available in your iSWD account.'
+                'Customer Service has finalized the resolution of your commercial service concern.'
             );
         } else {
             $mail->line(
-                'The completed service details for your Engineering Operation complaint are now available in your iSWD account.'
+                'The maintenance work has been accomplished, the accomplishment report has been reviewed, and Customer Service has finalized your complaint.'
             );
         }
 
         return $mail
+            ->line(
+                'You may review the complaint details and its final status through your iSWD Consumer Portal.'
+            )
             ->action(
                 'View My Complaint',
                 route(
@@ -100,14 +105,9 @@ class ComplaintCompleted extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'complaint_id' =>
-                $this->complaint->id,
-
-            'complaint_no' =>
-                $this->complaint->complaint_no,
-
-            'status' =>
-                $this->complaint->status,
+            'complaint_id' => $this->complaint->id,
+            'complaint_no' => $this->complaint->complaint_no,
+            'status' => $this->complaint->status,
         ];
     }
 }

@@ -38,6 +38,9 @@ COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+COPY docker/start-apache.sh /usr/local/bin/start-apache
+RUN chmod +x /usr/local/bin/start-apache
+CMD ["/usr/local/bin/start-apache"]
+
 
 

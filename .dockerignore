@@ -1,0 +1,14 @@
+﻿/.env
+/.env.*
+!/.env.example
+/.git
+/.github
+/vendor
+/node_modules
+/ai/.venv
+/.venv
+/venv
+**/__pycache__
+**/*.pyc
+/storage/logs/*
+/.phpunit.result.cache

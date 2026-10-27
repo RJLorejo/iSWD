@@ -160,6 +160,71 @@ class MaintenanceReviewController extends Controller
         );
     }
 
+
+    /** Print the full filtered register of submitted maintenance reports. */
+    public function printReport(Request $request)
+    {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'in:All,Pending Review,Returned,Approved'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+
+        $status = $filters['status'] ?? 'Pending Review';
+        $query = MaintenanceReport::query()
+            ->with([
+                'complaint.consumer',
+                'complaint.category',
+                'complaint.division',
+                'complaint.aiAnalysis',
+                'technician',
+                'reviewer',
+            ])
+            ->whereNotNull('submitted_at');
+
+        if ($status !== 'All') {
+            $query->where('review_status', $status);
+        }
+
+        $search = trim($filters['search'] ?? '');
+        if ($search !== '') {
+            $query->whereHas('complaint', function ($complaintQuery) use ($search) {
+                $complaintQuery->where(function ($q) use ($search) {
+                    $q->where('complaint_no', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('address', 'like', "%{$search}%")
+                        ->orWhereHas('category', fn ($category) =>
+                            $category->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('consumer', function ($consumer) use ($search) {
+                            $consumer->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('account_number', 'like', "%{$search}%");
+                        });
+                });
+            });
+        }
+
+        if (!empty($filters['from'])) {
+            $query->whereDate('submitted_at', '>=', $filters['from']);
+        }
+        if (!empty($filters['to'])) {
+            $query->whereDate('submitted_at', '<=', $filters['to']);
+        }
+
+        $reports = $query->orderByDesc('submitted_at')->get();
+        $counts = [
+            'total' => $reports->count(),
+            'pending' => $reports->where('review_status', 'Pending Review')->count(),
+            'returned' => $reports->where('review_status', 'Returned')->count(),
+            'approved' => $reports->where('review_status', 'Approved')->count(),
+        ];
+
+        return view('maintenance-manager.maintenance-reviews.print-report', compact(
+            'reports', 'counts', 'filters', 'status'
+        ));
+    }
+
     public function show(
         MaintenanceReport $maintenanceReport
     ) {
@@ -289,170 +354,104 @@ class MaintenanceReviewController extends Controller
         Request $request,
         MaintenanceReport $maintenanceReport
     ) {
-        $validated = $request->validate(
-            [
-                'review_remarks' => [
-                    'required',
-                    'string',
-                    'max:10000',
-                ],
+        $validated = $request->validate([
+            'review_remarks' => [
+                'required',
+                'string',
+                'max:10000',
             ],
-            [
-                'review_remarks.required' =>
-                'Please provide the corrections required.',
-            ]
-        );
-
-        $maintenanceReport->load([
-            'complaint.technicians',
+        ], [
+            'review_remarks.required' =>
+            'Please provide the corrections required.',
         ]);
 
-        if (!$maintenanceReport->submitted_at) {
-            return back()->with(
-                'error',
-                'This accomplishment report has not been submitted yet.'
-            );
-        }
-
-        if (!$maintenanceReport->complaint) {
-            return back()->with(
-                'error',
-                'The complaint associated with this accomplishment report could not be found.'
-            );
-        }
-
-        if (
-            $maintenanceReport->review_status ===
-            'Approved'
+        $result = DB::transaction(function () use (
+            $maintenanceReport,
+            $validated
         ) {
-            return back()->with(
-                'error',
-                'An approved accomplishment report cannot be returned for correction.'
-            );
-        }
+            // Lock the report so two requests cannot update it simultaneously.
+            $report = MaintenanceReport::query()
+                ->lockForUpdate()
+                ->findOrFail($maintenanceReport->id);
 
-        if (
-            $maintenanceReport->review_status !==
-            'Pending Review'
-        ) {
-            return back()->with(
-                'error',
-                'Only accomplishment reports pending review can be returned for correction.'
-            );
-        }
-
-        if (
-            $maintenanceReport->complaint->status !==
-            'Completed'
-        ) {
-            return back()->with(
-                'error',
-                'Only accomplished maintenance work can be returned for correction.'
-            );
-        }
-
-        DB::transaction(
-            function () use (
-                $maintenanceReport,
-                $validated
-            ) {
-                $maintenanceReport->update([
-                    'review_status' => 'Returned',
-                    'reviewed_by' => Auth::id(),
-                    'reviewed_at' => now(),
-                    'review_remarks' =>
-                    $validated['review_remarks'],
-                ]);
+            if (!$report->submitted_at) {
+                return 'not_submitted';
             }
-        );
+
+            // Repeated submissions are handled without modifying the report.
+            if ($report->review_status === 'Returned') {
+                return 'already_returned';
+            }
+
+            if ($report->review_status !== 'Pending Review') {
+                return 'invalid_status';
+            }
+
+            $complaint = $report->complaint;
+
+            if (!$complaint || $complaint->status !== 'Completed') {
+                return 'invalid_complaint';
+            }
+
+            $report->update([
+                'review_status' => 'Returned',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+                'review_remarks' => $validated['review_remarks'],
+            ]);
+
+            return 'returned';
+        });
+
+        if ($result === 'not_submitted') {
+            return redirect()
+                ->route('maintenance-manager.maintenance-reviews.index')
+                ->with('error', 'This accomplishment report has not been submitted yet.');
+        }
+
+        if ($result === 'already_returned') {
+            return redirect()
+                ->route('maintenance-manager.maintenance-reviews.show', $maintenanceReport)
+                ->with('success', 'This accomplishment report has already been returned for correction. No duplicate action was performed.');
+        }
+
+        if ($result !== 'returned') {
+            return redirect()
+                ->route('maintenance-manager.maintenance-reviews.show', $maintenanceReport)
+                ->with('error', 'This accomplishment report is no longer eligible for return.');
+        }
 
         $maintenanceReport->refresh();
 
         $maintenanceReport->load([
             'complaint.technicians',
-            'complaint.category',
-            'complaint.division',
         ]);
 
-        $technicians =
-            $maintenanceReport
-            ->complaint
-            ->technicians;
+        $technicians = $maintenanceReport->complaint?->technicians
+            ?? collect();
 
-        $emailsSent = 0;
-        $emailsFailed = 0;
-
-        foreach ($technicians as $technician) {
-
+        foreach ($technicians->unique('id') as $technician) {
             if (!$technician->email) {
                 continue;
             }
 
             try {
-
                 $technician->notify(
-                    new PlumberReportReturned(
-                        $maintenanceReport
-                    )
+                    new PlumberReportReturned($maintenanceReport)
                 );
-
-                $emailsSent++;
             } catch (\Throwable $exception) {
-
-                $emailsFailed++;
-
-                Log::error(
-                    'Returned accomplishment report email failed.',
-                    [
-                        'maintenance_report_id' =>
-                        $maintenanceReport->id,
-
-                        'complaint_id' =>
-                        $maintenanceReport->complaint_id,
-
-                        'complaint_no' =>
-                        $maintenanceReport
-                            ->complaint
-                            ?->complaint_no,
-
-                        'technician_id' =>
-                        $technician->id,
-
-                        'email' =>
-                        $technician->email,
-
-                        'error' =>
-                        $exception->getMessage(),
-                    ]
-                );
+                Log::error('Failed to queue returned report notification.', [
+                    'maintenance_report_id' => $maintenanceReport->id,
+                    'technician_id' => $technician->id,
+                    'error' => $exception->getMessage(),
+                ]);
             }
         }
-
-        $message =
-            'Accomplishment report returned to the maintenance team for correction.';
-
-        if ($emailsSent > 0) {
-            $message .=
-                ' ' .
-                $emailsSent .
-                ' plumber email notification(s) sent.';
-        }
-
-        if ($emailsFailed > 0) {
-            $message .=
-                ' ' .
-                $emailsFailed .
-                ' email notification(s) could not be sent.';
-        }
-
         return redirect()
-            ->route(
-                'maintenance-manager.maintenance-reviews.show',
-                $maintenanceReport
-            )
+            ->route('maintenance-manager.maintenance-reviews.show', $maintenanceReport)
             ->with(
                 'success',
-                $message
+                'Accomplishment report returned for correction successfully. The review decision has been saved.'
             );
     }
 

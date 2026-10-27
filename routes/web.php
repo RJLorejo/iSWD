@@ -1,17 +1,24 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Complaint;
+use App\Models\Consumer;
+use Illuminate\Http\Request;
 
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SearchController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ConsumerVerificationController;
-
+use App\Http\Controllers\Admin\AdminSystemReportController;
+use App\Http\Controllers\Admin\ComplaintController as AdminComplaintController;
+use App\Http\Controllers\Admin\MailSettingsController;
+use App\Http\Controllers\Admin\ConsumerFeedbackController as AdminConsumerFeedbackController;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\ConsumerController as AdminConsumerController;
 
 use App\Http\Controllers\CustomerService\DashboardController as CustomerServiceDashboard;
 use App\Http\Controllers\CustomerService\ComplaintController as CustomerServiceComplaintController;
@@ -21,17 +28,25 @@ use App\Http\Controllers\CustomerService\ComplaintVerificationController;
 use App\Http\Controllers\CustomerService\DivisionController;
 use App\Http\Controllers\CustomerService\ConsumerFeedbackController;
 use App\Http\Controllers\CustomerService\ServiceAnnouncementController as CustomerServiceAnnouncementController;
+use App\Http\Controllers\CustomerService\ReportsAnalyticsController;
+use App\Http\Controllers\CustomerService\FinalClosureController;
+use App\Http\Controllers\CustomerService\MaintenanceMonitoringController;
+use App\Http\Controllers\Admin\MaintenanceMonitoringController as AdminMaintenanceMonitoringController;
 
 
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
 use App\Http\Controllers\Manager\ComplaintController as ManagerComplaintController;
 use App\Http\Controllers\Manager\MaintenanceReviewController;
 use App\Http\Controllers\Manager\ServiceAreaController;
+use App\Http\Controllers\Manager\MaintenanceScheduleController;
+use App\Http\Controllers\Manager\SidebarCountController as ManagerSidebarCountController;
+
 
 
 use App\Http\Controllers\Technician\DashboardController as TechnicianDashboard;
 use App\Http\Controllers\Technician\ComplaintController as TechnicianComplaintController;
 use App\Http\Controllers\Technician\MaintenanceReportController;
+use App\Http\Controllers\Technician\SidebarCountController as TechnicianSidebarCountController;
 
 
 use App\Http\Controllers\Consumer\DashboardController as ConsumerDashboardController;
@@ -45,6 +60,8 @@ use App\Http\Controllers\Consumer\ServiceAnnouncementController;
 use App\Http\Controllers\Consumer\AIController;
 use App\Http\Controllers\Consumer\RegistrationStatusController;
 use App\Http\Controllers\Consumer\ComplaintFeedbackController;
+use App\Http\Controllers\Consumer\ProfileController as ConsumerProfileController;
+
 /*
 |--------------------------------------------------------------------------
 | Landing Page
@@ -84,15 +101,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])
         ->name('profile.password');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Global Search
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get('/search', [SearchController::class, 'index'])
-        ->name('search');
 });
 
 
@@ -177,6 +185,18 @@ Route::middleware(['auth', 'role:Administrator'])
         )->name('consumer-verifications.index');
 
 
+        Route::get('/sidebar-notifications', function () {
+            $pendingConsumerVerifications = Consumer::query()
+                ->where('registration_source', 'Self Registration')
+                ->where('verification_status', 'Pending Verification')
+                ->count();
+
+            return response()->json([
+                'pending_consumer_verifications' => $pendingConsumerVerifications,
+            ]);
+        })->name('sidebar.notifications');
+
+
         Route::get(
             '/consumer-verifications/{consumer}',
             [ConsumerVerificationController::class, 'show']
@@ -193,6 +213,118 @@ Route::middleware(['auth', 'role:Administrator'])
             '/consumer-verifications/{consumer}/reject',
             [ConsumerVerificationController::class, 'reject']
         )->name('consumer-verifications.reject');
+
+        Route::get('/reports', [
+            AdminSystemReportController::class,
+            'index',
+        ])->name('reports.index');
+
+        Route::get('/reports/print', [
+            AdminSystemReportController::class,
+            'print',
+        ])->name('reports.print');
+
+
+
+        Route::get('/complaints', [AdminComplaintController::class, 'index'])
+            ->name('complaints.index');
+
+        Route::get('/complaints/report', [AdminComplaintController::class, 'report'])
+            ->name('complaints.report');
+
+        Route::get('/complaints/{complaint}', [AdminComplaintController::class, 'show'])
+            ->name('complaints.show');
+
+
+        Route::prefix('maintenance-monitoring')
+            ->name('maintenance-monitoring.')
+            ->controller(AdminMaintenanceMonitoringController::class)
+            ->group(function () {
+
+                // Pending Workloads
+                Route::get('/pending-workloads', 'pendingWorkloads')
+                    ->name('pending-workloads');
+
+                Route::get('/pending-workloads/print', 'printPendingWorkloads')
+                    ->name('pending-workloads.print');
+
+                // Missed Schedules
+                Route::get('/missed-schedules', 'missedSchedules')
+                    ->name('missed-schedules');
+
+                Route::get('/missed-schedules/print', 'printMissedSchedules')
+                    ->name('missed-schedules.print');
+            });
+
+        // Add inside the existing Admin route group:
+        Route::prefix('consumer-feedback')
+            ->name('consumer-feedback.')
+            ->controller(AdminConsumerFeedbackController::class)
+            ->group(function () {
+                // Keep print before the dynamic {feedback} route.
+                Route::get('/print', 'print')
+                    ->name('print');
+
+                Route::get('/', 'index')
+                    ->name('index');
+
+                Route::get('/{feedback}', 'show')
+                    ->whereNumber('feedback')
+                    ->name('show');
+            });
+
+        // Admin Consumer Management
+        Route::get('/consumers/print-report', [
+            AdminConsumerController::class,
+            'printReport'
+        ])->name('consumers.print-report');
+
+        Route::get('/consumers', [
+            AdminConsumerController::class,
+            'index'
+        ])->name('consumers.index');
+
+        Route::get('/consumers/{consumer}', [
+            AdminConsumerController::class,
+            'show'
+        ])->name('consumers.show');
+
+
+        /*
+|--------------------------------------------------------------------------
+| Email / SMTP Settings
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/settings/mail',
+            [MailSettingsController::class, 'index']
+        )->name('settings.mail.index');
+
+        Route::put(
+            '/settings/mail',
+            [MailSettingsController::class, 'update']
+        )->middleware('throttle:10,1')
+            ->name('settings.mail.update');
+
+        Route::post(
+            '/settings/mail/test',
+            [MailSettingsController::class, 'test']
+        )->middleware('throttle:5,1')
+            ->name('settings.mail.test');
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])
+            ->name('audit-logs.index');
+
+        Route::get('/audit-logs/export', [AuditLogController::class, 'export'])
+            ->name('audit-logs.export');
+
+        Route::get('/audit-logs/print', [AuditLogController::class, 'print'])
+            ->name('audit-logs.print');
+
+        Route::get('/audit-logs/{auditLog}', [AuditLogController::class, 'show'])
+            ->whereNumber('auditLog')
+            ->name('audit-logs.show');
     });
 
 
@@ -213,6 +345,13 @@ Route::middleware(['auth', 'role:Customer Service'])
             [CustomerServiceDashboard::class, 'index']
         )->name('dashboard');
 
+
+        Route::get(
+            '/sidebar-notifications',
+            [ConsumerFeedbackController::class, 'sidebarNotifications']
+        )->name('sidebar-notifications');
+
+
         Route::get(
             '/consumers/print-report',
             [ConsumerController::class, 'printReport']
@@ -229,11 +368,14 @@ Route::middleware(['auth', 'role:Customer Service'])
             [CustomerServiceComplaintController::class, 'printReport']
         )->name('complaints.print-report');
 
-
         Route::resource(
             'complaints',
             CustomerServiceComplaintController::class
         );
+        Route::get('/complaint-categories/print', [
+            \App\Http\Controllers\CustomerService\ComplaintCategoryController::class,
+            'print',
+        ])->name('complaint-categories.print');
 
         Route::resource(
             'complaint-categories',
@@ -310,12 +452,57 @@ Route::middleware(['auth', 'role:Customer Service'])
             ]
         )->name('complaints.commercial.close');
 
+        /*
+|--------------------------------------------------------------------------
+| Engineering / Maintenance Complaint Closure
+|--------------------------------------------------------------------------
+| Only Customer Service may officially close a complaint
+| after the Maintenance Manager approves the accomplishment report.
+*/
+
+        Route::post(
+            '/complaints/{complaint}/maintenance/close',
+            [
+                CustomerServiceComplaintController::class,
+                'closeMaintenanceComplaint',
+            ]
+        )
+            ->middleware('throttle:5,1')
+            ->name('complaints.maintenance.close');
+
+
+
+        Route::get(
+            '/commercial-services',
+            [\App\Http\Controllers\CustomerService\CommercialServicesController::class, 'index']
+        )->name('commercial-services.index');
+
+        Route::get(
+            '/commercial-services/print',
+            [\App\Http\Controllers\CustomerService\CommercialServicesController::class, 'print']
+        )->name('commercial-services.print');
+
+        Route::get(
+            '/final-closures',
+            [FinalClosureController::class, 'index']
+        )->name('final-closures.index');
+
+        Route::get('/final-closures/print', [FinalClosureController::class, 'print'])
+            ->name('final-closures.print');
+
 
 
         Route::get(
             '/feedback',
             [ConsumerFeedbackController::class, 'index']
         )->name('feedback.index');
+
+
+        Route::get('/feedback/print', [
+            \App\Http\Controllers\CustomerService\ConsumerFeedbackController::class,
+            'print',
+        ])->name('feedback.print');
+
 
         Route::get(
             '/feedback/{feedback}',
@@ -348,6 +535,10 @@ Route::middleware(['auth', 'role:Customer Service'])
             [CustomerServiceAnnouncementController::class, 'index']
         )->name('announcements.index');
 
+        Route::get('/announcements/print', [
+            \App\Http\Controllers\CustomerService\ServiceAnnouncementController::class,
+            'print',
+        ])->name('announcements.print');
 
         Route::get(
             '/announcements/create',
@@ -395,6 +586,37 @@ Route::middleware(['auth', 'role:Customer Service'])
             '/announcements/{serviceAnnouncement}',
             [CustomerServiceAnnouncementController::class, 'destroy']
         )->name('announcements.destroy');
+
+        Route::get(
+            '/reports',
+            [ReportsAnalyticsController::class, 'index']
+        )->name('reports.index');
+
+        Route::get(
+            '/reports/print',
+            [ReportsAnalyticsController::class, 'print']
+        )->name('reports.print');
+
+        Route::get(
+            '/pending-workloads',
+            [MaintenanceMonitoringController::class, 'pendingWorkloads']
+        )->name('pending-workloads.index');
+
+        Route::get(
+            '/pending-workloads/print',
+            [MaintenanceMonitoringController::class, 'printPendingWorkloads']
+        )->name('pending-workloads.print');
+
+
+        Route::get(
+            '/missed-schedules',
+            [MaintenanceMonitoringController::class, 'missedSchedules']
+        )->name('missed-schedules.index');
+
+        Route::get(
+            '/missed-schedules/print',
+            [MaintenanceMonitoringController::class, 'printMissedSchedules']
+        )->name('missed-schedules.print');
     });
 
 
@@ -420,11 +642,93 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
             [ManagerDashboard::class, 'index']
         )->name('dashboard');
 
+        Route::get('/insights', [\App\Http\Controllers\Manager\MaintenanceInsightsController::class, 'index'])
+            ->name('insights.index');
+        Route::get('/insights/print', [\App\Http\Controllers\Manager\MaintenanceInsightsController::class, 'print'])
+            ->name('insights.print');
+
         /*
 |--------------------------------------------------------------------------
 | Plumber Service Areas
 |--------------------------------------------------------------------------
 */
+        /*
+|--------------------------------------------------------------------------
+| Daily Maintenance Scheduling
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/schedules',
+            [MaintenanceScheduleController::class, 'index']
+        )->name('schedules.index');
+
+
+        Route::get(
+            '/pending-workloads',
+            [\App\Http\Controllers\Manager\PendingWorkloadController::class, 'index']
+        )->name('pending-workloads.index');
+
+
+        Route::get(
+            '/backlogs',
+            [\App\Http\Controllers\Manager\BacklogController::class, 'index']
+        )->name('backlogs.index');
+
+        Route::get(
+            '/backlogs/{workOrder}/reschedule',
+            [\App\Http\Controllers\Manager\MissedScheduleRescheduleController::class, 'edit']
+        )->name('backlogs.reschedule.edit');
+
+        Route::post(
+            '/backlogs/{workOrder}/reschedule',
+            [\App\Http\Controllers\Manager\MissedScheduleRescheduleController::class, 'store']
+        )->middleware('throttle:10,1')->name('backlogs.reschedule.store');
+
+
+
+        Route::post(
+            '/schedules/work-orders',
+            [MaintenanceScheduleController::class, 'store']
+        )->name('schedules.store');
+
+        Route::post(
+            '/schedules/{schedule}/finalize',
+            [MaintenanceScheduleController::class, 'finalize']
+        )->name('schedules.finalize');
+
+        Route::post(
+            '/schedules/{schedule}/finalize-additions',
+            [MaintenanceScheduleController::class, 'finalizeAdditions']
+        )->name('schedules.finalize-additions');
+
+        // Audited replacement on an Approved, Finalized, unstarted work order.
+        Route::patch(
+            '/schedules/work-orders/{workOrder}/replace-plumber',
+            [MaintenanceScheduleController::class, 'replacePlumber']
+        )->name('schedules.replace-plumber');
+
+        Route::get(
+            '/schedules/work-orders/{workOrder}/handover',
+            [\App\Http\Controllers\Manager\MaintenanceHandoverController::class, 'edit']
+        )->name('schedules.handover.edit');
+
+        Route::patch(
+            '/schedules/work-orders/{workOrder}/handover',
+            [\App\Http\Controllers\Manager\MaintenanceHandoverController::class, 'update']
+        )->name('schedules.handover.update');
+
+        Route::patch(
+            '/schedules/work-orders/{workOrder}/reschedule',
+            [MaintenanceScheduleController::class, 'reschedule']
+        )->name('schedules.reschedule');
+
+
+        Route::post(
+            '/schedules/pending-workloads/{workOrder}/follow-up',
+            [\App\Http\Controllers\Manager\PendingWorkloadFollowUpController::class, 'store']
+        )->name('schedules.pending-follow-up');
+
 
         Route::get(
             '/service-areas',
@@ -458,7 +762,7 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
 
         Route::get(
             '/complaints/for-assignment',
-            [ManagerComplaintController::class, 'forAssignment']
+            fn() => redirect()->route('maintenance-manager.schedules.index')
         )->name('complaints.for-assignment');
 
         Route::get(
@@ -496,6 +800,12 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
             [MaintenanceReviewController::class, 'index']
         )->name('maintenance-reviews.index');
 
+        // Static print route MUST precede the dynamic {maintenanceReport} route.
+        Route::get(
+            '/maintenance-reviews/print',
+            [MaintenanceReviewController::class, 'printReport']
+        )->name('maintenance-reviews.print');
+
         Route::get(
             '/maintenance-reviews/{maintenanceReport}',
             [MaintenanceReviewController::class, 'show']
@@ -511,10 +821,48 @@ Route::middleware(['auth', 'role:Maintenance Manager'])
             [MaintenanceReviewController::class, 'returnForCorrection']
         )->name('maintenance-reviews.return');
 
+
+
+
+        /*
+|--------------------------------------------------------------------------
+| Technician Duty Management
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/technician-duties',
+            [\App\Http\Controllers\Manager\TechnicianDutyController::class, 'index']
+        )->name('technician-duties.index');
+
         Route::post(
-            '/maintenance-reviews/{maintenanceReport}/close',
-            [MaintenanceReviewController::class, 'close']
-        )->name('maintenance-reviews.close');
+            '/technician-duties/generate',
+            [\App\Http\Controllers\Manager\TechnicianDutyController::class, 'generate']
+        )->name('technician-duties.generate');
+
+        Route::post(
+            '/technician-duties',
+            [\App\Http\Controllers\Manager\TechnicianDutyController::class, 'store']
+        )->name('technician-duties.store');
+
+        Route::patch(
+            '/technician-duties/{duty}',
+            [\App\Http\Controllers\Manager\TechnicianDutyController::class, 'update']
+        )->name('technician-duties.update');
+
+        Route::post(
+            '/schedules/batch',
+            [
+                \App\Http\Controllers\Manager\MaintenanceScheduleController::class,
+                'batchStore',
+            ]
+        )->name('schedules.batch-store');
+
+
+        Route::get('/sidebar-counts', ManagerSidebarCountController::class)
+            ->middleware('throttle:120,1')
+            ->name('sidebar-counts'); // maintenance-manager.sidebar-counts
+
     });
 
 
@@ -535,16 +883,27 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             [TechnicianDashboard::class, 'index']
         )->name('dashboard');
 
+        Route::get('/sidebar-counts', TechnicianSidebarCountController::class)
+            ->middleware('throttle:120,1')
+            ->name('sidebar-counts'); // technician.sidebar-counts
+
+
+        Route::get(
+            '/active-work-orders',
+            [TechnicianComplaintController::class, 'activeWorkOrders']
+        )->name('active-work-orders.index');
+
         Route::get(
             '/complaints',
             [TechnicianComplaintController::class, 'index']
         )->name('complaints.index');
 
+
+
         Route::get(
             '/complaints/print-report',
             [TechnicianComplaintController::class, 'printReport']
         )->name('complaints.print-report');
-
 
         Route::get(
             '/complaints/{complaint}',
@@ -552,6 +911,17 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
         )->name('complaints.show');
 
 
+
+        // Individual accomplishment reports submitted by the logged-in technician.
+        Route::get(
+            '/maintenance-reports/history/print',
+            [MaintenanceReportController::class, 'printHistory']
+        )->name('maintenance-reports.history.print');
+
+        Route::get(
+            '/maintenance-reports/history',
+            [MaintenanceReportController::class, 'history']
+        )->name('maintenance-reports.history');
 
         Route::get(
             '/maintenance-reports',
@@ -567,6 +937,32 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             '/complaints/{complaint}/maintenance-report/start',
             [MaintenanceReportController::class, 'start']
         )->name('maintenance-reports.start');
+
+        Route::post(
+            '/complaints/{complaint}/work-orders/{workOrder}/start',
+            [MaintenanceReportController::class, 'startWorkOrder']
+        )->name('work-orders.start');
+
+        /*
+|--------------------------------------------------------------------------
+| Record Pending Workload
+|--------------------------------------------------------------------------
+|
+| Technician records unfinished maintenance with a required reason.
+| Manager will review it for next-working-day planning.
+|
+*/
+
+        Route::post(
+            '/complaints/{complaint}/work-orders/{workOrder}/pending',
+            [MaintenanceReportController::class, 'markPendingWorkload']
+        )->name('work-orders.pending');
+
+        Route::post(
+            '/complaints/{complaint}/work-orders/{workOrder}/resume',
+            [MaintenanceReportController::class, 'resumeWorkOrder']
+        )->name('work-orders.resume');
+
 
         Route::post(
             '/complaints/{complaint}/maintenance-report',
@@ -592,37 +988,36 @@ Route::middleware(['auth', 'role:Maintenance Technician'])
             '/reports/maintenance/print',
             [MaintenanceReportController::class, 'print']
         )->name('reports.maintenance.print');
+
+        Route::get(
+            '/schedule/print',
+            [\App\Http\Controllers\Technician\ScheduleController::class, 'print']
+        )->name('schedule.print');
+
+        Route::get(
+            '/schedule',
+            [\App\Http\Controllers\Technician\ScheduleController::class, 'index']
+        )->name('schedule.index');
+
+        Route::post(
+            '/schedule/missed/{workOrder}/report',
+            [\App\Http\Controllers\Technician\ScheduleController::class, 'reportMissed']
+        )->middleware('throttle:5,1')->name('schedule.missed.report');
+
+        Route::get(
+            '/pending-workload',
+            [\App\Http\Controllers\Technician\PendingWorkloadController::class, 'index']
+        )->name('pending-workload.index');
+
+        Route::get(
+            '/pending-workload/print',
+            [\App\Http\Controllers\Technician\PendingWorkloadController::class, 'print']
+        )
+            ->name('pending-workload.print');
     });
 
 
-/*
-|--------------------------------------------------------------------------
-| CONSUMER AUTHENTICATION
-|--------------------------------------------------------------------------
-|
-| Consumers have a separate login page.
-| They still use the same users table and Consumer role.
-|
-*/
 
-/*
-|--------------------------------------------------------------------------
-| CONSUMER AUTHENTICATION
-|--------------------------------------------------------------------------
-|
-| Consumers have a separate login and password recovery flow.
-| They still use the same users table and Consumer role.
-|
-*/
-
-/*
-|--------------------------------------------------------------------------
-| CONSUMER AUTHENTICATION
-|--------------------------------------------------------------------------
-|
-| Consumers use a separate authentication and password recovery flow.
-|
-*/
 
 Route::middleware('guest')->group(function () {
 
@@ -834,6 +1229,16 @@ Route::middleware([
             [ConsumerComplaintController::class, 'index']
         )->name('complaints.index');
 
+        Route::get(
+            '/complaints/refresh-state',
+            [ConsumerComplaintController::class, 'refreshIndexState']
+        )->name('complaints.refresh-state');
+
+        Route::get(
+            '/complaints/{complaint}/refresh-state',
+            [ConsumerComplaintController::class, 'refreshShowState']
+        )->name('complaints.show.refresh-state');
+
 
         Route::get(
             '/complaints/create',
@@ -907,7 +1312,19 @@ Route::middleware([
             '/complaints/{complaint}/feedback',
             [ComplaintFeedbackController::class, 'store']
         )->name('complaints.feedback.store');
-    });
 
+
+        Route::get('/profile', [ConsumerProfileController::class, 'show'])
+            ->name('profile.show');
+
+        Route::get('/profile/edit', [ConsumerProfileController::class, 'edit'])
+            ->name('profile.edit');
+
+        Route::put('/profile', [ConsumerProfileController::class, 'update'])
+            ->name('profile.update');
+
+        Route::put('/profile/password', [ConsumerProfileController::class, 'updatePassword'])
+            ->name('profile.password');
+    });
 
 require __DIR__ . '/auth.php';

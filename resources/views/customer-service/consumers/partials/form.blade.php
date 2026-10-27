@@ -927,46 +927,43 @@
             const provinceInput =
                 document.getElementById('province');
 
-
             /*
             |--------------------------------------------------------------------------
-            | Default Map
+            | Default Map Center — Sagay City Proper
             |--------------------------------------------------------------------------
             */
 
-            const defaultLat = 10.9447;
-            const defaultLng = 123.4247;
+            const defaultLat = 10.8961;
+            const defaultLng = 123.4155;
 
-            const savedLat =
-                parseFloat(latitudeInput.value);
+            const savedLat = parseFloat(latitudeInput.value);
+            const savedLng = parseFloat(longitudeInput.value);
 
-            const savedLng =
-                parseFloat(longitudeInput.value);
+            const hasSavedLocation =
+                latitudeInput.value.trim() !== '' &&
+                longitudeInput.value.trim() !== '' &&
+                Number.isFinite(savedLat) &&
+                Number.isFinite(savedLng) &&
+                savedLat >= -90 &&
+                savedLat <= 90 &&
+                savedLng >= -180 &&
+                savedLng <= 180;
 
-            const hasSavedLocation = !Number.isNaN(savedLat) &&
-                !Number.isNaN(savedLng);
+            // Existing consumers open at their saved location.
+            // New consumers open at Sagay City proper.
+            const initialLat = hasSavedLocation ? savedLat : defaultLat;
+            const initialLng = hasSavedLocation ? savedLng : defaultLng;
+            const initialZoom = hasSavedLocation ? 17 : 15;
 
-
-            const map = L.map(
-                'consumer-service-map'
-            ).setView(
-                hasSavedLocation ?
-                [savedLat, savedLng] :
-                [defaultLat, defaultLng],
-
-                hasSavedLocation ?
-                17 :
-                14
+            const map = L.map('consumer-service-map').setView(
+                [initialLat, initialLng],
+                initialZoom
             );
 
-
-            L.tileLayer(
-                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors'
-                }
-            ).addTo(map);
-
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
 
             let marker = null;
 

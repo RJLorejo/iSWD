@@ -1,502 +1,229 @@
-<!DOCTYPE html>
+@extends('layouts.report')
 
-<html lang="en">
+@section('title', 'Customer Service Complaint Report')
 
-<head>
+@section('back-url', route('customer-service.complaints.index'))
 
-    <meta charset="UTF-8">
+@section('report-title', 'Customer Service Complaint Report')
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('report-subtitle', 'Complaint Records and Status Summary')
 
-    <title>Customer Service Complaint Report</title>
+@section('prepared-by-role', 'Customer Service Personnel')
 
+@section('report-content')
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    @php
+        $reportCount = $complaints->count();
 
-        body {
-            margin: 0;
-            padding: 28px;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11px;
-            color: #1f2937;
-            background: white;
-        }
+        $search = request('search');
+        $status = request('status');
+        $urgencyFilter = request('urgency');
+        $type = request('type');
+        $division = request('division');
+        $dateFrom = request('date_from');
+        $dateTo = request('date_to');
+    @endphp
 
-        .container {
-            max-width: 1400px;
-            margin: auto;
-        }
+    <section class="report-section">
 
-        .actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
+        <h3 class="report-section-title">
+            Report Criteria
+        </h3>
 
-        button {
-            border: 0;
-            border-radius: 6px;
-            padding: 9px 14px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        <div class="report-grid">
 
-        .print {
-            background: #2563eb;
-            color: white;
-        }
-
-        .close {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 21px;
-        }
-
-        .header h2 {
-            margin: 5px 0 0;
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .header p {
-            margin: 5px 0 0;
-            color: #6b7280;
-        }
-
-        .criteria {
-            border: 1px solid #d1d5db;
-            background: #f9fafb;
-            border-radius: 7px;
-            padding: 11px 13px;
-            margin-bottom: 16px;
-        }
-
-        .criteria-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 7px 18px;
-        }
-
-        .label {
-            font-weight: bold;
-            color: #4b5563;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            display: table-header-group;
-        }
-
-        th {
-            border: 1px solid #9ca3af;
-            background: #f3f4f6;
-            padding: 8px 6px;
-            text-align: left;
-            font-size: 9px;
-            text-transform: uppercase;
-        }
-
-        td {
-            border: 1px solid #d1d5db;
-            padding: 8px 6px;
-            vertical-align: top;
-            font-size: 10px;
-        }
-
-        tr {
-            page-break-inside: avoid;
-        }
-
-        .complaint-number {
-            font-weight: bold;
-        }
-
-        .urgency {
-            display: block;
-            margin-top: 4px;
-            font-size: 9px;
-            font-weight: bold;
-        }
-
-        .high {
-            color: #b91c1c;
-        }
-
-        .moderate {
-            color: #b45309;
-        }
-
-        .low {
-            color: #15803d;
-        }
-
-        .muted {
-            color: #6b7280;
-            font-size: 9px;
-        }
-
-        .footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 16px;
-            padding-top: 10px;
-            border-top: 1px solid #d1d5db;
-        }
-
-        @page {
-            size: landscape;
-            margin: 12mm;
-        }
-
-        @media print {
-
-            body {
-                padding: 0;
-            }
-
-            .actions {
-                display: none;
-            }
-
-        }
-    </style>
-
-</head>
-
-
-<body>
-
-    <div class="container">
-
-        <div class="actions">
-
-            <button type="button" class="print" onclick="window.print()">
-
-                Print Report
-
-            </button>
-
-
-            <button type="button" class="close" onclick="window.close()">
-
-                Close
-
-            </button>
-
-        </div>
-
-
-        <div class="header">
-
-            <h1>
-                SAGAY WATER DISTRICT
-            </h1>
-
-            <h2>
-                Customer Service Complaint Report
-            </h2>
-
-            <p>
-                Filtered complaint records
-            </p>
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- FILTER CRITERIA --}}
-        {{-- ========================================================= --}}
-
-        <div class="criteria">
-
-            <div class="criteria-grid">
-
-                <div>
-                    <span class="label">
-                        Search:
-                    </span>
-
-                    {{ request('search') ?: 'None' }}
+            <div class="report-field">
+                <div class="report-field-label">Search</div>
+                <div class="report-field-value">
+                    {{ $search ?: 'All complaints' }}
                 </div>
+            </div>
 
-
-                <div>
-                    <span class="label">
-                        Status:
-                    </span>
-
-                    {{ request('status') ?: 'All' }}
+            <div class="report-field">
+                <div class="report-field-label">Status</div>
+                <div class="report-field-value">
+                    {{ $status ?: 'All statuses' }}
                 </div>
+            </div>
 
-
-                <div>
-                    <span class="label">
-                        Urgency:
-                    </span>
-
-                    {{ request('urgency') === 'not_assessed' ? 'Not Assessed' : (request('urgency') ?: 'All') }}
+            <div class="report-field">
+                <div class="report-field-label">Urgency</div>
+                <div class="report-field-value">
+                    @switch($urgencyFilter)
+                        @case('High')
+                            High
+                            @break
+                        @case('Moderate')
+                            Moderate
+                            @break
+                        @case('Low')
+                            Low
+                            @break
+                        @case('not_assessed')
+                            Not assessed
+                            @break
+                        @default
+                            All urgency levels
+                    @endswitch
                 </div>
+            </div>
 
-
-                <div>
-                    <span class="label">
-                        Complaint Type:
-                    </span>
-
-                    @php
-                        $selectedType = $complaints->firstWhere('complaint_category_id', request('complaint_type'))
-                            ?->category?->name;
-                    @endphp
-
-                    {{ $selectedType ?: 'All' }}
+            <div class="report-field">
+                <div class="report-field-label">Complaint Type</div>
+                <div class="report-field-value">
+                    {{ $type ?: 'All complaint types' }}
                 </div>
+            </div>
 
-
-                <div>
-                    <span class="label">
-                        Division:
-                    </span>
-
-                    @php
-                        $selectedDivision = $complaints->firstWhere('division_id', request('division_id'))?->division
-                            ?->name;
-                    @endphp
-
-                    {{ $selectedDivision ?: 'All' }}
+            <div class="report-field">
+                <div class="report-field-label">Division</div>
+                <div class="report-field-value">
+                    {{ $division ?: 'All divisions' }}
                 </div>
+            </div>
 
-
-                <div>
-                    <span class="label">
-                        From:
-                    </span>
-
-                    {{ request('date_from') ? \Carbon\Carbon::parse(request('date_from'))->format('M d, Y') : 'Beginning' }}
+            <div class="report-field">
+                <div class="report-field-label">Date Range</div>
+                <div class="report-field-value">
+                    {{ $dateFrom ?: 'Start' }}
+                    &mdash;
+                    {{ $dateTo ?: 'Present' }}
                 </div>
-
-
-                <div>
-                    <span class="label">
-                        To:
-                    </span>
-
-                    {{ request('date_to') ? \Carbon\Carbon::parse(request('date_to'))->format('M d, Y') : 'Present' }}
-                </div>
-
-
-                <div>
-                    <span class="label">
-                        Records:
-                    </span>
-
-                    {{ $complaints->count() }}
-                </div>
-
             </div>
 
         </div>
 
+    </section>
 
-        {{-- ========================================================= --}}
-        {{-- TABLE --}}
-        {{-- ========================================================= --}}
+    <section class="report-section">
 
-        @if ($complaints->count())
+        <div class="report-section-heading-row">
 
-            <table>
+            <h3 class="report-section-title">
+                Complaint Records
+            </h3>
+
+            <div class="report-record-count">
+                Total Records:
+                <strong>{{ $reportCount }}</strong>
+            </div>
+
+        </div>
+
+        <div class="report-table-wrapper">
+
+            <table class="report-table">
+
+                <colgroup>
+                    <col style="width: 14%;">
+                    <col style="width: 21%;">
+                    <col style="width: 19%;">
+                    <col style="width: 16%;">
+                    <col style="width: 13%;">
+                    <col style="width: 17%;">
+                </colgroup>
 
                 <thead>
-
                     <tr>
-
-                        <th>
-                            Complaint
-                        </th>
-
-                        <th>
-                            Consumer
-                        </th>
-
-                        <th>
-                            Complaint Type
-                        </th>
-
-                        <th>
-                            Division
-                        </th>
-
-                        <th>
-                            Status
-                        </th>
-
-                        <th>
-                            Reported
-                        </th>
-
+                        <th>Complaint No.</th>
+                        <th>Consumer</th>
+                        <th>Complaint Type</th>
+                        <th>Urgency</th>
+                        <th>Status</th>
+                        <th>Reported</th>
                     </tr>
-
                 </thead>
-
 
                 <tbody>
 
-                    @foreach ($complaints as $complaint)
-                        @php
+                    @forelse ($complaints as $complaint)
 
-                            $urgency = $complaint->aiAnalysis?->urgency_level;
+                        @php
+                            $analysis = $complaint->aiAnalysis;
+
+                            // Show the CS-verified urgency first.
+                            // Use the AI assessment only if CS has not verified it.
+                            $verifiedUrgency = $analysis?->verified_urgency_level;
+                            $aiUrgency = $analysis?->urgency_level;
+                            $urgency = $verifiedUrgency ?: $aiUrgency;
 
                             $urgencyClass = match ($urgency) {
                                 'High' => 'high',
-
                                 'Moderate' => 'moderate',
-
                                 'Low' => 'low',
-
                                 default => '',
                             };
 
-                        @endphp
+                            $consumerName = $complaint->consumer?->user?->full_name
+                                ?? $complaint->consumer?->full_name
+                                ?? 'N/A';
 
+                            $complaintType = $complaint->complaint_type
+                                ?? $complaint->type
+                                ?? 'N/A';
+
+                            $complaintNumber = $complaint->complaint_number
+                                ?? ('CMP-' . str_pad($complaint->id, 6, '0', STR_PAD_LEFT));
+
+                            $reportedAt = $complaint->created_at;
+                        @endphp
 
                         <tr>
 
                             <td>
+                                {{ $complaintNumber }}
+                            </td>
 
-                                <span class="complaint-number">
+                            <td>
+                                {{ $consumerName }}
+                            </td>
 
-                                    {{ $complaint->complaint_no }}
+                            <td>
+                                {{ $complaintType }}
+                            </td>
 
-                                </span>
-
-
+                            <td>
                                 @if ($urgency)
-                                    <span class="urgency {{ $urgencyClass }}">
-
-                                        {{ strtoupper($urgency) }}
-
-                                    </span>
+                                    <strong>{{ strtoupper($urgency) }}</strong>
                                 @else
-                                    <span class="urgency muted">
-
+                                    <span style="color: #6b7280;">
                                         NOT ASSESSED
-
                                     </span>
                                 @endif
-
                             </td>
 
+                            <td>
+                                {{ strtoupper(str_replace('_', ' ', $complaint->status ?? 'N/A')) }}
+                            </td>
 
                             <td>
-
-                                {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? '—') }}
-
-
-                                @if ($complaint->consumer?->account_number)
-                                    <div class="muted">
-
-                                        Account:
-                                        {{ $complaint->consumer->account_number }}
-
-                                    </div>
+                                {{ $reportedAt?->format('M d, Y') ?? 'N/A' }}
+                                @if ($reportedAt)
+                                    <br>
+                                    <span style="color: #6b7280;">
+                                        {{ $reportedAt->format('h:i A') }}
+                                    </span>
                                 @endif
-
-                            </td>
-
-
-                            <td>
-
-                                {{ $complaint->category?->name ?? 'Uncategorized' }}
-
-                            </td>
-
-
-                            <td>
-
-                                {{ $complaint->division?->name ?? '—' }}
-
-                            </td>
-
-
-                            <td>
-
-                                {{ $complaint->status }}
-
-                            </td>
-
-
-                            <td>
-
-                                {{ $complaint->created_at?->format('M d, Y h:i A') ?? '—' }}
-
                             </td>
 
                         </tr>
-                    @endforeach
+
+                    @empty
+
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                No complaint records found for the selected criteria.
+                            </td>
+                        </tr>
+
+                    @endforelse
 
                 </tbody>
 
             </table>
-        @else
-            <div
-                style="
-                padding: 40px;
-                text-align: center;
-                border: 1px solid #d1d5db;
-                color: #6b7280;
-            ">
-
-                No complaints matched the selected filters.
-
-            </div>
-
-        @endif
-
-
-        <div class="footer">
-
-            <div>
-
-                <strong>
-                    Total Records:
-                </strong>
-
-                {{ $complaints->count() }}
-
-            </div>
-
-
-            <div>
-
-                <strong>
-                    Generated:
-                </strong>
-
-                {{ now()->format('M d, Y h:i A') }}
-
-            </div>
 
         </div>
 
-    </div>
+    </section>
 
-</body>
-
-</html>
+@endsection

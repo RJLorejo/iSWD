@@ -173,14 +173,22 @@ class UrgencyAnalyzer:
             or widespread_leak_impact
         )
 
+
         if major_incident_indicators:
             level = "High"
+
+        elif (
+            complete_service_loss
+            and extended_duration
+        ):
+            level = "Moderate"
 
         elif score >= 4:
             level = "Moderate"
 
         else:
             level = "Low"
+
 
         if not reasons:
             reasons.append(

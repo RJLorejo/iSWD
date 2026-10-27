@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Technician;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
+use App\Models\MaintenanceWorkOrder;
+use App\Models\MaintenanceReport;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,163 +14,324 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $technicianId = Auth::id();
+        $technicianId = (int) Auth::id();
+        $today = Carbon::now('Asia/Manila');
+        $todayDate = $today->toDateString();
 
-        $assignedCount = $this
-            ->assignedComplaintsQuery($technicianId)
-            ->where('complaints.status', 'Assigned')
+        $baseOrders = MaintenanceWorkOrder::query()
+            ->whereHas('technicians', function ($query) use ($technicianId) {
+                $query->where('users.id', $technicianId);
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Active Complaint Constraint
+        |--------------------------------------------------------------------------
+        */
+
+        $activeComplaint = function ($query) {
+            $query->whereNotIn('complaints.status', [
+                'Completed',
+                'Closed',
+                'Rejected',
+            ]);
+        };
+
+        /*
+        |--------------------------------------------------------------------------
+        | Work Order Statistics
+        |--------------------------------------------------------------------------
+        */
+
+        $assignedCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Scheduled')
+            ->whereHas('complaint', $activeComplaint)
             ->count();
 
-        $inProgressCount = $this
-            ->assignedComplaintsQuery($technicianId)
-            ->where('complaints.status', 'In Progress')
+        $inProgressCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'In Progress')
+            ->whereHas('complaint', $activeComplaint)
             ->count();
 
-        $urgentCount = $this
-            ->assignedComplaintsQuery($technicianId)
-            ->whereIn('complaints.status', [
-                'Assigned',
-                'In Progress',
-            ])
+        $pendingWorkloadCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Pending Workload')
+            ->whereHas('complaint', $activeComplaint)
+            ->whereNotExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('maintenance_work_orders as later_visits')
+                    ->whereColumn(
+                        'later_visits.complaint_id',
+                        'maintenance_work_orders.complaint_id'
+                    )
+                    ->whereColumn(
+                        'later_visits.visit_number',
+                        '>',
+                        'maintenance_work_orders.visit_number'
+                    )
+                    ->where('later_visits.status', 'Completed');
+            })
+            ->count();
+
+        $historicalPendingCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Pending Workload')
+            ->count();
+
+        $completedCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Completed')
+            ->count();
+
+        $activeCount = $assignedCount + $inProgressCount;
+
+        $totalCount = $activeCount
+            + $pendingWorkloadCount
+            + $completedCount;
+
+        $completionRate = $totalCount > 0
+            ? round(($completedCount / $totalCount) * 100, 1)
+            : 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Today's Scheduled Visits
+        |--------------------------------------------------------------------------
+        */
+
+        $todayScheduledCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Scheduled')
+            ->whereHas('complaint', $activeComplaint)
+            ->whereHas('schedule', function ($query) use ($todayDate) {
+                $query->where('status', 'Finalized')
+                    ->whereDate('schedule_date', $todayDate);
+            })
+            ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Overdue Scheduled Visits
+        |--------------------------------------------------------------------------
+        */
+
+        $overdueCount = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Scheduled')
+            ->whereHas('complaint', $activeComplaint)
+            ->whereHas('schedule', function ($query) use ($todayDate) {
+                $query->where('status', 'Finalized')
+                    ->whereDate('schedule_date', '<', $todayDate);
+            })
+            ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI High Urgency
+        |--------------------------------------------------------------------------
+        | Count distinct complaints, not repeated visits.
+        */
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verified High Urgency
+        |--------------------------------------------------------------------------
+        | Count distinct complaints, not repeated visits.
+        | Use the urgency finalized by Customer Service.
+        */
+
+        $urgentCount = Complaint::query()
+            ->whereIn('complaints.status', ['Assigned', 'In Progress'])
+            ->whereHas('maintenanceWorkOrders', function ($query) use ($technicianId) {
+                $query->whereIn('maintenance_work_orders.status', [
+                    'Scheduled',
+                    'In Progress',
+                ])
+                ->whereHas('technicians', function ($team) use ($technicianId) {
+                    $team->where('users.id', $technicianId);
+                });
+            })
             ->whereHas('aiAnalysis', function (Builder $query) {
                 $query->whereRaw(
-                    'UPPER(urgency_level) = ?',
+                    'UPPER(TRIM(verified_urgency_level)) = ?',
                     ['HIGH']
                 );
             })
             ->count();
 
-        $activeCount = $assignedCount + $inProgressCount;
 
-        $completedCount = $this
-            ->assignedComplaintsQuery($technicianId)
-            ->where('complaints.status', 'Completed')
-            ->count();
+        /*
+        |--------------------------------------------------------------------------
+        | Six-Month Accomplishment Trend
+        |--------------------------------------------------------------------------
+        */
 
-        $totalCount = $this
-            ->assignedComplaintsQuery($technicianId)
-            ->whereIn('complaints.status', [
-                'Assigned',
-                'In Progress',
-                'Completed',
-                'Closed',
+        $trendStart = $today->copy()->startOfMonth()->subMonths(5);
+        $trendEnd = $today->copy()->endOfMonth();
+
+        $monthlyResults = (clone $baseOrders)
+            ->where('maintenance_work_orders.status', 'Completed')
+            ->whereNotNull('maintenance_work_orders.completed_at')
+            ->whereBetween('maintenance_work_orders.completed_at', [
+                $trendStart,
+                $trendEnd,
             ])
-            ->count();
+            ->selectRaw(
+                "DATE_FORMAT(maintenance_work_orders.completed_at, '%Y-%m') AS month_key"
+            )
+            ->selectRaw('COUNT(*) AS total')
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
 
-        $currentComplaints = $this
-            ->assignedComplaintsQuery($technicianId)
+        $trendLabels = [];
+        $trendValues = [];
+
+        for ($i = 0; $i < 6; $i++) {
+            $month = $trendStart->copy()->addMonths($i);
+
+            $trendLabels[] = $month->format('M Y');
+            $trendValues[] = (int) (
+                $monthlyResults[$month->format('Y-m')] ?? 0
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Active Maintenance Queue
+        |--------------------------------------------------------------------------
+        | High urgency first within each status group.
+        */
+
+        $currentWorkOrders = (clone $baseOrders)
             ->with([
-                'consumer.address',
-                'division',
-                'category',
-                'technicians',
-                'aiAnalysis',
-                'commercialResolution',
+                'complaint.consumer',
+                'complaint.consumer.address',
+                'complaint.category',
+                'complaint.division',
+                'complaint.aiAnalysis',
+                'schedule',
             ])
-            ->whereIn('complaints.status', [
-                'Assigned',
+            ->whereIn('maintenance_work_orders.status', [
+                'Scheduled',
                 'In Progress',
             ])
+            ->whereHas('complaint', $activeComplaint)
             ->orderByRaw("
-                CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM complaint_ai_analyses
-                        WHERE complaint_ai_analyses.complaint_id = complaints.id
-                        AND UPPER(complaint_ai_analyses.urgency_level) = 'HIGH'
-                    ) THEN 1
-
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM complaint_ai_analyses
-                        WHERE complaint_ai_analyses.complaint_id = complaints.id
-                        AND UPPER(complaint_ai_analyses.urgency_level) = 'MODERATE'
-                    ) THEN 2
-
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM complaint_ai_analyses
-                        WHERE complaint_ai_analyses.complaint_id = complaints.id
-                        AND UPPER(complaint_ai_analyses.urgency_level) = 'LOW'
-                    ) THEN 3
-
-                    ELSE 4
-                END
-            ")
-            ->orderByRaw("
-                CASE
-                    WHEN complaints.status = 'In Progress' THEN 1
-                    WHEN complaints.status = 'Assigned' THEN 2
+                CASE maintenance_work_orders.status
+                    WHEN 'In Progress' THEN 1
+                    WHEN 'Scheduled' THEN 2
                     ELSE 3
                 END
             ")
-            ->latest('complaints.updated_at')
-            ->take(6)
+            ->orderByRaw("
+    CASE WHEN EXISTS (
+        SELECT 1
+        FROM complaints
+        INNER JOIN complaint_ai_analyses
+            ON complaint_ai_analyses.complaint_id = complaints.id
+        WHERE complaints.id = maintenance_work_orders.complaint_id
+        AND UPPER(TRIM(complaint_ai_analyses.verified_urgency_level)) = 'HIGH'
+    ) THEN 0 ELSE 1 END
+")
+            ->orderBy('maintenance_work_orders.id')
+            ->limit(6)
             ->get();
 
-        $recentCompleted = $this
-            ->assignedComplaintsQuery($technicianId)
+        /*
+        |--------------------------------------------------------------------------
+        | Recently Accomplished Visits
+        |--------------------------------------------------------------------------
+        */
+
+        $recentCompletedOrders = (clone $baseOrders)
             ->with([
-                'consumer',
-                'division',
-                'category',
-                'technicians',
-                'aiAnalysis',
-                'maintenanceReport',
+                'complaint.consumer',
+                'complaint.category',
+                'complaint.aiAnalysis',
+                'complaint.maintenanceReport',
             ])
-            ->where('complaints.status', 'Completed')
-            ->latest('complaints.completed_at')
-            ->latest('complaints.updated_at')
-            ->take(5)
+            ->where('maintenance_work_orders.status', 'Completed')
+            ->whereNotNull('maintenance_work_orders.completed_at')
+            ->orderByDesc('maintenance_work_orders.completed_at')
+            ->limit(5)
             ->get();
 
-        $recentActivity = $this
-            ->assignedComplaintsQuery($technicianId)
+        /*
+        |--------------------------------------------------------------------------
+        | Recent Work Order Updates
+        |--------------------------------------------------------------------------
+        */
+
+        $recentActivityOrders = (clone $baseOrders)
             ->with([
-                'consumer',
-                'division',
-                'category',
-                'technicians',
-                'aiAnalysis',
+                'complaint.category',
+                'complaint.consumer',
             ])
-            ->whereIn('complaints.status', [
-                'Assigned',
-                'In Progress',
-                'Completed',
-                'Closed',
-            ])
-            ->latest('complaints.updated_at')
-            ->take(5)
+            ->orderByDesc('maintenance_work_orders.updated_at')
+            ->limit(5)
             ->get();
 
-        return view(
-            'technician.dashboard',
-            compact(
-                'assignedCount',
-                'inProgressCount',
-                'urgentCount',
-                'activeCount',
-                'completedCount',
-                'totalCount',
-                'currentComplaints',
-                'recentCompleted',
-                'recentActivity'
-            )
-        );
-    }
+        $statusLabels = [
+            'Scheduled',
+            'In Progress',
+            'Pending Workload',
+            'Completed',
+        ];
 
-    private function assignedComplaintsQuery(
-        int $technicianId
-    ): Builder {
-        return Complaint::query()
-            ->whereHas(
-                'technicians',
-                function (Builder $query) use ($technicianId) {
-                    $query->where(
-                        'users.id',
-                        $technicianId
-                    );
-                }
-            );
+        $statusValues = [
+            $assignedCount,
+            $inProgressCount,
+            $pendingWorkloadCount,
+            $completedCount,
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | My Submitted Accomplishment Reports
+        |--------------------------------------------------------------------------
+        | These are report records, not maintenance work-order visits.
+        | Only the original submitting technician's reports are counted.
+        */
+
+        $myReports = MaintenanceReport::query()
+            ->where('technician_id', $technicianId)
+            ->whereNotNull('submitted_at');
+
+        $reportTotalCount = (clone $myReports)->count();
+        $reportPendingCount = (clone $myReports)
+            ->where('review_status', 'Pending Review')->count();
+        $reportApprovedCount = (clone $myReports)
+            ->where('review_status', 'Approved')->count();
+        $reportReturnedCount = (clone $myReports)
+            ->where('review_status', 'Returned')->count();
+
+        $recentSubmittedReports = (clone $myReports)
+            ->with(['complaint.category'])
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->limit(4)
+            ->get();
+
+        return view('technician.dashboard', compact(
+            'assignedCount',
+            'inProgressCount',
+            'pendingWorkloadCount',
+            'historicalPendingCount',
+            'completedCount',
+            'activeCount',
+            'totalCount',
+            'urgentCount',
+            'completionRate',
+            'todayScheduledCount',
+            'overdueCount',
+            'trendLabels',
+            'trendValues',
+            'statusLabels',
+            'statusValues',
+            'currentWorkOrders',
+            'recentCompletedOrders',
+            'recentActivityOrders',
+            'reportTotalCount',
+            'reportPendingCount',
+            'reportApprovedCount',
+            'reportReturnedCount',
+            'recentSubmittedReports'
+        ));
     }
 }

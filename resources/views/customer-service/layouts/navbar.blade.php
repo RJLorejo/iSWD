@@ -47,32 +47,6 @@
 
         <div class="flex shrink-0 items-center gap-2 sm:gap-3">
 
-            @php
-                $navbarNewFeedbackCount = \App\Models\ComplaintFeedback::query()
-                    ->where('handling_status', 'New')
-                    ->count();
-            @endphp
-
-            <a
-                href="{{ route('customer-service.feedback.index', ['handling_status' => 'New']) }}"
-                class="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-sky-50 hover:text-sky-700"
-                title="New consumer feedback">
-
-                <i class="far fa-bell text-lg"></i>
-
-                @if ($navbarNewFeedbackCount > 0)
-
-                    <span
-                        class="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
-
-                        {{ $navbarNewFeedbackCount > 9 ? '9+' : $navbarNewFeedbackCount }}
-
-                    </span>
-
-                @endif
-
-            </a>
-
             <div
                 x-data="{ open: false }"
                 class="relative">

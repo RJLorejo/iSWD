@@ -4,171 +4,197 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
+use App\Models\MaintenanceReport;
+use App\Models\MaintenanceWorkOrder;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        $today = CarbonImmutable::now('Asia/Manila')->toDateString();
         /*
-        |--------------------------------------------------------------------------
-        | MAINTENANCE CASE STATISTICS
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| Complaint Summary
+|--------------------------------------------------------------------------
+*/
 
-        // Verified complaints
-        $verifiedComplaints = Complaint::where(
-            'complaints.status',
-            'Verified'
-        )->count();
+        $eligibleComplaints = Complaint::query()
+            ->where('complaints.status', 'Verified')
+            ->whereHas('division', function ($query) {
+                $query->whereIn('name', [
+                    'Engineering',
+                    'Customer Service',
+                ]);
+            });
 
+        $verifiedComplaints = (clone $eligibleComplaints)->count();
 
-        // Verified complaints that do not yet have a technician
-        $unassignedCases = Complaint::where(
-            'complaints.status',
-            'Verified'
-        )
+        $unassignedCases = (clone $eligibleComplaints)
             ->whereDoesntHave('technicians')
             ->count();
 
+        $assignedCases = Complaint::query()
+            ->where('status', 'Assigned')
+            ->count();
 
-        // Assigned complaints
-        $assignedCases = Complaint::where(
-            'complaints.status',
-            'Assigned'
-        )->count();
+        $inProgressComplaints = Complaint::query()
+            ->where('status', 'In Progress')
+            ->count();
 
+        $reportsForReview = MaintenanceReport::query()
+            ->where('review_status', 'Pending Review')
+            ->count();
 
-        // Complaints currently being worked on
-        $inProgressComplaints = Complaint::where(
-            'complaints.status',
-            'In Progress'
-        )->count();
+        $completedToday = Complaint::query()
+            ->where('status', 'Completed')
+            ->whereDate('completed_at', $today)
+            ->count();
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | REPORTS FOR REVIEW
-        |--------------------------------------------------------------------------
-        |
-        | TEMPORARY VALUE FOR THE CURRENT PROTOTYPE.
-        |
-        | Replace this with the actual MaintenanceReport query
-        | once the report workflow is finalized.
-        |
-        */
-
-        $reportsForReview = 2;
-
+        $technicianCount = User::role('Maintenance Technician')
+            ->where('is_active', true)
+            ->count();
 
         /*
+|--------------------------------------------------------------------------
+| New & Verified Complaints
+|--------------------------------------------------------------------------
+| Display only verified Engineering and Customer Service complaints
+| that have no technician assignment.
+*/
+
+        $recentVerifiedComplaints = (clone $eligibleComplaints)
+            ->whereDoesntHave('technicians')
+            ->with([
+                'consumer',
+                'category',
+                'aiAnalysis',
+                'division',
+            ])
+            ->latest('complaints.created_at')
+            ->take(5)
+            ->get();
+        /*
         |--------------------------------------------------------------------------
-        | COMPLETED TODAY
+        | Scheduling Workflow Counts
         |--------------------------------------------------------------------------
+        | These supplement the existing cards and can also be used by charts.
+        | A Draft Addition belongs to a finalized schedule but is not yet
+        | approved for technician dispatch.
         */
 
-        $completedToday = Complaint::where(
-            'complaints.status',
-            'Completed'
-        )
-            ->whereDate(
-                'complaints.updated_at',
-                Carbon::today()
-            )
+        $draftWorkOrders = MaintenanceWorkOrder::query()
+            ->where('status', 'Scheduled')
+            ->where('approval_status', 'Draft')
+            ->count();
+
+        $pendingWorkloadCount = MaintenanceWorkOrder::query()
+            ->where('status', 'Pending Workload')
+            ->count();
+
+        $approvedScheduledCount = MaintenanceWorkOrder::query()
+            ->where('status', 'Scheduled')
+            ->where('approval_status', 'Approved')
+            ->count();
+
+        $activeWorkOrderCount = MaintenanceWorkOrder::query()
+            ->whereIn('status', ['In Progress'])
             ->count();
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | TECHNICIAN COUNT
-        |--------------------------------------------------------------------------
-        */
-
-        $technicianCount = User::role(
-            'Maintenance Technician'
-        )->count();
-
 
         /*
         |--------------------------------------------------------------------------
-        | RECENT VERIFIED COMPLAINTS
+        | Active Maintenance
         |--------------------------------------------------------------------------
+        | Exclude complaints that have already completed or closed.
         */
 
-        $recentVerifiedComplaints = Complaint::with([
-            'consumer',
-            'category',
-        ])
-            ->where(
-                'complaints.status',
-                'Verified'
-            )
-            ->latest('complaints.created_at')
-            ->take(5)
-            ->get();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVE COMPLAINTS
-        |--------------------------------------------------------------------------
-        |
-        | A complaint may have multiple assigned technicians.
-        |
-        */
-
-        $activeComplaints = Complaint::with([
-            'consumer',
-            'category',
-            'technicians',
-        ])
-            ->whereIn(
-                'complaints.status',
-                [
-                    'Assigned',
-                    'In Progress',
-                ]
-            )
-            ->latest('complaints.created_at')
-            ->take(5)
-            ->get();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | TECHNICIAN WORKLOAD
-        |--------------------------------------------------------------------------
-        |
-        | Because one complaint can have multiple technicians,
-        | assignedComplaints must use the complaint_technicians
-        | pivot relationship.
-        |
-        */
-
-        $technicians = User::role(
-            'Maintenance Technician'
-        )
-            ->withCount([
-                'assignedComplaints as active_complaints_count' => function ($query) {
-                    $query->whereIn(
-                        'complaints.status',
-                        [
-                            'Assigned',
-                            'In Progress',
-                        ]
-                    );
-                },
+        $activeComplaints = Complaint::query()
+            ->with([
+                'consumer',
+                'category',
+                'technicians',
+                'aiAnalysis',
+                'workOrders.schedule',
+                'workOrders.technicians',
             ])
-            ->orderByDesc('active_complaints_count')
+            ->whereIn('status', [
+                'Assigned',
+                'In Progress',
+            ])
+            ->whereDoesntHave('workOrders', function ($query) {
+                $query->where('status', 'Completed');
+            })
+            ->latest('created_at')
             ->take(5)
             ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Technician Workload
+        |--------------------------------------------------------------------------
+        | Count active work orders assigned to each technician rather than
+        | relying solely on complaint-level assignments. This reflects the
+        | actual maintenance workload, including multiple jobs per day.
+        */
+
+        /*
+|--------------------------------------------------------------------------
+| Technician Workload
+|--------------------------------------------------------------------------
+| Count active maintenance work orders directly from the database.
+| This avoids depending on an undefined User relationship.
+*/
+
+        $technicians = User::role('Maintenance Technician')
+            ->where('is_active', true)
+            ->get();
+
+        $technicianIds = $technicians->pluck('id');
+
+        $workloadCounts = collect();
+
+        if ($technicianIds->isNotEmpty()) {
+            $workloadCounts = DB::table('maintenance_work_order_technicians as mwot')
+                ->join(
+                    'maintenance_work_orders as mwo',
+                    'mwo.id',
+                    '=',
+                    'mwot.maintenance_work_order_id'
+                )
+                ->whereIn('mwot.technician_id', $technicianIds)
+                ->whereIn('mwo.status', [
+                    'Scheduled',
+                    'In Progress',
+                    'Pending Workload',
+                ])
+                ->select(
+                    'mwot.technician_id',
+                    DB::raw('COUNT(DISTINCT mwo.id) as active_complaints_count')
+                )
+                ->groupBy('mwot.technician_id')
+                ->pluck('active_complaints_count', 'mwot.technician_id');
+        }
+
+        $technicians = $technicians
+            ->each(function ($technician) use ($workloadCounts) {
+                $technician->active_complaints_count = (int) (
+                    $workloadCounts[$technician->id] ?? 0
+                );
+            })
+            ->sortByDesc('active_complaints_count')
+            ->take(5)
+            ->values();
 
 
         /*
         |--------------------------------------------------------------------------
-        | CASE STATUS CHART
+        | Case Status Chart Data
         |--------------------------------------------------------------------------
+        | Preserve the original chart variable for existing JavaScript.
         */
 
         $caseStatusChart = [
@@ -178,9 +204,8 @@ class DashboardController extends Controller
                 'Assigned',
                 'In Progress',
                 'For Review',
-                'Completed',
+                'Completed Today',
             ],
-
             'data' => [
                 $verifiedComplaints,
                 $unassignedCases,
@@ -191,28 +216,48 @@ class DashboardController extends Controller
             ],
         ];
 
-
         /*
         |--------------------------------------------------------------------------
-        | RETURN DASHBOARD
+        | Current Scheduling Chart Data
         |--------------------------------------------------------------------------
+        | These values reflect the new work-order approval workflow.
         */
 
-        return view(
-            'maintenance-manager.dashboard',
-            compact(
-                'verifiedComplaints',
-                'unassignedCases',
-                'assignedCases',
-                'inProgressComplaints',
-                'reportsForReview',
-                'completedToday',
-                'technicianCount',
-                'recentVerifiedComplaints',
-                'activeComplaints',
-                'technicians',
-                'caseStatusChart'
-            )
-        );
+        $maintenanceWorkflowChart = [
+            'labels' => [
+                'Draft / Draft Additions',
+                'Approved / Scheduled',
+                'In Progress',
+                'Pending Workload',
+                'Completed',
+            ],
+            'data' => [
+                $draftWorkOrders,
+                $approvedScheduledCount,
+                $activeWorkOrderCount,
+                $pendingWorkloadCount,
+                MaintenanceWorkOrder::query()
+                    ->where('status', 'Completed')
+                    ->count(),
+            ],
+        ];
+
+        return view('maintenance-manager.dashboard', compact(
+            'verifiedComplaints',
+            'unassignedCases',
+            'assignedCases',
+            'inProgressComplaints',
+            'reportsForReview',
+            'completedToday',
+            'technicianCount',
+            'recentVerifiedComplaints',
+            'activeComplaints',
+            'technicians',
+            'caseStatusChart',
+            'maintenanceWorkflowChart',
+            'draftWorkOrders',
+            'pendingWorkloadCount',
+            'approvedScheduledCount'
+        ));
     }
 }

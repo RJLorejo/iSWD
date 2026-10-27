@@ -37,32 +37,6 @@
 
         <div class="flex items-center gap-5">
 
-            <form method="GET" action="{{ route('search') }}" class="hidden md:block relative">
-
-                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3 text-gray-400"></i>
-
-                <input type="search" name="q" value="{{ request('q') }}"
-                    placeholder="Search employees, departments, positions..."
-                    class="pl-11 pr-10 w-80 rounded-xl border bg-gray-50 px-4 py-2 focus:ring-2 focus:ring-sky-500 outline-none transition">
-
-                @if (request('q'))
-                    <a href="{{ route('search') }}" class="absolute right-3 top-3 text-gray-400 hover:text-red-500">
-
-                        <i class="fa-solid fa-xmark"></i>
-
-                    </a>
-                @endif
-
-            </form>
-
-            <button class="relative h-10 w-10 rounded-xl hover:bg-gray-100">
-
-                <i class="fa-regular fa-bell text-xl"></i>
-
-                <span class="absolute right-2 top-2 w-2 h-2 bg-red-500 rounded-full"></span>
-
-            </button>
-
             <div x-data="{ open: false }" class="relative">
 
                 <button @click="open=!open" class="flex items-center gap-3 rounded-xl hover:bg-gray-100 px-3 py-2">

@@ -138,36 +138,19 @@
 
                     <div class="p-2">
 
-                        @if (Route::has('profile.show'))
-                            <a href="{{ route('profile.show') }}"
+
+                        @if (Route::has('consumer.profile.show'))
+                            <a href="{{ route('consumer.profile.show') }}"
                                 class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
 
                                 <span
                                     class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-
                                     <i class="fas fa-user text-xs"></i>
-
                                 </span>
 
                                 My Profile
-
                             </a>
                         @endif
-
-                        <a href="{{ route('consumer.complaints.index') }}"
-                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
-
-                            <span
-                                class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-
-                                <i class="fas fa-file-lines text-xs"></i>
-
-                            </span>
-
-                            My Complaints
-
-                        </a>
-
                     </div>
 
                     <div class="border-t border-slate-100 p-2">

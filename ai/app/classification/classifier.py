@@ -385,24 +385,28 @@ class ComplaintClassifier:
 
         return terms
 
+
     def _confidence_level(
         self,
         confidence: float,
         confidence_gap: float,
     ) -> str:
+        # A large gap alone does not mean the
+        # classifier is highly confident.
         if (
-            confidence >= 0.20
-            and confidence_gap >= 0.10
+            confidence >= 0.60
+            and confidence_gap >= 0.15
         ):
             return "High"
 
         if (
-            confidence >= 0.12
-            and confidence_gap >= 0.05
+            confidence >= 0.35
+            and confidence_gap >= 0.08
         ):
             return "Moderate"
 
         return "Low"
+
 
     def _review_reason(
         self,
@@ -576,6 +580,7 @@ class ComplaintClassifier:
             or best_confidence < 0.12
         )
 
+
         review_reason = (
             self._review_reason(
                 best_confidence,
@@ -585,10 +590,8 @@ class ComplaintClassifier:
             )
         )
 
-        top_terms = (
-            self._get_top_terms(
-                word_vector
-            )
+        top_terms = self._get_top_terms(
+            word_vector
         )
 
         return {

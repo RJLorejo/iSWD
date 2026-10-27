@@ -32,6 +32,7 @@ class Complaint extends Model
         'verified_at',
         'verification_reason',
         'completed_at',
+        'closed_at',
     ];
 
     protected $casts = [
@@ -41,6 +42,7 @@ class Complaint extends Model
         'updated_at' => 'datetime',
         'latitude' => 'float',
         'longitude' => 'float',
+        'closed_at' => 'datetime',
     ];
 
     public function consumer()
@@ -224,5 +226,22 @@ class Complaint extends Model
     public function isRejected(): bool
     {
         return $this->status === 'Rejected';
+    }
+
+    public function workOrders(): HasMany
+    {
+        return $this->hasMany(
+            MaintenanceWorkOrder::class,
+            'complaint_id'
+        );
+    }
+
+
+    public function maintenanceWorkOrders()
+    {
+        return $this->hasMany(
+            \App\Models\MaintenanceWorkOrder::class,
+            'complaint_id'
+        );
     }
 }

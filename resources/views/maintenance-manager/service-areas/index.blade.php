@@ -3,6 +3,21 @@
 @section('title', 'Plumber Service Areas')
 
 @section('content')
+@php
+    $areaPrintRecords = $serviceAreas->map(fn ($area) => [
+        'name' => $area->name,
+        'description' => $area->description ?: '—',
+        'plumbers' => $area->plumbers_count,
+        'status' => $area->is_active ? 'Active' : 'Inactive',
+    ])->values()->all();
+    $plumberPrintRecords = $plumbers->map(fn ($plumber) => [
+        'name' => $plumber->full_name,
+        'employee_id' => $plumber->employee_id ?: '—',
+        'position' => $plumber->position?->name ?? 'Maintenance Technician',
+        'area' => $plumber->serviceArea?->name ?? 'Not Assigned',
+    ])->values()->all();
+@endphp
+
 
     <div x-data="{
         areaModal: false,
@@ -96,6 +111,8 @@
 
         </div>
 
+
+        <button type="button" onclick="printServiceAreasReport()" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><i class="fas fa-print"></i> Print Report</button>
 
         {{-- Success --}}
         @if (session('success'))
@@ -1259,5 +1276,20 @@
         </div>
 
     </div>
+
+
+@include('maintenance-manager.partials.report-print-template')
+<script>
+function printServiceAreasReport() {
+    const areas = @js($areaPrintRecords);
+    const plumbers = @js($plumberPrintRecords);
+    const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    const row = cells => '<tr>'+cells.map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>';
+    const areaTable = '<thead><tr><th>Service Area</th><th>Description</th><th>Plumbers</th><th>Status</th></tr></thead><tbody>' + (areas.map(a=>row([a.name,a.description,a.plumbers,a.status])).join('') || '<tr><td colspan="4">No service areas.</td></tr>') + '</tbody>';
+    const plumberTable = '<thead><tr><th>Plumber</th><th>Employee ID</th><th>Position</th><th>Permanent Service Area</th></tr></thead><tbody>' + (plumbers.map(p=>row([p.name,p.employee_id,p.position,p.area])).join('') || '<tr><td colspan="4">No plumbers.</td></tr>') + '</tbody>';
+    const tableHtml = areaTable;
+    openMaintenanceReport({secondaryTitle:'Plumber Assignments',secondaryTableHtml:plumberTable,title:'Plumber Service Areas Report',subtitle:'Permanent Service Areas and Plumber Assignments',period:'Current assignment records',tableHtml,summary:`${areas.length} service areas · ${plumbers.length} plumbers`});
+}
+</script>
 
 @endsection

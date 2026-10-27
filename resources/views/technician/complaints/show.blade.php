@@ -8,27 +8,40 @@
         $currentTechnician = $complaint->technicians->firstWhere('id', auth()->id());
         $myAssignmentStatus = $currentTechnician?->pivot?->status;
 
-        $report = $complaint->maintenanceReport;
-        $commercialResolution = $complaint->commercialResolution;
+        // The current visit's team, not historical complaint assignments, controls actions.
+$isReassignedFromCurrentVisit = $isReassignedFromCurrentVisit ?? false;
+$isCurrentWorkOrderTechnician = $workOrder && $workOrderTeam->contains('id', (int) auth()->id());
+$myParticipation = $workOrder
+    ? \App\Models\MaintenanceWorkOrderParticipation::query()
+        ->where('maintenance_work_order_id', $workOrder->id)
+        ->where('technician_id', (int) auth()->id())
+        ->first()
+    : null;
+$isHandedOver = in_array($myParticipation?->status, ['Handed Over', 'Replaced'], true);
+$canActOnCurrentVisit = !$isReassignedFromCurrentVisit && $isCurrentWorkOrderTechnician && !$isHandedOver;
 
-        $isEngineering = str_contains(strtolower($complaint->division?->name ?? ''), 'engineering');
+$report = $complaint->maintenanceReport;
+$commercialResolution = $complaint->commercialResolution;
 
-        $isForwardedRequest = !$isEngineering && !is_null($commercialResolution?->forwarded_to_maintenance_at);
+$isEngineering = str_contains(strtolower($complaint->division?->name ?? ''), 'engineering');
 
-        $displayStatus = match ($complaint->status) {
-            'Completed' => 'Accomplished',
-            default => $complaint->status,
-        };
+$isForwardedRequest = !$isEngineering && !is_null($commercialResolution?->forwarded_to_maintenance_at);
 
-        $statusClasses = match ($complaint->status) {
-            'Assigned' => 'bg-blue-50 text-blue-700 border-blue-200',
-            'In Progress' => 'bg-amber-50 text-amber-700 border-amber-200',
-            'Completed' => 'bg-green-50 text-green-700 border-green-200',
-            'Closed' => 'bg-gray-100 text-gray-700 border-gray-200',
-            default => 'bg-gray-50 text-gray-700 border-gray-200',
-        };
+$displayStatus = match ($complaint->status) {
+    'Completed' => 'Accomplished',
+    default => $complaint->status,
+};
 
-        $urgency = strtoupper(trim($complaint->aiAnalysis?->urgency_level ?? ''));
+$statusClasses = match ($complaint->status) {
+    'Assigned' => 'bg-blue-50 text-blue-700 border-blue-200',
+    'In Progress' => 'bg-amber-50 text-amber-700 border-amber-200',
+    'Completed' => 'bg-green-50 text-green-700 border-green-200',
+    'Closed' => 'bg-gray-100 text-gray-700 border-gray-200',
+    default => 'bg-gray-50 text-gray-700 border-gray-200',
+};
+
+// Display Customer Service's finalized urgency only.
+        $urgency = strtoupper(trim((string) ($complaint->aiAnalysis?->verified_urgency_level ?? '')));
 
         $urgencyClasses = match ($urgency) {
             'HIGH' => 'bg-red-50 text-red-700 border-red-200',
@@ -43,7 +56,7 @@
 
         $completedDate = $complaint->technicians->pluck('pivot.completed_at')->filter()->sort()->first();
 
-        $assignedNames = $complaint->technicians
+        $assignedNames = $currentMaintenanceTeam
             ->map(fn($technician) => $technician->full_name)
             ->filter()
             ->implode(', ');
@@ -190,6 +203,20 @@
             </div>
         @endif
 
+        @if ($errors->has('maintenance'))
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <i class="fas fa-circle-exclamation mr-2"></i>
+                {{ $errors->first('maintenance') }}
+            </div>
+        @endif
+
+        @if ($errors->has('pending_reason'))
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <i class="fas fa-circle-exclamation mr-2"></i>
+                {{ $errors->first('pending_reason') }}
+            </div>
+        @endif
+
 
         <div
             class="bg-white rounded-2xl
@@ -275,9 +302,19 @@
 
                     <div class="flex flex-wrap gap-2">
 
-                        @if ($complaint->status === 'Assigned' && $myAssignmentStatus === 'Assigned')
 
-                            <form method="POST" action="{{ route('technician.maintenance-reports.start', $complaint) }}">
+                        @if (
+                            $workOrder &&
+                                in_array($complaint->status, ['Assigned', 'In Progress'], true) &&
+                                ($scheduleState['can_start'] ?? false) &&
+                                $workOrder->approval_status === 'Approved' &&
+                                $workOrder->schedule?->status === 'Finalized')
+
+                            <form method="POST"
+                                action="{{ route('technician.work-orders.start', [
+                                    'complaint' => $complaint,
+                                    'workOrder' => $workOrder,
+                                ]) }}">
                                 @csrf
 
                                 <button type="submit"
@@ -292,7 +329,7 @@
                                 </button>
 
                             </form>
-                        @elseif ($complaint->status === 'In Progress')
+                        @elseif ($canActOnCurrentVisit && $canContinueAccomplishment)
                             <a href="{{ route('technician.maintenance-reports.create', $complaint) }}"
                                 class="inline-flex items-center gap-2
                                        px-5 py-3 rounded-xl
@@ -303,7 +340,9 @@
 
                                 Continue Accomplishment Report
                             </a>
-                        @elseif ($complaint->status === 'Completed' && $report?->review_status === 'Returned')
+                        @elseif (in_array($complaint->status, ['Completed', 'Closed'], true) &&
+                                $report?->review_status === 'Returned' &&
+                                (int) $report->technician_id === (int) auth()->id())
                             <a href="{{ route('technician.maintenance-reports.create', $complaint) }}"
                                 class="inline-flex items-center gap-2
                                        px-5 py-3 rounded-xl
@@ -366,6 +405,194 @@
                 </div>
 
             </div>
+
+
+            @php
+                $reportStatus = $report?->review_status;
+
+                $needsReportReview = in_array($reportStatus, ['Pending Review', 'Approved', 'Returned'], true);
+
+                $today = now('Asia/Manila')->toDateString();
+
+                $workOrderSchedule = $workOrder?->schedule;
+
+                $workOrderScheduleDate = $workOrderSchedule?->schedule_date
+                    ? \Carbon\CarbonImmutable::parse($workOrderSchedule->schedule_date, 'Asia/Manila')->toDateString()
+                    : null;
+
+                $hasValidWorkOrderSchedule =
+                    $workOrderSchedule?->status === 'Finalized' &&
+                    $workOrder?->approval_status === 'Approved' &&
+                    $workOrderScheduleDate !== null &&
+                    $workOrderScheduleDate === $today;
+
+                $hasStartedWorkOrder = !is_null($workOrder?->started_at);
+
+                // A newer follow-up (even if still Draft) supersedes the old visit.
+                // Match the backend resumeWorkOrder() eligibility check.
+                $newerFollowUp = $workOrder
+                    ? \App\Models\MaintenanceWorkOrder::query()
+                        ->with('technicians')
+                        ->where('complaint_id', $complaint->id)
+                        ->where(function ($query) use ($workOrder) {
+                            $query
+                                ->where('visit_number', '>', $workOrder->visit_number)
+                                ->orWhere(function ($sameVisit) use ($workOrder) {
+                                    $sameVisit
+                                        ->where('visit_number', $workOrder->visit_number)
+                                        ->where('id', '>', $workOrder->id);
+                                });
+                        })
+                        ->whereIn('status', ['Scheduled', 'In Progress', 'Completed', 'Pending Workload'])
+                        ->orderByDesc('visit_number')
+                        ->orderByDesc('id')
+                        ->first()
+                    : null;
+
+                $reassignedToAnotherPlumber =
+                    $newerFollowUp && !$newerFollowUp->technicians->contains('id', (int) auth()->id());
+
+                $canRecordOrderPending =
+                    in_array($complaint->status, ['Assigned', 'In Progress'], true) &&
+                    $workOrder !== null &&
+                    in_array($workOrder->status, ['Scheduled', 'In Progress'], true) &&
+                    $hasValidWorkOrderSchedule &&
+                    $canActOnCurrentVisit &&
+                    !$needsReportReview;
+
+                $canResumeSameDay =
+                    in_array($complaint->status, ['Assigned', 'In Progress'], true) &&
+                    $workOrder !== null &&
+                    $workOrder->status === 'Pending Workload' &&
+                    !$newerFollowUp &&
+                    $canActOnCurrentVisit &&
+                    $hasValidWorkOrderSchedule &&
+                    $canActOnCurrentVisit &&
+                    !$needsReportReview;
+
+            @endphp
+
+
+            @if ($canActOnCurrentVisit && in_array($complaint->status, ['Assigned', 'In Progress'], true))
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+
+                    <div class="flex items-start gap-3">
+
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                            <i class="fas fa-clock"></i>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-slate-900">
+                                Unfinished Maintenance
+                            </h3>
+
+                            <p class="mt-1 text-sm text-slate-500">
+                                Record a reason if maintenance cannot start or must be interrupted.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    @if ($needsReportReview)
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <p class="text-sm font-semibold text-amber-900">
+                                <i class="fas fa-circle-info mr-1"></i>
+                                Report Review Required
+                            </p>
+
+                            <p class="mt-1 text-sm text-amber-800">
+                                This complaint already has a maintenance report
+                                marked {{ $reportStatus }}.
+                                Please contact the Maintenance Manager before
+                                recording Pending Workload.
+                            </p>
+                        </div>
+                    @elseif ($workOrder?->status === 'Pending Workload')
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <p class="text-sm font-semibold text-amber-900">
+                                <i class="fas fa-hourglass-half mr-1"></i>
+                                Pending Workload Recorded
+                            </p>
+
+                            <p class="mt-2 text-sm text-amber-800">
+                                {{ $workOrder->pending_reason }}
+                            </p>
+
+                            @if ($reassignedToAnotherPlumber)
+                                <p class="mt-3 text-sm font-medium text-slate-700">
+                                    <i class="fas fa-user-check mr-1"></i>
+                                    Maintenance reassigned to another plumber. No further action is required for this visit.
+                                </p>
+                            @elseif ($newerFollowUp)
+                                <p class="mt-3 text-sm font-medium text-slate-700">
+                                    A newer follow-up visit has been arranged. Continue only through the new work order.
+                                </p>
+                            @elseif ($canResumeSameDay)
+                                <form method="POST"
+                                    action="{{ route('technician.work-orders.resume', [$complaint, $workOrder]) }}"
+                                    class="mt-3">
+                                    @csrf
+                                    <button type="submit"
+                                        class="inline-flex items-center gap-2 rounded-xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-800">
+                                        <i class="fas fa-play"></i>
+                                        {{ $hasStartedWorkOrder ? 'Resume Maintenance' : 'Start After Interruption' }}
+                                    </button>
+                                </form>
+                            @else
+                                <p class="mt-3 text-xs text-amber-700">
+                                    Resumption is unavailable. Contact the Maintenance Manager if follow-up is needed.
+                                </p>
+                            @endif
+                        </div>
+                    @elseif ($canRecordOrderPending)
+                        <form method="POST"
+                            action="{{ route('technician.work-orders.pending', [$complaint, $workOrder]) }}"
+                            class="space-y-3">
+                            @csrf
+
+                            <div>
+                                <label for="pending_reason" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Reason for Unfinished Maintenance
+                                    <span class="text-red-500">*</span>
+                                </label>
+
+                                <textarea id="pending_reason" name="pending_reason" rows="3" minlength="10" maxlength="2000" required
+                                    placeholder="Example: Repair could not be completed because additional pipe fittings are required."
+                                    class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-100">{{ old('pending_reason') }}</textarea>
+
+                                @error('pending_reason')
+                                    <p class="mt-1 text-xs text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
+
+                            <div class="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+                                <i class="fas fa-circle-info mr-1"></i>
+                                This will not complete the complaint. You can resume today;
+                                otherwise the manager can arrange a follow-up visit.
+                            </div>
+
+                            <button type="submit"
+                                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">
+                                <i class="fas fa-clipboard-check"></i>
+                                Record Pending Workload
+                            </button>
+                        </form>
+                    @else
+                        <p class="text-sm text-slate-500">
+                            No eligible maintenance activity is available
+                            for Pending Workload recording.
+                        </p>
+                    @endif
+
+                </div>
+
+            @endif
+
 
 
             @if ($complaint->status === 'Completed' && $report?->review_status === 'Pending Review')
@@ -473,6 +700,410 @@
 
         </div>
 
+        @if ($isReassignedFromCurrentVisit || $isHandedOver)
+            <div class="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm" role="status">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-user-shield mt-1 text-indigo-700"></i>
+                    <div>
+                        <h2 class="font-semibold text-indigo-950">Maintenance Reassigned to Another Plumber</h2>
+                        <p class="mt-1 text-sm leading-6 text-indigo-800">
+                            Your assignment to this maintenance visit has ended. You can review the complaint
+                            and previous maintenance records, but you cannot start, resume, or record
+                            unfinished work for the current visit. Contact the Maintenance Manager for clarification.
+                        </p>
+                        @if ($currentMaintenanceTeam->isNotEmpty())
+                            <p class="mt-2 text-xs font-semibold text-indigo-800">
+                                Current team: {{ $assignedNames }}
+                            </p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Approval is specific to the work order, not only its parent schedule. --}}
+        @if ($workOrder && $workOrder->approval_status !== 'Approved')
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-clock mt-1 text-amber-700"></i>
+                    <div>
+                        <p class="font-semibold text-amber-900">Draft Maintenance Assignment — Awaiting Manager Approval
+                        </p>
+                        <p class="mt-1 text-sm text-amber-800">This visit is visible for advance planning only. Maintenance
+                            cannot begin until the Manager approves this work order, even when the daily schedule is
+                            finalized.</p>
+                        @if ($workOrder->is_late_addition && filled($workOrder->late_addition_reason))
+                            <p class="mt-2 whitespace-pre-line text-sm text-amber-900"><strong>Early scheduling
+                                    reason:</strong> {{ $workOrder->late_addition_reason }}</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Manager-approved maintenance work schedule --}}
+        @include('technician.complaints.partials.work-order-schedule', [
+            'scheduleState' => $scheduleState,
+            'workOrder' => $workOrder,
+            'workOrderTeam' => $workOrderTeam,
+        ])
+
+        {{-- ========================================================= --}}
+        {{-- MAINTENANCE SCHEDULING HISTORY - PLUMBER --}}
+        {{-- ========================================================= --}}
+
+        @php
+            $plumberWorkOrders = \App\Models\MaintenanceWorkOrder::query()
+                ->with('schedule')
+                ->where('complaint_id', $complaint->id)
+                ->whereHas('technicians', function ($query) {
+                    $query->where('users.id', auth()->id());
+                })
+                ->orderBy('visit_number')
+                ->orderBy('id')
+                ->get();
+        @endphp
+
+        {{-- Prominent historical unfinished-visit reason. Keep the original
+             work order as the source of truth, even after follow-up scheduling. --}}
+        @php
+            $latestUnfinishedVisit = $plumberWorkOrders
+                ->filter(fn($order) => filled($order->pending_reason))
+                ->sortByDesc(
+                    fn($order) => $order->pending_recorded_at
+                        ? \Carbon\Carbon::parse($order->pending_recorded_at)->timestamp
+                        : $order->id,
+                )
+                ->first();
+        @endphp
+
+        @if ($latestUnfinishedVisit)
+            <div class="overflow-hidden rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
+                <div class="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <span
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
+                            <i class="fas fa-circle-exclamation"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <h2 class="text-base font-bold text-orange-950">Unfinished Maintenance Reason</h2>
+                            <p class="mt-1 text-xs text-orange-800">
+                                Visit {{ $latestUnfinishedVisit->visit_number }} · Work Order
+                                #{{ $latestUnfinishedVisit->id }}
+                                @if ($latestUnfinishedVisit->schedule?->schedule_date)
+                                    ·
+                                    {{ \Carbon\Carbon::parse($latestUnfinishedVisit->schedule->schedule_date)->format('M d, Y') }}
+                                @endif
+                            </p>
+                            <p class="mt-3 whitespace-pre-line break-words text-sm leading-6 text-orange-950">
+                                {{ $latestUnfinishedVisit->pending_reason }}</p>
+                            @if ($latestUnfinishedVisit->pending_recorded_at)
+                                <p class="mt-3 text-xs text-orange-800">
+                                    Recorded
+                                    {{ \Carbon\Carbon::parse($latestUnfinishedVisit->pending_recorded_at)->format('M d, Y h:i A') }}
+                                    PHT
+                                </p>
+                            @endif
+                            <p class="mt-2 text-xs text-orange-800">
+                                This reason belongs to the original unfinished visit and remains visible after a follow-up
+                                is scheduled.
+                            </p>
+                        </div>
+                    </div>
+                    <span
+                        class="shrink-0 self-start rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-semibold text-orange-800">
+                        {{ $latestUnfinishedVisit->status === 'Pending Workload' ? 'Pending Workload' : 'Historical Reason' }}
+                    </span>
+                </div>
+            </div>
+        @endif
+
+        @if ($plumberWorkOrders->isNotEmpty())
+
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+
+                <div class="border-b border-gray-100 px-5 py-4 sm:px-6">
+
+                    <div class="flex items-start gap-3">
+
+                        <div
+                            class="flex h-11 w-11 shrink-0 items-center justify-center
+                            rounded-xl bg-sky-100 text-sky-700">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+
+                        <div>
+                            <h2 class="font-semibold text-gray-900">
+                                Maintenance Scheduling History
+                            </h2>
+
+                            <p class="mt-1 text-sm text-gray-500">
+                                Your assigned maintenance visits and scheduling decisions
+                                recorded by the Maintenance Manager.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="space-y-4 p-5 sm:p-6">
+
+                    @foreach ($plumberWorkOrders as $order)
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+
+                            <div
+                                class="flex flex-col gap-3 sm:flex-row
+                                sm:items-start sm:justify-between">
+
+                                <div>
+
+                                    <p class="text-sm font-bold text-gray-900">
+                                        Visit {{ $order->visit_number }}
+                                        · Work Order #{{ $order->id }}
+                                    </p>
+
+                                    <p class="mt-2 text-sm text-gray-600">
+
+                                        <i class="far fa-calendar mr-1 text-sky-600"></i>
+
+                                        @if ($order->schedule?->schedule_date)
+                                            {{ \Carbon\Carbon::parse($order->schedule->schedule_date)->format('M d, Y') }}
+                                        @else
+                                            No scheduled date recorded
+                                        @endif
+
+                                    </p>
+
+                                </div>
+
+                                <span
+                                    class="inline-flex self-start items-center
+                                     rounded-full border border-gray-200
+                                     bg-white px-3 py-1
+                                     text-xs font-semibold text-gray-700">
+
+                                    {{ $order->status }}
+                                    ·
+                                    {{ $order->approval_status === 'Approved' ? 'Approved' : 'Draft — Awaiting Approval' }}
+
+                                </span>
+
+                            </div>
+
+                            {{-- Pending Workload reason for this visit (retained in history) --}}
+                            @if ($order->status === 'Pending Workload' || filled($order->pending_reason))
+                                <div class="mt-4 rounded-xl border border-orange-200 bg-orange-50 p-4">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="flex items-center gap-2 text-sm font-bold text-orange-900">
+                                            <i class="fas fa-circle-exclamation text-orange-700"></i>
+                                            Reason for Unfinished Maintenance
+                                        </p>
+                                        <span
+                                            class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-orange-700 border border-orange-200">
+                                            Pending Workload
+                                        </span>
+                                    </div>
+
+                                    <p class="mt-2 whitespace-pre-line break-words text-sm leading-6 text-orange-900">
+                                        {{ filled($order->pending_reason) ? $order->pending_reason : 'No reason was recorded for this visit.' }}
+                                    </p>
+
+                                    @if ($order->pending_recorded_at)
+                                        <p class="mt-3 text-xs text-orange-700">
+                                            <i class="far fa-clock mr-1"></i>
+                                            Recorded
+                                            {{ \Carbon\Carbon::parse($order->pending_recorded_at)->format('M d, Y h:i A') }}
+                                            PHT
+                                        </p>
+                                    @endif
+
+                                    @if ($order->status === 'Pending Workload')
+                                        <p class="mt-2 text-xs text-orange-700">
+                                            Awaiting the Maintenance Manager's follow-up scheduling decision.
+                                        </p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            {{-- Manager's Early Scheduling Justification --}}
+                            @if ($order->is_late_addition && filled($order->late_addition_reason))
+                                <div
+                                    class="mt-4 rounded-xl border border-amber-200
+                                    bg-amber-50 p-4">
+
+                                    <div class="flex items-center gap-2">
+
+                                        <i class="fas fa-clipboard-check text-amber-700"></i>
+
+                                        <h3 class="text-sm font-bold text-amber-900">
+                                            Early Scheduling Justification
+                                        </h3>
+
+                                    </div>
+
+                                    <p
+                                        class="mt-2 whitespace-pre-line break-words
+                                      text-sm leading-6 text-amber-900">
+                                        {{ $order->late_addition_reason }}
+                                    </p>
+
+                                    <p class="mt-3 text-xs text-amber-700">
+                                        <i class="fas fa-user-shield mr-1"></i>
+                                        Recorded by Maintenance Management
+                                    </p>
+
+                                </div>
+                            @endif
+
+                            {{-- Plumber Replacement History --}}
+                            @php
+                                $replacementHistories = $plumberReplacementHistories->get($order->id, collect());
+
+                                $replacementHistoryId = 'replacement-history-' . $order->id;
+                            @endphp
+
+                            @if ($replacementHistories->isNotEmpty())
+                                <div class="mt-4 overflow-hidden rounded-xl border border-indigo-200 bg-white">
+
+                                    {{-- Clickable show/hide header --}}
+                                    <button type="button"
+                                        onclick="const panel = document.getElementById(@js($replacementHistoryId)); const icon = this.querySelector('[data-toggle-icon]'); const expanded = this.getAttribute('aria-expanded') === 'true'; this.setAttribute('aria-expanded', String(!expanded)); panel.hidden = expanded; icon.classList.toggle('rotate-180', !expanded);"
+                                        aria-expanded="false" aria-controls="{{ $replacementHistoryId }}"
+                                        class="flex w-full items-center justify-between gap-3 bg-indigo-50 p-4 text-left transition hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                                        <div class="flex min-w-0 items-center gap-3">
+                                            <div
+                                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                                                <i class="fas fa-user-gear"></i>
+                                            </div>
+
+                                            <div class="min-w-0">
+                                                <h3 class="text-sm font-bold text-indigo-950">
+                                                    Plumber Replacement History
+                                                </h3>
+
+                                                <p class="mt-1 text-xs leading-5 text-indigo-800">
+                                                    View the reason and details of previous plumber replacements.
+                                                </p>
+
+                                                <span
+                                                    class="mt-2 inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                                                    {{ $replacementHistories->count() }}
+                                                    {{ $replacementHistories->count() === 1 ? 'record' : 'records' }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <i data-toggle-icon
+                                            class="fas fa-chevron-down shrink-0 text-indigo-600 transition-transform duration-200"></i>
+                                    </button>
+
+                                    {{-- Hidden until the user expands the section --}}
+                                    <div id="{{ $replacementHistoryId }}" hidden>
+                                        <div class="space-y-4 p-4">
+
+                                            @foreach ($replacementHistories as $replacementHistory)
+                                                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+
+                                                    <div class="flex items-start gap-3">
+                                                        <div
+                                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                                                            <i class="fas fa-user"></i>
+                                                        </div>
+
+                                                        <div class="min-w-0 flex-1">
+                                                            <h4 class="text-sm font-bold text-gray-900">
+                                                                Replacement Record {{ $loop->iteration }}
+                                                            </h4>
+
+                                                            @if ($replacementHistory->created_at)
+                                                                <p class="mt-1 text-xs text-gray-500">
+                                                                    {{ \Carbon\Carbon::parse($replacementHistory->created_at)->timezone('Asia/Manila')->format('M d, Y · h:i A') }}
+                                                                    PHT
+                                                                </p>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Previous and replacement plumber names --}}
+                                                    <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                                                        <div class="rounded-lg border border-gray-200 bg-white p-3">
+                                                            <p
+                                                                class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                                Previous Plumber
+                                                            </p>
+
+                                                            <p
+                                                                class="mt-2 break-words text-sm font-semibold text-gray-900">
+                                                                <i class="fas fa-user-minus mr-1 text-rose-500"></i>
+                                                                {{ $replacementHistory->previous_plumber_name }}
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="rounded-lg border border-gray-200 bg-white p-3">
+                                                            <p
+                                                                class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                                Replacement Plumber
+                                                            </p>
+
+                                                            <p
+                                                                class="mt-2 break-words text-sm font-semibold text-gray-900">
+                                                                <i class="fas fa-user-check mr-1 text-emerald-600"></i>
+                                                                {{ $replacementHistory->replacement_plumber_name }}
+                                                            </p>
+                                                        </div>
+
+                                                    </div>
+
+                                                    {{-- Replacement reason --}}
+                                                    <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                                                        <p
+                                                            class="text-xs font-bold uppercase tracking-wide text-amber-800">
+                                                            <i class="fas fa-clipboard-list mr-1"></i>
+                                                            Reason for Replacement
+                                                        </p>
+
+                                                        <p
+                                                            class="mt-2 whitespace-pre-line break-words text-sm leading-6 text-gray-800">
+                                                            {{ $replacementHistory->reason ?: 'No replacement reason was recorded.' }}
+                                                        </p>
+                                                    </div>
+
+                                                    {{-- Audit information --}}
+                                                    <div class="mt-3 rounded-lg border border-gray-200 bg-white p-3">
+                                                        <p class="text-xs text-gray-500">
+                                                            <span class="font-semibold text-gray-700">Recorded by:</span>
+                                                            {{ $replacementHistory->performer?->full_name ?? ($replacementHistory->performer?->name ?? 'Maintenance Manager (name unavailable)') }}
+                                                        </p>
+
+                                                        @if ($replacementHistory->created_at)
+                                                            <p class="mt-2 text-xs text-gray-500">
+                                                                <span class="font-semibold text-gray-700">Date
+                                                                    recorded:</span>
+                                                                {{ \Carbon\Carbon::parse($replacementHistory->created_at)->timezone('Asia/Manila')->format('M d, Y h:i A') }}
+                                                                PHT
+                                                            </p>
+                                                        @endif
+                                                    </div>
+
+                                                </div>
+                                            @endforeach
+
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+
+                        </div>
+                    @endforeach
+
+                </div>
+
+            </div>
+
+        @endif
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -1456,7 +2087,7 @@
 
                                     <div
                                         class="relative z-10 w-8 h-8 rounded-full
-                                               {{ $complaint->technicians->count() ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }}
+                                               {{ $currentMaintenanceTeam->isNotEmpty() ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }}
                                                flex items-center justify-center shrink-0">
                                         <i class="fas fa-check text-xs"></i>
                                     </div>
@@ -1467,11 +2098,12 @@
                                             Plumber Assigned
                                         </p>
 
-                                        @if ($complaint->technicians->count())
+                                        @if ($currentMaintenanceTeam->isNotEmpty())
 
-                                            @if ($assignmentDate)
+                                            @if ($currentVisit?->created_at)
                                                 <p class="text-xs text-gray-500 mt-1">
-                                                    {{ \Carbon\Carbon::parse($assignmentDate)->format('M d, Y • h:i A') }}
+                                                    Current work order created
+                                                    {{ $currentVisit->created_at->timezone('Asia/Manila')->format('M d, Y • h:i A') }}
                                                 </p>
                                             @endif
 
@@ -1569,7 +2201,7 @@
                                             </p>
                                         @elseif ($completedDate)
                                             <p class="text-xs text-gray-500 mt-1">
-                                                {{($completedDate)->format('M d, Y • h:i A') }}
+                                                {{ $completedDate->format('M d, Y • h:i A') }}
                                             </p>
                                         @else
                                             <p class="text-xs text-gray-400 mt-1">
@@ -1730,7 +2362,7 @@
                    min-w-9 h-9 px-2.5 rounded-full
                    bg-blue-100 text-blue-700
                    text-sm font-bold">
-                                {{ $complaint->technicians->count() }}
+                                {{ $currentMaintenanceTeam->count() }}
                             </span>
 
                         </div>
@@ -1742,7 +2374,7 @@
 
                         <div class="space-y-3">
 
-                            @foreach ($complaint->technicians as $technician)
+                            @foreach ($currentMaintenanceTeam as $technician)
                                 <div
                                     class="flex items-center gap-3 p-3 rounded-xl
                                            {{ $technician->id === auth()->id() ? 'bg-sky-50 border border-sky-200' : 'bg-gray-50 border border-gray-100' }}">
@@ -1781,16 +2413,32 @@
                                         </p>
 
 
-                                        @if ($technician->pivot?->status)
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                {{ $technician->pivot->status }}
-                                            </p>
-                                        @endif
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {{ $currentVisit?->approval_status === 'Approved' ? 'Approved Work Order' : 'Draft — Awaiting Manager Approval' }}
+                                        </p>
 
                                     </div>
 
                                 </div>
                             @endforeach
+
+                            @if ($previousMaintenanceTeam->isNotEmpty())
+                                <details class="rounded-xl border border-gray-200 bg-white p-3">
+                                    <summary class="cursor-pointer text-xs font-semibold text-gray-600">
+                                        View Previous Complaint Assignments
+                                        ({{ $previousMaintenanceTeam->count() }})
+                                    </summary>
+
+                                    <div class="mt-3 space-y-2">
+                                        @foreach ($previousMaintenanceTeam as $previousTechnician)
+                                            <div class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                                                <i class="fas fa-clock-rotate-left mr-1"></i>
+                                                {{ $previousTechnician->full_name }}
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </details>
+                            @endif
 
                         </div>
 

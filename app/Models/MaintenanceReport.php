@@ -34,6 +34,7 @@ class MaintenanceReport extends Model
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
         'resubmitted_at' => 'datetime',
+        'revision_number' => 'integer',
     ];
 
     public function complaint()

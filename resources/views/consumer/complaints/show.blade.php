@@ -4,6 +4,94 @@
 
 @section('content')
 
+    <style>
+        /* Presentation-only refinements for the consumer complaint details page. */
+        #consumer-complaint-details {
+            --complaint-ink: #0f172a;
+            color: var(--complaint-ink);
+        }
+
+        #consumer-complaint-details section,
+        #consumer-complaint-details>.mb-6.overflow-hidden {
+            min-width: 0;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgb(15 23 42 / 0.04);
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+        #consumer-complaint-details section:hover {
+            box-shadow: 0 5px 18px rgb(15 23 42 / 0.045);
+        }
+
+        #consumer-complaint-details h1,
+        #consumer-complaint-details h2,
+        #consumer-complaint-details h3,
+        #consumer-complaint-details p,
+        #consumer-complaint-details span,
+        #consumer-complaint-details a {
+            overflow-wrap: anywhere;
+        }
+
+        #consumer-complaint-details a:focus-visible,
+        #consumer-complaint-details button:focus-visible {
+            outline: 3px solid rgb(14 165 233 / .35);
+            outline-offset: 3px;
+        }
+
+        #consumer-complaint-details img {
+            max-width: 100%;
+        }
+
+        #consumer-complaint-details #complaintMap {
+            width: 100%;
+            min-height: 260px;
+            border-radius: .875rem;
+            z-index: 0;
+        }
+
+        @media (max-width: 640px) {
+            #consumer-complaint-details {
+                padding: 1.25rem .875rem 1.5rem;
+            }
+
+            #consumer-complaint-details>.mb-6.overflow-hidden>div {
+                padding: 1rem;
+            }
+
+            #consumer-complaint-details section>div.p-6 {
+                padding: 1rem;
+            }
+
+            #consumer-complaint-details section>div.px-6 {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            #consumer-complaint-details .grid {
+                min-width: 0;
+            }
+
+            #consumer-complaint-details [class*="rounded-3xl"] {
+                border-radius: .875rem;
+            }
+
+            #consumer-complaint-details #complaintMap {
+                min-height: 220px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #consumer-complaint-details * {
+                transition-duration: .01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+
+    <div class="mb-5">
+        <x-pending-workload-status :complaint="$complaint" audience="consumer" />
+    </div>
+
     @php
         $divisionName = strtolower((string) optional($complaint->division)->name);
 
@@ -69,8 +157,91 @@
             $report ||
             $commercialResolution?->forwarded_to_maintenance_at;
     @endphp
+    @if (session('success'))
+        <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+            <div class="flex items-start gap-3">
+
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600">
+
+                    <i class="fas fa-circle-check"></i>
+
+                </div>
+
+                <div class="min-w-0 flex-1">
+
+                    <p class="text-sm font-semibold text-emerald-900">
+                        Success
+                    </p>
+
+                    <div class="mt-1 text-sm leading-6 text-emerald-700">
+                        {{ session('success') }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
+
+            <div class="flex items-start gap-3">
+
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-red-600">
+
+                    <i class="fas fa-circle-exclamation"></i>
+
+                </div>
+
+                <div class="min-w-0 flex-1">
+
+                    <p class="text-sm font-semibold text-red-900">
+                        Unable to Complete Request
+                    </p>
+
+                    <div class="mt-1 text-sm leading-6 text-red-700">
+                        {{ session('error') }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    @endif
+
+    @if (session('warning'))
+        <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+
+            <div class="flex items-start gap-3">
+
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600">
+
+                    <i class="fas fa-triangle-exclamation"></i>
+
+                </div>
+
+                <div class="min-w-0 flex-1">
+
+                    <p class="text-sm font-semibold text-amber-900">
+                        Notice
+                    </p>
+
+                    <div class="mt-1 text-sm leading-6 text-amber-800">
+                        {{ session('warning') }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    @endif
+
+    <div id="consumer-complaint-details" class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
 
         <div class="mb-6">
 
@@ -315,6 +486,8 @@
 
                     </div>
 
+
+
                     <div class="p-6 md:p-7">
 
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -518,8 +691,50 @@
 
                             </div>
 
-                        </div>
 
+                            {{-- CUSTOMER SERVICE REPLY --}}
+                            @if (filled($feedback->resolution_message))
+                                <div class="mt-5 overflow-hidden rounded-2xl border border-sky-200 bg-white">
+                                    <div class="flex items-start gap-3 border-b border-sky-100 bg-sky-50 p-5">
+                                        <div
+                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700">
+                                            <i class="fas fa-comment-dots"></i>
+                                        </div>
+
+                                        <div class="min-w-0 flex-1">
+                                            <h3 class="font-bold text-sky-950">
+                                                Reply from Customer Service
+                                            </h3>
+
+                                            <p class="mt-1 text-sm leading-6 text-sky-800">
+                                                Customer Service has reviewed your feedback and sent you a response.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                                            <i class="fas fa-check-circle"></i>
+                                            Replied
+                                        </span>
+                                    </div>
+
+                                    <div class="p-5">
+                                        <p class="whitespace-pre-line break-words text-sm leading-7 text-slate-700">
+                                            {{ $feedback->resolution_message }}</p>
+
+                                        @if ($feedback->resolution_sent_at)
+                                            <p class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+                                                <i class="far fa-clock mr-1"></i>
+                                                Sent
+                                                {{ $feedback->resolution_sent_at->timezone('Asia/Manila')->format('M d, Y \a\t g:i A') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+
+
+                        </div>
                     </div>
 
                 </section>
@@ -1506,7 +1721,7 @@
 
                                             @if ($processingCompleted)
                                                 <p class="mt-1 text-xs text-slate-500">
-                                                    Completed by
+                                                    Initial processing completed by
 
                                                     <span class="font-semibold text-slate-700">
                                                         {{ $commercialResolution?->processor?->full_name ?? 'Customer Service' }}
@@ -1559,19 +1774,23 @@
 
 
                                                 <p class="mt-1 text-xs text-slate-500">
-                                                    Completed by
+                                                    Officially closed by
 
                                                     <span class="font-semibold text-slate-700">
-                                                        {{ $commercialResolution?->processor?->full_name ?? 'Customer Service' }}
+                                                        Customer Service
                                                     </span>
                                                 </p>
 
 
                                                 <p class="mt-1.5 text-[11px] font-medium text-slate-400">
-
                                                     <i class="far fa-clock mr-1"></i>
 
-                                                    {{ ($complaint->completed_at ?? $complaint->updated_at)->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
+                                                    @if ($complaint->closed_at)
+                                                        {{ $complaint->closed_at->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
+                                                    @else
+                                                        Closure date not recorded
+                                                    @endif
+                                                </p>
 
                                                 </p>
 
@@ -1893,9 +2112,7 @@
 
                                     {{-- Maintenance Completed --}}
                                     @php
-                                        $maintenanceCompleted =
-                                            (bool) $report?->submitted_at ||
-                                            in_array($complaint->status, ['Completed', 'Closed'], true);
+                                        $maintenanceCompleted = (bool) $report?->submitted_at;
 
                                         $maintenanceCompletedAt =
                                             $report?->submitted_at ??
@@ -1935,7 +2152,7 @@
                                                 class="text-sm font-semibold
                                 {{ $maintenanceCompleted ? 'text-slate-800' : 'text-slate-400' }}">
 
-                                                Maintenance Completed
+                                                Maintenance Accomplished
 
                                             </p>
 
@@ -1972,6 +2189,105 @@
                                     </div>
 
 
+                                    {{-- ===================================================== --}}
+                                    {{-- MANAGER REVIEW --}}
+                                    {{-- ===================================================== --}}
+                                    @php
+                                        $managerReviewStatus = $report?->review_status;
+
+                                        $managerApproved =
+                                            $report?->submitted_at !== null && $managerReviewStatus === 'Approved';
+
+                                        $managerReturned = $managerReviewStatus === 'Returned';
+
+                                        $managerReviewedAt = $report?->reviewed_at;
+                                    @endphp
+
+                                    <div class="flex gap-4">
+
+                                        <div class="flex flex-col items-center">
+
+                                            {{-- Manager Review Circle --}}
+                                            <div
+                                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+    {{ $managerApproved
+        ? 'bg-sky-600 text-white'
+        : ($managerReturned
+            ? 'bg-amber-500 text-white'
+            : 'border border-slate-200 bg-white text-slate-400') }}">
+
+                                                @if ($managerApproved)
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                                                        aria-hidden="true">
+                                                        <path d="M5 12l4 4L19 6" />
+                                                    </svg>
+                                                @elseif ($managerReturned)
+                                                    <i class="fas fa-rotate-left text-xs text-white"></i>
+                                                @else
+                                                    <i class="fas fa-clock text-xs"></i>
+                                                @endif
+
+                                            </div>
+
+                                            <div
+                                                class="min-h-12 w-px flex-1
+            {{ $managerApproved ? 'bg-sky-300' : 'bg-slate-200' }}">
+                                            </div>
+
+                                        </div>
+
+                                        <div class="pb-6">
+
+                                            <p
+                                                class="text-sm font-semibold
+            {{ $managerApproved ? 'text-slate-800' : 'text-slate-500' }}">
+                                                Manager Review
+                                            </p>
+
+                                            @if ($managerApproved)
+
+                                                <p class="mt-1 text-xs font-semibold text-sky-700">
+                                                    Accomplishment report approved
+                                                </p>
+
+                                                <p class="mt-1 text-xs text-slate-500">
+                                                    Reviewed by
+                                                    <span class="font-semibold text-slate-700">
+                                                        {{ $report?->reviewer?->full_name ?? 'Maintenance Manager' }}
+                                                    </span>
+                                                </p>
+
+                                                @if ($managerReviewedAt)
+                                                    <p class="mt-1.5 text-[11px] font-medium text-slate-400">
+                                                        <i class="far fa-clock mr-1"></i>
+                                                        {{ \Illuminate\Support\Carbon::parse($managerReviewedAt)->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
+                                                    </p>
+                                                @endif
+                                            @elseif ($managerReturned)
+                                                <p class="mt-1 text-xs font-semibold text-amber-700">
+                                                    Returned for correction
+                                                </p>
+
+                                                <p class="mt-1 text-xs text-slate-500">
+                                                    The maintenance team is addressing the required corrections.
+                                                </p>
+                                            @elseif ($maintenanceCompleted)
+                                                <p class="mt-1 text-xs text-slate-500">
+                                                    Awaiting Maintenance Manager review.
+                                                </p>
+                                            @else
+                                                <p class="mt-1 text-xs text-slate-400">
+                                                    Review will begin after the accomplishment report is submitted.
+                                                </p>
+
+                                            @endif
+
+                                        </div>
+
+                                    </div>
+
 
                                     {{-- Closed --}}
                                     @php
@@ -1985,7 +2301,7 @@
 
                                             <div
                                                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                                {{ $closed ? 'bg-sky-600 text-white' : 'border border-slate-200 bg-white text-slate-400' }}">
+                                {{ $closed ? 'bg-emerald-600 text-white' : 'border border-slate-200 bg-white text-slate-400' }}">
 
                                                 <i
                                                     class="fas
@@ -2011,7 +2327,7 @@
 
                                             @if ($closed)
                                                 <p class="mt-1 text-xs text-slate-500">
-                                                    Your concern has been finalized by Sagay Water District.
+                                                    Your concern has been officially finalized by Customer Service.
                                                 </p>
 
 
@@ -2019,8 +2335,16 @@
 
                                                     <i class="far fa-clock mr-1"></i>
 
-                                                    {{ $complaint->updated_at->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
+                                                    @if ($complaint->closed_at)
+                                                        {{ \Illuminate\Support\Carbon::parse($complaint->closed_at)->timezone('Asia/Manila')->format('M d, Y · g:i A') }}
+                                                    @else
+                                                        Closure date not recorded
+                                                    @endif
 
+                                                </p>
+                                            @elseif ($managerApproved)
+                                                <p class="mt-1 text-xs font-medium text-amber-700">
+                                                    Maintenance approved. Awaiting final closure by Customer Service.
                                                 </p>
                                             @else
                                                 <p class="mt-1 text-xs text-slate-500">
@@ -2146,7 +2470,133 @@
                     }, 300);
                 });
             </script>
+
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const stateUrl = @json(route('consumer.complaints.show.refresh-state', [
+                            'complaint' => $complaint->id,
+                        ]));
+
+                    let previousSignature = null;
+                    let checking = false;
+                    let notice = null;
+
+                    function showUpdateNotice() {
+                        if (notice) return;
+
+                        notice = document.createElement('div');
+                        notice.setAttribute('role', 'status');
+                        notice.setAttribute('aria-live', 'polite');
+
+                        notice.style.cssText = [
+                            'display:flex',
+                            'align-items:center',
+                            'justify-content:space-between',
+                            'flex-wrap:wrap',
+                            'gap:12px',
+                            'padding:14px 16px',
+                            'margin:0 0 16px',
+                            'border:1px solid #93c5fd',
+                            'border-radius:8px',
+                            'background:#eff6ff',
+                            'color:#1e3a8a'
+                        ].join(';');
+
+                        const message = document.createElement('span');
+                        message.textContent =
+                            'Your complaint has changed. Refresh to load the latest status and timeline.';
+
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.textContent = 'Refresh now';
+                        button.style.cssText = [
+                            'padding:8px 14px',
+                            'border:0',
+                            'border-radius:6px',
+                            'background:#1d4ed8',
+                            'color:white',
+                            'font-weight:600',
+                            'cursor:pointer'
+                        ].join(';');
+
+                        button.addEventListener('click', function() {
+                            window.location.reload();
+                        });
+
+                        notice.append(message, button);
+
+                        const details = document.getElementById(
+                            'consumer-complaint-details'
+                        );
+
+                        if (details) {
+                            details.insertAdjacentElement('beforebegin', notice);
+                        } else {
+                            document.body.prepend(notice);
+                        }
+                    }
+
+                    async function checkForUpdates() {
+                        if (
+                            checking ||
+                            document.visibilityState !== 'visible'
+                        ) {
+                            return;
+                        }
+
+                        checking = true;
+
+                        try {
+                            const response = await fetch(stateUrl, {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                cache: 'no-store',
+                                credentials: 'same-origin'
+                            });
+
+                            if (!response.ok) {
+                                return;
+                            }
+
+                            const data = await response.json();
+
+                            if (typeof data.signature !== 'string') {
+                                return;
+                            }
+
+                            if (previousSignature === null) {
+                                previousSignature = data.signature;
+                                return;
+                            }
+
+                            if (data.signature !== previousSignature) {
+                                previousSignature = data.signature;
+                                showUpdateNotice();
+                            }
+                        } catch (error) {
+                            // Do not interrupt the page or discard user input.
+                            console.warn('Complaint status check failed.');
+                        } finally {
+                            checking = false;
+                        }
+                    }
+
+                    checkForUpdates();
+                    window.setInterval(checkForUpdates, 10000);
+
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'visible') {
+                            checkForUpdates();
+                        }
+                    });
+                });
+            </script>
         @endpush
     @endif
+
 
 @endsection

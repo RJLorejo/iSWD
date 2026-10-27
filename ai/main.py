@@ -68,7 +68,7 @@ class ClassificationRequest(BaseModel):
 
 class ComplaintAnalysisRequest(BaseModel):
     description: str = Field(
-        min_length=10,
+        min_length=1,
         max_length=5000,
     )
 

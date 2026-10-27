@@ -24,6 +24,8 @@ class ComplaintFeedback extends Model
         'follow_up_notes',
         'follow_up_at',
         'resolved_at',
+        'resolution_message',
+        'resolution_sent_at',
     ];
 
     protected $casts = [
@@ -34,6 +36,7 @@ class ComplaintFeedback extends Model
         'reviewed_at' => 'datetime',
         'follow_up_at' => 'datetime',
         'resolved_at' => 'datetime',
+        'resolution_sent_at' => 'datetime',
     ];
 
     public function complaint(): BelongsTo

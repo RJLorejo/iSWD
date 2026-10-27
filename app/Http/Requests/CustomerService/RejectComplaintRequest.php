@@ -26,7 +26,13 @@ class RejectComplaintRequest extends FormRequest
     {
         return [
             'verification_reason.required' =>
-            'Please provide a reason for rejecting this complaint.',
+                'Please provide a reason for rejecting this complaint.',
+
+            'verification_reason.string' =>
+                'The rejection reason must be valid text.',
+
+            'verification_reason.max' =>
+                'The rejection reason cannot exceed 1000 characters.',
         ];
     }
 }

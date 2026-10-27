@@ -4,7 +4,51 @@
 
 @section('content')
 
+    <div class="mb-5">
+        <x-pending-workload-status :complaint="$complaint" audience="staff" />
+    </div>
+
+
     @php
+
+        $returnTo = request()->query('return_to', 'complaints');
+
+        $backRoute = match ($returnTo) {
+            'final-closures' => 'customer-service.final-closures.index',
+            'verification' => 'customer-service.complaint-verification.index',
+            'commercial-services' => 'customer-service.commercial-services.index',
+            'feedback' => 'customer-service.feedback.show',
+            default => 'customer-service.complaints.index',
+        };
+
+        // Keep the existing return_to behavior as the fallback.
+        $backUrl = route($backRoute);
+
+        // Prefer back_url when the complaint was opened from a monitoring page.
+        $candidateBackUrl = request()->query('back_url');
+
+        if (is_string($candidateBackUrl) && $candidateBackUrl !== '') {
+            $parts = parse_url($candidateBackUrl);
+
+            if (
+                is_array($parts) &&
+                isset($parts['path']) &&
+                str_starts_with($parts['path'], '/') &&
+                !str_starts_with($parts['path'], '//')
+            ) {
+                $isRelativeUrl = !isset($parts['host']) && !isset($parts['scheme']);
+
+                $isSameHostUrl =
+                    isset($parts['host']) &&
+                    strtolower($parts['host']) === strtolower(request()->getHost()) &&
+                    in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true);
+
+                if ($isRelativeUrl || $isSameHostUrl) {
+                    $backUrl = $candidateBackUrl;
+                }
+            }
+        }
+
         $isCommercial = str_contains(strtolower((string) $complaint->division?->name), 'commercial');
         $isEngineering = str_contains(strtolower((string) $complaint->division?->name), 'engineering');
 
@@ -12,14 +56,26 @@
 
         $commercialResolution = $complaint->commercialResolution;
         $report = $complaint->maintenanceReport;
+        $reportApproved = $report !== null && $report->submitted_at !== null && $report->review_status === 'Approved';
+
+        $wasForwardedToMaintenance = (bool) $commercialResolution?->forwarded_to_maintenance_at;
+
+        $requiresMaintenanceClosure =
+            $isEngineering || $wasForwardedToMaintenance || (!$isCommercial && $report !== null);
+
+        $canCloseMaintenance = $requiresMaintenanceClosure && $complaint->status === 'Completed' && $reportApproved;
         $aiAnalysis = $complaint->aiAnalysis;
 
         $consumerCategory = $aiAnalysis?->consumerCategory ?? $complaint->category;
         $predictedCategory = $aiAnalysis?->predictedCategory;
         $verifiedCategory = $aiAnalysis?->verifiedCategory;
 
-        $urgencyLevel = $aiAnalysis?->urgency_level;
+        // Keep the original AI suggestion separate from the CS-verified result.
+        $aiSuggestedUrgency = $aiAnalysis?->urgency_level;
+        $verifiedUrgency = $aiAnalysis?->verified_urgency_level;
+        $urgencyLevel = $verifiedUrgency ?: $aiSuggestedUrgency;
         $urgencyLabel = $urgencyLevel ?: 'Not Assessed';
+        $urgencySourceLabel = $verifiedUrgency ? 'Customer Service verified' : 'AI suggested';
 
         $urgencyClasses = match ($urgencyLevel) {
             'High' => 'bg-red-50 border-red-200 text-red-700',
@@ -111,6 +167,27 @@
             })
             ->values()
             ->all();
+
+        /*
+|--------------------------------------------------------------------------
+| Maintenance Work Order History
+|--------------------------------------------------------------------------
+*/
+        $workOrders = \App\Models\MaintenanceWorkOrder::query()
+            ->with(['schedule', 'technicians'])
+            ->where('complaint_id', $complaint->id)
+            ->orderBy('visit_number')
+            ->orderBy('id')
+            ->get();
+
+        $hasPendingWorkload = $workOrders->contains(fn($order) => $order->status === 'Pending Workload');
+
+        $hasMissedSchedule = $workOrders->contains(function ($order) {
+            return $order->status === 'Rescheduled' ||
+                filled($order->missed_reason) ||
+                filled($order->missed_manager_reason) ||
+                filled($order->missed_confirmed_at);
+        });
     @endphp
 
 
@@ -147,7 +224,7 @@
 
             <div class="flex flex-col sm:flex-row gap-2">
 
-                <a href="{{ route('customer-service.complaints.index') }}"
+                <a href="{{ $backUrl }}"
                     class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
                     border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
 
@@ -223,13 +300,17 @@
 
                     <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
-                            Urgency
+                            Complaint Urgency
                         </p>
 
                         <span
                             class="mt-2 inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-semibold {{ $urgencyClasses }}">
                             {{ $urgencyLabel }}
                         </span>
+
+                        <p class="mt-2 text-xs text-gray-500">
+                            {{ $urgencySourceLabel }}
+                        </p>
                     </div>
 
                     <div>
@@ -257,6 +338,25 @@
             </div>
 
         </div>
+
+        {{-- Maintenance History Badges --}}
+<div class="flex flex-wrap items-center gap-2">
+
+    @if ($hasPendingWorkload)
+        <span class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800">
+            <i class="fas fa-clock"></i>
+            Pending Maintenance
+        </span>
+    @endif
+
+    @if ($hasMissedSchedule)
+        <span class="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-800">
+            <i class="fas fa-calendar-xmark"></i>
+            Missed Schedule
+        </span>
+    @endif
+
+</div>
 
 
         {{-- Complaint Information --}}
@@ -368,7 +468,8 @@
 
                 <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
                             <i class="fas fa-images"></i>
                         </div>
 
@@ -431,9 +532,7 @@
                             </p>
                         </div>
 
-                        <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold {{ $urgencyClasses }}">
-                            {{ $urgencyLabel }} Urgency
-                        </span>
+
 
                     </div>
 
@@ -452,17 +551,57 @@
 
                         <div class="rounded-xl border border-violet-200 bg-violet-50 p-4">
                             <p class="text-xs text-violet-600">AI Suggested</p>
+
                             <p class="mt-1 text-sm font-semibold text-gray-900">
                                 {{ $predictedCategory?->name ?? ($aiAnalysis->predicted_type ?? 'Not available') }}
                             </p>
+
+                            @php
+                                $aiUrgencyLabel = $aiAnalysis->urgency_level ?? 'Not available';
+
+                                $aiUrgencyClasses = match (strtolower((string) $aiUrgencyLabel)) {
+                                    'high', 'critical', 'emergency' => 'bg-red-100 text-red-700',
+                                    'medium', 'moderate' => 'bg-amber-100 text-amber-700',
+                                    'low' => 'bg-green-100 text-green-700',
+                                    default => 'bg-gray-100 text-gray-600',
+                                };
+                            @endphp
+
+                            <div class="mt-3">
+                                <p class="text-xs text-violet-600 mb-1">
+                                    AI Urgency Suggestion
+                                </p>
+
+                                <span
+                                    class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold {{ $aiUrgencyClasses }}">
+                                    {{ ucfirst((string) $aiUrgencyLabel) }}
+                                </span>
+                            </div>
                         </div>
 
+
                         <div class="rounded-xl border border-green-200 bg-green-50 p-4">
-                            <p class="text-xs text-green-600">Verified Classification</p>
+                            <p class="text-xs font-semibold text-green-700">
+                                Verified Classification
+                            </p>
+
                             <p class="mt-1 text-sm font-semibold text-gray-900">
                                 {{ $verifiedCategory?->name ?? ($complaint->status === 'Pending' ? 'Pending review' : $complaint->category?->name ?? 'Not available') }}
                             </p>
+
+                            <div class="mt-3 border-t border-green-200 pt-3">
+                                <p class="mb-1 text-xs text-green-700">
+                                    Verified Urgency
+                                </p>
+
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ $urgencyClasses }}">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                                    {{ $urgencyLabel }}
+                                </span>
+                            </div>
                         </div>
+
 
                     </div>
 
@@ -524,61 +663,36 @@
         @endif
 
         {{-- Related Complaint Analysis --}}
-        {{-- Related Complaint Analysis --}}
-        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-
-            <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
-
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-
-                    <div class="flex items-start gap-3">
-
-                        <div
-                            class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600
-                    flex items-center justify-center shrink-0">
-
-                            <i class="fas fa-link text-sm"></i>
-
-                        </div>
-
-                        <div>
-
-                            <h2 class="font-semibold text-gray-900">
-                                Related Complaint Analysis
-                            </h2>
-
-                            <p class="text-sm text-gray-500 mt-0.5">
-                                AI compares nearby and recent complaints that may be part of the same or a connected
-                                incident.
-                            </p>
-
-                        </div>
-
+        <details class="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <summary
+                class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500">
+                <div class="flex min-w-0 items-start gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                        <i class="fas fa-link text-sm"></i>
                     </div>
-
-                    @if (($similarComplaints['count'] ?? 0) > 0)
-                        <span
-                            class="inline-flex self-start sm:self-auto items-center gap-1.5
-                    px-2.5 py-1 rounded-full
-                    bg-violet-50 text-violet-700
-                    border border-violet-100
-                    text-xs font-semibold">
-
-                            <i class="fas fa-link text-[10px]"></i>
-
-                            {{ $similarComplaints['count'] }}
-
-                            {{ ($similarComplaints['count'] ?? 0) === 1 ? 'Possible Match' : 'Possible Matches' }}
-
-                        </span>
-                    @endif
-
+                    <div class="min-w-0">
+                        <h2 class="font-semibold text-gray-900">Related Complaint Analysis</h2>
+                        <p class="mt-1 text-sm text-gray-500">
+                            AI compares nearby and recent complaints that may be part of the same or a connected incident.
+                        </p>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <span
+                                class="inline-flex items-center rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                                {{ $similarComplaints['count'] ?? 0 }}
+                                {{ ($similarComplaints['count'] ?? 0) === 1 ? 'Possible Match' : 'Possible Matches' }}
+                            </span>
+                            <span class="text-xs text-gray-500">
+                                <span class="group-open:hidden">Click to view matches</span>
+                                <span class="hidden group-open:inline">Click to hide matches</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
+                <i
+                    class="fas fa-chevron-down shrink-0 text-sm text-gray-400 transition-transform group-open:rotate-180"></i>
+            </summary>
 
-            </div>
-
-
-            <div class="p-5 sm:p-6">
+            <div class="border-t border-gray-100 p-5 sm:p-6">
 
                 @if ($similarComplaintError)
 
@@ -1064,9 +1178,7 @@
                 @endif
 
             </div>
-
-        </div>
-
+        </details>
 
         {{-- Pending Verification --}}
         @if ($complaint->status === 'Pending')
@@ -1144,18 +1256,81 @@
                         </div>
 
 
-                        <div class="mt-5">
+                        <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-5">
 
-                            <label for="verification_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{-- URGENCY VERIFICATION --}}
+                            @if ($aiAnalysis)
+                                <div>
+                                    <h3 class="text-sm font-semibold text-blue-950">
+                                        <i class="fas fa-shield-alt mr-1"></i>
+                                        AI Urgency Verification
+                                    </h3>
+                                    <p class="mt-1 text-xs leading-5 text-blue-800">
+                                        Review the AI suggestion against the complaint description and available evidence.
+                                        Select the urgency level verified by Customer Service.
+                                    </p>
+                                </div>
 
-                                Verification Notes
-                                <span class="font-normal text-gray-400">(optional)</span>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="rounded-lg bg-white border border-blue-100 p-3">
+                                        <p class="text-xs text-gray-500">Original AI suggested urgency</p>
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">
+                                            {{ $aiAnalysis->urgency_level ?: 'Not Assessed' }}
+                                        </p>
+                                        @if (!is_null($aiAnalysis->urgency_score))
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                AI urgency score: {{ $aiAnalysis->urgency_score }}
+                                            </p>
+                                        @endif
+                                    </div>
 
-                            </label>
+                                    <div>
+                                        <label for="verified_urgency_level"
+                                            class="block text-sm font-semibold text-blue-950 mb-2">
+                                            Verified urgency <span class="text-red-600">*</span>
+                                        </label>
+                                        <select id="verified_urgency_level" name="verified_urgency_level" required
+                                            class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <option value="">Select verified urgency</option>
+                                            @foreach (['Low', 'Moderate', 'High'] as $urgencyOption)
+                                                <option value="{{ $urgencyOption }}" @selected(old('verified_urgency_level', $aiAnalysis->verified_urgency_level ?? $aiAnalysis->urgency_level) === $urgencyOption)>
+                                                    {{ $urgencyOption }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('verified_urgency_level')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
 
-                            <textarea name="verification_reason" id="verification_reason" rows="3" maxlength="2000"
-                                class="w-full rounded-xl border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Add notes about the verification or classification correction...">{{ old('verification_reason') }}</textarea>
+                                @if ($aiAnalysis->verified_urgency_level)
+                                    <div class="rounded-lg border border-green-200 bg-green-50 p-3">
+                                        <p class="text-sm font-semibold text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Previously verified urgency: {{ $aiAnalysis->verified_urgency_level }}
+                                        </p>
+                                        @if ($aiAnalysis->urgency_verified_at)
+                                            <p class="mt-1 text-xs text-green-700">
+                                                Verified on {{ $aiAnalysis->urgency_verified_at->format('M d, Y h:i A') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                <p class="text-xs text-blue-800">
+                                    The original AI urgency and score are retained. The verified urgency is stored
+                                    separately.
+                                </p>
+                            @else
+                                <div>
+                                    <h3 class="text-sm font-semibold text-blue-950">AI Urgency Verification</h3>
+                                    <p class="mt-1 text-xs text-blue-800">
+                                        No AI urgency analysis is recorded for this complaint. You can continue with the
+                                        existing verification workflow.
+                                    </p>
+                                </div>
+                            @endif
 
                         </div>
 
@@ -1255,8 +1430,7 @@
                         </p>
                     </div>
 
-                    <form method="POST"
-                        action="{{ route('customer-service.complaints.commercial.start', $complaint) }}"
+                    <form method="POST" action="{{ route('customer-service.complaints.commercial.start', $complaint) }}"
                         onsubmit="return confirm('Start initial processing for this service request?');">
 
                         @csrf
@@ -1480,59 +1654,205 @@
         @endif
 
 
-        {{-- Read-only CS Processing Result --}}
-        @if (
-            $isCommercial &&
-                $commercialResolution &&
-                $commercialResolution->initial_processing_completed_at &&
-                $complaint->status !== 'CS Processing')
-            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
+        {{-- ========================================================= --}}
+        {{-- MAINTENANCE SCHEDULING HISTORY - CUSTOMER SERVICE --}}
+        @php
+            $csWorkOrders = \App\Models\MaintenanceWorkOrder::query()
+                ->with('schedule')
+                ->where('complaint_id', $complaint->id)
+                ->orderBy('visit_number')
+                ->orderBy('id')
+                ->get();
+        @endphp
 
-                <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
+        @if ($csWorkOrders->isNotEmpty())
+            <details class="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <summary
+                    class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-semibold text-gray-900">Maintenance Scheduling History</h2>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Review scheduled maintenance visits and recorded scheduling justifications.
+                            </p>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <span
+                                    class="inline-flex rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                    {{ $csWorkOrders->count() }}
+                                    {{ $csWorkOrders->count() === 1 ? 'Visit record' : 'Visit records' }}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                    <span class="group-open:hidden">Click to view history</span>
+                                    <span class="hidden group-open:inline">Click to hide history</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <i
+                        class="fas fa-chevron-down shrink-0 text-sm text-gray-400 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <div class="space-y-3 border-t border-gray-100 p-5 sm:p-6">
 
-                    <h2 class="font-semibold text-gray-900">
-                        Customer Service Processing Result
-                    </h2>
+                    @foreach ($csWorkOrders as $order)
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
 
-                    <p class="text-sm text-gray-500 mt-1">
-                        Findings recorded before the request was closed or forwarded.
-                    </p>
+                            <div
+                                class="flex flex-col gap-3 sm:flex-row
+                                sm:items-start sm:justify-between">
+
+                                <div>
+
+                                    <p class="text-sm font-bold text-gray-900">
+                                        Visit {{ $order->visit_number }}
+                                        · Work Order #{{ $order->id }}
+                                    </p>
+
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <i class="far fa-calendar mr-1"></i>
+
+                                        {{ $order->schedule?->schedule_date
+                                            ? \Carbon\Carbon::parse($order->schedule->schedule_date)->format('M d, Y')
+                                            : 'No scheduled date recorded' }}
+                                    </p>
+
+                                </div>
+
+                                <span
+                                    class="inline-flex self-start rounded-full
+                                     border border-gray-200 bg-white
+                                     px-3 py-1 text-xs font-semibold text-gray-700">
+
+                                    {{ $order->status }}
+
+                                </span>
+
+                            </div>
+
+                            {{-- Operational visit reasons: read-only for Customer Service --}}
+                            @if ($order->status === 'Pending Workload' || filled($order->pending_reason))
+                                <div class="mt-4 rounded-xl border border-orange-200 bg-orange-50 p-4 space-y-2">
+                                    <h3 class="text-sm font-bold text-orange-900"><i class="fas fa-clock mr-1"></i>
+                                        Pending Workload / Unfinished Visit</h3>
+                                    <p class="text-xs text-orange-800">Maintenance was started or attempted but has not
+                                        been completed for this visit.</p>
+                                    <p class="text-xs font-semibold text-orange-900">Recorded reason</p>
+                                    <p class="text-sm whitespace-pre-line break-words text-orange-950">
+                                        {{ $order->pending_reason ?: 'No pending workload reason recorded.' }}</p>
+                                    @if (filled($order->manager_remarks))
+                                        <p class="text-xs font-semibold text-orange-900 pt-1">Manager remarks</p>
+                                        <p class="text-sm whitespace-pre-line break-words text-orange-950">
+                                            {{ $order->manager_remarks }}</p>
+                                    @endif
+                                    @if ($order->pending_recorded_at)
+                                        <p class="text-xs text-orange-700">Recorded
+                                            {{ \Carbon\Carbon::parse($order->pending_recorded_at)->format('M d, Y h:i A') }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @php
+                                $visitDate = $order->schedule?->schedule_date;
+                                $isPastUnstartedVisit =
+                                    $visitDate &&
+                                    \Carbon\Carbon::parse($visitDate)->startOfDay()->lt(today()) &&
+                                    !$order->started_at;
+                                $hasMissedRecord =
+                                    filled($order->missed_reason) ||
+                                    filled($order->missed_manager_reason) ||
+                                    $order->missed_confirmed_at ||
+                                    $order->missed_reported_at;
+                                $isMissedVisit =
+                                    $hasMissedRecord || ($order->status === 'Rescheduled' && $isPastUnstartedVisit);
+                            @endphp
+                            @if ($isMissedVisit)
+                                <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-3">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-rose-900"><i
+                                                class="fas fa-calendar-xmark mr-1"></i> Missed Schedule / Rescheduling
+                                            Record</h3>
+                                        <p class="mt-1 text-xs text-rose-800">This scheduling record concerns a missed or
+                                            rescheduled visit; it is separate from Pending Workload.</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-semibold text-rose-900">Plumber's reported reason</p>
+                                        <p class="mt-1 text-sm whitespace-pre-line break-words text-rose-950">
+                                            {{ $order->missed_reason ?: 'No plumber reason was submitted.' }}</p>
+                                        @if ($order->missed_reported_at)
+                                            <p class="mt-1 text-xs text-rose-700">Reported
+                                                {{ \Carbon\Carbon::parse($order->missed_reported_at)->format('M d, Y h:i A') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                    <div class="border-t border-rose-200 pt-3">
+                                        <p class="text-xs font-semibold text-rose-900">Manager's verified reason</p>
+                                        <p class="mt-1 text-sm whitespace-pre-line break-words text-rose-950">
+                                            {{ $order->missed_manager_reason ?: 'Not recorded for this visit (may be a legacy record).' }}
+                                        </p>
+                                        @if ($order->missed_confirmed_at)
+                                            <p class="mt-1 text-xs text-rose-700">Confirmed
+                                                {{ \Carbon\Carbon::parse($order->missed_confirmed_at)->format('M d, Y h:i A') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                            @elseif ($isPastUnstartedVisit && $order->status === 'Scheduled' && $order->schedule?->status === 'Finalized')
+                                <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                    <p class="text-sm font-semibold text-amber-900">Past scheduled visit — awaiting
+                                        maintenance verification</p>
+                                    <p class="mt-1 text-xs text-amber-800">No start time is recorded. This does not
+                                        establish that physical work did not occur.</p>
+                                </div>
+                            @endif
+
+                            @if ($order->rescheduled_from_work_order_id)
+                                <div class="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                                    <i class="fas fa-arrow-right-arrow-left mr-1"></i>
+                                    Replacement visit for Work Order #{{ $order->rescheduled_from_work_order_id }}.
+                                    <span class="block mt-1 text-xs text-blue-700">Check this visit's schedule and approval
+                                        status before treating it as finalized.</span>
+                                </div>
+                            @endif
+
+                            {{-- Early Scheduling Justification --}}
+                            @if ($order->is_late_addition && filled($order->late_addition_reason))
+                                <div
+                                    class="mt-4 rounded-xl border border-amber-200
+                                    bg-amber-50 p-4">
+
+                                    <div class="flex items-center gap-2">
+
+                                        <i class="fas fa-clipboard-check text-amber-700"></i>
+
+                                        <h3 class="text-sm font-bold text-amber-900">
+                                            Early Scheduling Justification
+                                        </h3>
+
+                                    </div>
+
+                                    <p
+                                        class="mt-2 whitespace-pre-line break-words
+                                      text-sm leading-6 text-amber-900">
+                                        {{ $order->late_addition_reason }}
+                                    </p>
+
+                                    <p class="mt-2 text-xs text-amber-700">
+                                        Recorded by Maintenance Management
+                                    </p>
+
+                                </div>
+                            @endif
+
+                        </div>
+                    @endforeach
 
                 </div>
-
-                <div class="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-                    <div>
-
-                        <p class="text-xs font-medium text-gray-500 mb-2">
-                            Findings
-                        </p>
-
-                        <div
-                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
-                            {{ $commercialResolution->findings ?: 'No findings recorded.' }}
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-xs font-medium text-gray-500 mb-2">
-                            Resolution / Recommendation
-                        </p>
-
-                        <div
-                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
-                            {{ $commercialResolution->resolution_remarks ?: 'No recommendation recorded.' }}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
+            </details>
         @endif
-
 
         {{-- Maintenance Result --}}
         @if ($report)
@@ -1712,7 +2032,242 @@
             </div>
         @endif
 
+        {{-- ========================================================= --}}
+        {{-- FINAL MAINTENANCE COMPLAINT CLOSURE --}}
+        {{-- ========================================================= --}}
 
+        @if ($requiresMaintenanceClosure && in_array($complaint->status, ['Completed', 'Closed'], true))
+
+            <div class="overflow-hidden rounded-2xl border border-gray-200
+                bg-white shadow-sm">
+
+                <div class="border-b border-gray-100 px-5 py-4">
+
+                    <div class="flex items-start gap-3">
+
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center
+                            justify-center rounded-xl
+                            bg-blue-100 text-blue-700">
+
+                            <i class="fas fa-clipboard-check"></i>
+
+                        </div>
+
+                        <div>
+                            <h2 class="font-bold text-gray-900">
+                                Final Complaint Closure
+                            </h2>
+
+                            <p class="mt-1 text-sm text-gray-500">
+                                Customer Service finalizes the complaint after
+                                Maintenance Manager approval.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="space-y-5 p-5 sm:p-6">
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                        <div class="rounded-xl border border-gray-200
+                            bg-gray-50 p-4">
+
+                            <p class="text-xs font-medium text-gray-500">
+                                Maintenance Status
+                            </p>
+
+                            <p class="mt-1 text-sm font-bold text-gray-900">
+                                {{ $complaint->status === 'Closed' ? 'Closed' : 'Accomplished' }}
+                            </p>
+
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200
+                            bg-gray-50 p-4">
+
+                            <p class="text-xs font-medium text-gray-500">
+                                Manager Review
+                            </p>
+
+                            <p
+                                class="mt-1 text-sm font-bold
+                        {{ $reportApproved ? 'text-emerald-700' : 'text-amber-700' }}">
+
+                                {{ $reportApproved ? 'Approved' : $report?->review_status ?? 'Not Submitted' }}
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    @if ($complaint->status === 'Closed')
+                        <div
+                            class="flex items-start gap-3 rounded-xl
+                            border border-emerald-200 bg-emerald-50 p-4">
+
+                            <i class="fas fa-circle-check mt-0.5 text-emerald-600"></i>
+
+                            <div>
+                                <p class="text-sm font-bold text-emerald-800">
+                                    Complaint Officially Closed
+                                </p>
+
+                                <p class="mt-1 text-sm text-emerald-700">
+                                    This complaint has already been finalized.
+                                    No further closure action is required.
+                                </p>
+                            </div>
+
+                        </div>
+                    @elseif ($canCloseMaintenance)
+                        <div class="rounded-xl border border-blue-200
+                            bg-blue-50 p-4">
+
+                            <p class="text-sm font-bold text-blue-900">
+                                Ready for Final Closure
+                            </p>
+
+                            <p class="mt-1 text-sm leading-6 text-blue-800">
+                                The accomplishment report has been submitted
+                                and approved by the Maintenance Manager.
+                                Customer Service may now officially close
+                                this complaint.
+                            </p>
+
+                        </div>
+
+                        <form method="POST"
+                            action="{{ route('customer-service.complaints.maintenance.close', [
+                                'complaint' => $complaint,
+                                'return_to' => $returnTo,
+                            ]) }}"
+                            onsubmit="
+                        if (this.dataset.submitting === '1') return false;
+
+                        if (!confirm(
+                            'Officially close this complaint?\n\n' +
+                            'The consumer will be notified by email ' +
+                            'if a linked account with an email is available.'
+                        )) return false;
+
+                        this.dataset.submitting = '1';
+
+                        const button = this.querySelector(
+                            'button[type=submit]'
+                        );
+
+                        button.disabled = true;
+                        button.classList.add('opacity-70', 'cursor-wait');
+
+                        button.querySelector('.button-label').textContent =
+                            'Closing Complaint...';
+
+                        return true;
+                    ">
+
+                            @csrf
+
+                            <div class="flex justify-end">
+
+                                <button type="submit"
+                                    class="inline-flex items-center justify-center
+                                   gap-2 rounded-xl bg-emerald-600
+                                   px-5 py-3 text-sm font-semibold
+                                   text-white transition
+                                   hover:bg-emerald-700">
+
+                                    <i class="fas fa-lock"></i>
+
+                                    <span class="button-label">
+                                        Close Complaint
+                                    </span>
+
+                                </button>
+
+                            </div>
+
+                        </form>
+                    @else
+                        <div class="rounded-xl border border-amber-200
+                            bg-amber-50 p-4">
+
+                            <p class="text-sm font-bold text-amber-900">
+                                Awaiting Manager Approval
+                            </p>
+
+                            <p class="mt-1 text-sm leading-6 text-amber-800">
+                                Customer Service cannot close this complaint
+                                until the submitted accomplishment report
+                                is approved by the Maintenance Manager.
+                            </p>
+
+                        </div>
+                    @endif
+
+                </div>
+
+            </div>
+
+        @endif
+
+
+        {{-- Read-only CS Processing Result --}}
+        @if (
+            $isCommercial &&
+                $commercialResolution &&
+                $commercialResolution->initial_processing_completed_at &&
+                $complaint->status !== 'CS Processing')
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
+
+                <div class="px-5 sm:px-6 py-4 border-b border-gray-100">
+
+                    <h2 class="font-semibold text-gray-900">
+                        Customer Service Processing Result
+                    </h2>
+
+                    <p class="text-sm text-gray-500 mt-1">
+                        Findings recorded before the request was closed or forwarded.
+                    </p>
+
+                </div>
+
+                <div class="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                    <div>
+
+                        <p class="text-xs font-medium text-gray-500 mb-2">
+                            Findings
+                        </p>
+
+                        <div
+                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                            {{ $commercialResolution->findings ?: 'No findings recorded.' }}
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <p class="text-xs font-medium text-gray-500 mb-2">
+                            Resolution / Recommendation
+                        </p>
+
+                        <div
+                            class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-line">
+                            {{ $commercialResolution->resolution_remarks ?: 'No recommendation recorded.' }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        @endif
         {{-- Complaint Tracking --}}
         <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
 
@@ -1995,17 +2550,19 @@
                                             Forwarded to Maintenance
                                         </p>
 
-                                        @if ($forwarded)
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                {{ $commercialResolution->forwarded_to_maintenance_at->format('M d, Y • h:i A') }}
-                                            </p>
+                                        @if ($forwarded && $commercialResolution)
+                                            @if ($commercialResolution->forwarded_to_maintenance_at)
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    {{ \Illuminate\Support\Carbon::parse($commercialResolution->forwarded_to_maintenance_at)->format('M d, Y • h:i A') }}
+                                                </p>
+                                            @endif
 
-                                            <p class="text-xs text-gray-500 mt-1">
+                                            <p class="mt-1 text-xs text-gray-500">
                                                 Forwarded by
                                                 {{ $commercialResolution->forwarder?->full_name ?? 'Customer Service' }}
                                             </p>
                                         @else
-                                            <p class="text-xs text-gray-400 mt-1">
+                                            <p class="mt-1 text-xs text-gray-400">
                                                 Pending Customer Service decision
                                             </p>
                                         @endif
@@ -2262,9 +2819,18 @@
                             </div>
 
 
-                            {{-- Closed --}}
+
+                            {{-- ===================================================== --}}
+                            {{-- CUSTOMER SERVICE FINAL CLOSURE --}}
+                            {{-- ===================================================== --}}
+
                             @php
                                 $maintenanceClosed = $complaint->status === 'Closed';
+
+                                $managerApproved =
+                                    $report?->submitted_at !== null && $report?->review_status === 'Approved';
+
+                                $closureDate = $maintenanceClosed ? $complaint->closed_at : null;
                             @endphp
 
                             <div class="flex gap-4">
@@ -2273,7 +2839,7 @@
 
                                     <div
                                         class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
-                                        {{ $maintenanceClosed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
+            {{ $maintenanceClosed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400' }}">
 
                                         <i class="fas {{ $maintenanceClosed ? 'fa-check' : 'fa-circle' }} text-xs"></i>
 
@@ -2284,27 +2850,41 @@
                                 <div>
 
                                     <p
-                                        class="text-sm font-semibold {{ $maintenanceClosed ? 'text-gray-900' : 'text-gray-400' }}">
+                                        class="text-sm font-semibold
+            {{ $maintenanceClosed ? 'text-gray-900' : 'text-gray-400' }}">
+
                                         {{ $isCommercial ? 'Request Closed' : 'Complaint Closed' }}
+
                                     </p>
 
                                     @if ($maintenanceClosed)
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            {{ $complaint->completed_at?->format('M d, Y • h:i A') ?? $complaint->updated_at?->format('M d, Y • h:i A') }}
-                                        </p>
+                                        @if ($closureDate)
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                {{ $closureDate->format('M d, Y • h:i A') }}
+                                            </p>
+                                        @else
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Closure date not recorded
+                                            </p>
+                                        @endif
 
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            Finalized by Maintenance Management
+                                        <p class="text-xs text-green-700 mt-1">
+                                            Officially closed by Customer Service
+                                        </p>
+                                    @elseif ($managerApproved)
+                                        <p class="text-xs text-amber-600 mt-1">
+                                            Approved by Maintenance Manager — awaiting Customer Service final closure
                                         </p>
                                     @else
                                         <p class="text-xs text-gray-400 mt-1">
-                                            Pending finalization
+                                            Pending final closure
                                         </p>
                                     @endif
 
                                 </div>
 
                             </div>
+
 
                         @endif
 

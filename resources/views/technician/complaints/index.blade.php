@@ -1,290 +1,216 @@
 @extends('technician.layouts.app')
 
-@section('title', 'My Complaints')
+@section('title', $pageTitle ?? 'All Complaints')
 
 @section('content')
+    @php
+        $isActivePage = ($scope ?? 'all') === 'active';
+        $viewScope = $viewScope ?? request('scope', 'all');
+        $filterLabels = [
+            'scheduled' => 'Scheduled Visits',
+            'in_progress' => 'In Progress Visits',
+            'pending_workload' => 'Unresolved Pending Visits',
+            'completed' => 'Accomplished Visits',
+            'active' => 'Active Visits',
+            'high_urgency' => 'High Urgency Complaints',
+            'today' => "Today's Scheduled Visits",
+            'overdue' => 'Overdue Scheduled Visits',
+        ];
 
-    <div class="max-w-7xl mx-auto space-y-5">
+        $indexRoute = $isActivePage ? 'technician.active-work-orders.index' : 'technician.complaints.index';
 
+        $hasFilters =
+            ($viewScope !== 'all' && !$isActivePage) ||
+            request()->filled('search') ||
+            request()->filled('status') ||
+            request()->filled('urgency') ||
+            request()->filled('date_from') ||
+            request()->filled('date_to');
+
+        $statusStyles = [
+            'Assigned' => 'bg-blue-50 text-blue-700 border-blue-200',
+            'In Progress' => 'bg-amber-50 text-amber-700 border-amber-200',
+            'Completed' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            'Closed' => 'bg-slate-100 text-slate-600 border-slate-200',
+        ];
+
+        $urgencyStyles = [
+            'HIGH' => 'bg-red-50 text-red-700 border-red-200',
+            'MODERATE' => 'bg-amber-50 text-amber-700 border-amber-200',
+            'LOW' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        ];
+
+        $notFinalizedUrgencyStyle = 'bg-slate-50 text-slate-500 border-slate-200';
+    @endphp
+
+    <div class="mx-auto max-w-7xl space-y-5 pb-8">
 
         {{-- ========================================================= --}}
-        {{-- HEADER --}}
+        {{-- PAGE HEADER --}}
         {{-- ========================================================= --}}
 
-        <div class="flex flex-col lg:flex-row
-                    lg:items-center lg:justify-between gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-            <div>
+            <div class="min-w-0">
 
-                <div class="flex items-center gap-2
-                            text-sm font-medium text-sky-600">
-
+                <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-sky-600">
                     <i class="fas fa-screwdriver-wrench"></i>
-
                     Maintenance Operations
-
                 </div>
 
-
-                <h1 class="text-2xl sm:text-3xl
-                           font-bold text-gray-900 mt-1">
-
-                    My Complaints
-
+                <h1 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    {{ $pageTitle ?? 'All Complaints' }}
                 </h1>
 
-
-                <p class="text-sm text-gray-500 mt-1">
-
-                    View and manage maintenance complaints
-                    assigned to you.
-
+                <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+                    {{ $pageDescription ?? 'View maintenance complaints assigned to you.' }}
                 </p>
+
+                @if (!$isActivePage && isset($filterLabels[$viewScope]))
+                    <div
+                        class="mt-2 inline-flex items-center gap-2 rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-semibold text-sky-800">
+                        <i class="fas fa-filter"></i>
+                        Filtered by: {{ $filterLabels[$viewScope] }}
+                        <a href="{{ route('technician.complaints.index') }}" class="ml-1 underline">Clear</a>
+                    </div>
+                @endif
 
             </div>
 
+            <div class="flex flex-wrap items-center gap-2">
 
-            {{-- ACTIVE INDICATOR --}}
-
-            @if ($activeCount > 0)
                 <div
-                    class="inline-flex items-center gap-2
-                            px-3.5 py-2 rounded-xl
-                            bg-sky-50 border border-sky-100
-                            text-sky-700 text-sm font-medium">
-
-                    <span class="relative flex h-2.5 w-2.5">
-
-                        <span
-                            class="animate-ping absolute inline-flex
-                                   h-full w-full rounded-full
-                                   bg-sky-400 opacity-75">
-                        </span>
-
-                        <span
-                            class="relative inline-flex rounded-full
-                                   h-2.5 w-2.5 bg-sky-600">
-                        </span>
-
-                    </span>
+                    class="inline-flex items-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-3.5 py-2.5 text-sm font-semibold text-sky-700">
+                    <span class="h-2 w-2 rounded-full bg-sky-500"></span>
 
                     {{ $activeCount }}
 
-                    active
-                    {{ $activeCount === 1 ? 'complaint' : 'complaints' }}
-
+                    Active {{ $activeCount === 1 ? 'Complaint' : 'Complaints' }}
                 </div>
-            @endif
+
+            </div>
 
         </div>
 
 
-
         {{-- ========================================================= --}}
-        {{-- FLASH --}}
+        {{-- FLASH MESSAGES --}}
         {{-- ========================================================= --}}
 
         @if (session('success'))
-            <div
-                class="rounded-xl border border-green-200
-                        bg-green-50 px-4 py-3
-                        text-sm text-green-800
-                        flex items-start gap-3">
+            <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                role="status">
 
                 <i class="fas fa-circle-check mt-0.5"></i>
 
-                <span>
-                    {{ session('success') }}
-                </span>
+                <span>{{ session('success') }}</span>
 
             </div>
         @endif
 
-
         @if (session('error'))
-            <div
-                class="rounded-xl border border-red-200
-                        bg-red-50 px-4 py-3
-                        text-sm text-red-800
-                        flex items-start gap-3">
+            <div class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                role="alert">
 
                 <i class="fas fa-circle-exclamation mt-0.5"></i>
 
-                <span>
-                    {{ session('error') }}
-                </span>
+                <span>{{ session('error') }}</span>
 
             </div>
         @endif
 
 
-
         {{-- ========================================================= --}}
-        {{-- MINIMAL STATISTICS --}}
+        {{-- STATISTICS --}}
         {{-- ========================================================= --}}
 
-        <div class="grid grid-cols-3 gap-2 sm:gap-4">
-
+        <div class="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:gap-4">
 
             {{-- ASSIGNED --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-            <div
-                class="bg-white rounded-xl sm:rounded-2xl
-                        border border-gray-200
-                        shadow-sm p-3 sm:p-5">
+                <div class="flex items-start justify-between gap-2">
 
-                <div class="flex items-center
-                            justify-between gap-2">
+                    <div class="min-w-0">
 
-                    <div>
-
-                        <p class="text-[10px] sm:text-sm
-                                  text-gray-500">
-
-                            Assigned
-
+                        <p class="text-xs font-medium text-slate-500 sm:text-sm">
+                            Assigned Complaints
                         </p>
 
-                        <p
-                            class="text-xl sm:text-3xl
-                                  font-bold text-gray-900
-                                  mt-1">
-
+                        <p class="mt-2 text-2xl font-bold tabular-nums text-slate-900 sm:text-3xl">
                             {{ $assignedCount }}
-
                         </p>
 
                     </div>
 
-
-                    <div
-                        class="hidden sm:flex
-                                w-10 h-10 rounded-xl
-                                bg-blue-50 text-blue-600
-                                items-center justify-center">
-
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                         <i class="fas fa-clipboard-list"></i>
-
                     </div>
 
                 </div>
 
-
-                <p class="hidden sm:block
-                          text-xs text-gray-400 mt-2">
-
+                <p class="mt-2 text-xs text-slate-400">
                     Waiting to start
-
                 </p>
 
             </div>
-
 
 
             {{-- IN PROGRESS --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-            <div
-                class="bg-white rounded-xl sm:rounded-2xl
-                        border border-gray-200
-                        shadow-sm p-3 sm:p-5">
+                <div class="flex items-start justify-between gap-2">
 
-                <div class="flex items-center
-                            justify-between gap-2">
+                    <div class="min-w-0">
 
-                    <div>
-
-                        <p class="text-[10px] sm:text-sm
-                                  text-gray-500">
-
-                            In Progress
-
+                        <p class="text-xs font-medium text-slate-500 sm:text-sm">
+                            In Progress Complaints
                         </p>
 
-                        <p
-                            class="text-xl sm:text-3xl
-                                  font-bold text-amber-600
-                                  mt-1">
-
+                        <p class="mt-2 text-2xl font-bold tabular-nums text-amber-600 sm:text-3xl">
                             {{ $inProgressCount }}
-
                         </p>
 
                     </div>
 
-
-                    <div
-                        class="hidden sm:flex
-                                w-10 h-10 rounded-xl
-                                bg-amber-50 text-amber-600
-                                items-center justify-center">
-
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
                         <i class="fas fa-screwdriver-wrench"></i>
-
                     </div>
 
                 </div>
 
-
-                <p class="hidden sm:block
-                          text-xs text-gray-400 mt-2">
-
+                <p class="mt-2 text-xs text-slate-400">
                     Active field work
-
                 </p>
 
             </div>
-
 
 
             {{-- HIGH URGENCY --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-            <div
-                class="bg-white rounded-xl sm:rounded-2xl
-                        border border-gray-200
-                        shadow-sm p-3 sm:p-5">
+                <div class="flex items-start justify-between gap-2">
 
-                <div class="flex items-center
-                            justify-between gap-2">
+                    <div class="min-w-0">
 
-                    <div>
-
-                        <p class="text-[10px] sm:text-sm
-                                  text-gray-500">
-
-                            High Urgency
-
+                        <p class="text-xs font-medium text-slate-500 sm:text-sm">
+                            High Urgency Complaints
                         </p>
 
-                        <p
-                            class="text-xl sm:text-3xl
-                                  font-bold text-red-600
-                                  mt-1">
-
+                        <p class="mt-2 text-2xl font-bold tabular-nums text-red-600 sm:text-3xl">
                             {{ $urgentCount }}
-
                         </p>
 
                     </div>
 
-
-                    <div
-                        class="hidden sm:flex
-                                w-10 h-10 rounded-xl
-                                bg-red-50 text-red-600
-                                items-center justify-center">
-
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
                         <i class="fas fa-triangle-exclamation"></i>
-
                     </div>
 
                 </div>
 
-
-                <p class="hidden sm:block
-                          text-xs text-gray-400 mt-2">
-
+                <p class="mt-2 text-xs text-slate-400">
                     Needs attention
-
                 </p>
 
             </div>
@@ -292,315 +218,309 @@
         </div>
 
 
+        <p class="text-xs leading-5 text-slate-500">
+            The cards above count complaint statuses. Dashboard visit cards count individual maintenance work orders,
+            so their totals may differ when a complaint has multiple visits or is awaiting a follow-up schedule.
+        </p>
 
         {{-- ========================================================= --}}
-        {{-- ACTIVE / ALL SWITCH --}}
+        {{-- PAGE NAVIGATION --}}
         {{-- ========================================================= --}}
 
-        <div class="bg-white rounded-2xl
-                    border border-gray-200 shadow-sm p-1.5">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
-            <div class="grid grid-cols-2 gap-1">
+            {{-- ACTIVE WORK ORDERS --}}
+            <a href="{{ route('technician.active-work-orders.index') }}"
+                @if ($isActivePage) aria-current="page" @endif
+                class="group flex items-center gap-3 rounded-2xl border p-4 transition
+                    {{ $isActivePage
+                        ? 'border-sky-300 bg-sky-50 shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50' }}">
 
-
-                {{-- ACTIVE WORK --}}
-
-                <a href="{{ route(
-                    'technician.complaints.index',
-                    array_merge(request()->except(['page', 'status', 'scope']), [
-                        'scope' => 'active',
-                    ]),
-                ) }}"
-                    class="flex items-center justify-center
-                           gap-2 px-4 py-2.5 rounded-xl
-                           text-sm font-semibold transition
-                           {{ $scope === 'active' ? 'bg-sky-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50' }}">
-
-                    <i class="fas fa-person-digging"></i>
-
-                    <span>
-                        Active Work
-                    </span>
-
-                    @if ($activeCount > 0)
-                        <span
-                            class="px-2 py-0.5 rounded-full
-                                   text-[10px]
-                                   {{ $scope === 'active' ? 'bg-white/20 text-white' : 'bg-sky-50 text-sky-700' }}">
-
-                            {{ $activeCount }}
-
-                        </span>
-                    @endif
-
-                </a>
-
-
-
-                {{-- ALL MY COMPLAINTS --}}
-
-                <a href="{{ route(
-                    'technician.complaints.index',
-                    array_merge(request()->except(['page', 'status', 'scope']), [
-                        'scope' => 'all',
-                    ]),
-                ) }}"
-                    class="flex items-center justify-center
-                           gap-2 px-4 py-2.5 rounded-xl
-                           text-sm font-semibold transition
-                           {{ $scope === 'all' ? 'bg-sky-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50' }}">
+                <div
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+                    {{ $isActivePage ? 'bg-sky-600 text-white' : 'bg-sky-100 text-sky-600' }}">
 
                     <i class="fas fa-list-check"></i>
 
-                    <span>
-                        All My Complaints
-                    </span>
+                </div>
 
-                </a>
+                <div class="min-w-0 flex-1">
 
-            </div>
+                    <p class="text-sm font-bold text-slate-900">
+                        Active Work Orders
+                    </p>
+
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        First assigned, first in queue
+                    </p>
+
+                </div>
+
+                <span
+                    class="rounded-full px-2.5 py-1 text-xs font-bold
+                    {{ $isActivePage ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600' }}">
+
+                    {{ $activeCount }}
+
+                </span>
+
+            </a>
+
+
+            {{-- ALL COMPLAINTS --}}
+            <a href="{{ route('technician.complaints.index') }}"
+                @if (!$isActivePage) aria-current="page" @endif
+                class="group flex items-center gap-3 rounded-2xl border p-4 transition
+                    {{ !$isActivePage
+                        ? 'border-sky-300 bg-sky-50 shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50' }}">
+
+                <div
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+                    {{ !$isActivePage ? 'bg-sky-600 text-white' : 'bg-sky-100 text-sky-600' }}">
+
+                    <i class="fas fa-clock-rotate-left"></i>
+
+                </div>
+
+                <div class="min-w-0 flex-1">
+
+                    <p class="text-sm font-bold text-slate-900">
+                        All Complaints
+                    </p>
+
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        Newest complaints first
+                    </p>
+
+                </div>
+
+                <i class="fas fa-chevron-right text-xs text-slate-400"></i>
+
+            </a>
 
         </div>
 
+
+        {{-- ========================================================= --}}
+        {{-- QUEUE INFORMATION --}}
+        {{-- ========================================================= --}}
+
+        @if ($isActivePage)
+            <div class="flex items-start gap-3 rounded-2xl border border-sky-100 bg-sky-50/70 p-4">
+
+                <i class="fas fa-circle-info mt-0.5 text-sky-600"></i>
+
+                <div class="min-w-0">
+
+                    <p class="text-sm font-semibold text-sky-900">
+                        First Come, First Served Queue
+                    </p>
+
+                    <p class="mt-1 text-xs leading-5 text-sky-800 sm:text-sm">
+                        Work orders are listed by assignment date and time,
+                        from oldest to newest. Follow the Maintenance Manager's
+                        finalized schedule before starting field work.
+                    </p>
+
+                </div>
+
+            </div>
+        @endif
 
 
         {{-- ========================================================= --}}
         {{-- FILTERS --}}
         {{-- ========================================================= --}}
 
-        <div class="bg-white rounded-2xl
-                    border border-gray-200 shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-            <form method="GET" action="{{ route('technician.complaints.index') }}" class="p-4 sm:p-5">
+            <form method="GET" action="{{ route($indexRoute) }}" class="p-4 sm:p-5">
+                @if (!$isActivePage && $viewScope !== 'all')
+                    <input type="hidden" name="scope" value="{{ $viewScope }}">
+                @endif
 
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 
-                <input type="hidden" name="scope" value="{{ $scope }}">
+                    <div>
 
+                        <h2 class="text-sm font-bold text-slate-900">
+                            <i class="fas fa-filter mr-2 text-sky-600"></i>
+                            Filter Complaints
+                        </h2>
 
-                <div
-                    class="grid grid-cols-1
-                            md:grid-cols-2
-                            xl:grid-cols-6 gap-3">
-
-
-                    {{-- SEARCH --}}
-
-                    <div class="relative md:col-span-2">
-
-                        <i
-                            class="fas fa-magnifying-glass
-                                  absolute left-3.5 top-1/2
-                                  -translate-y-1/2
-                                  text-gray-400">
-                        </i>
-
-                        <input type="text" name="search" value="{{ request('search') }}"
-                            placeholder="Search complaint, consumer, type..."
-                            class="w-full pl-10 pr-4 py-2.5
-                                   rounded-xl border-gray-300
-                                   text-sm
-                                   focus:border-sky-500
-                                   focus:ring-sky-500">
+                        <p class="mt-1 text-xs text-slate-500">
+                            Narrow down complaints using the available filters.
+                        </p>
 
                     </div>
 
+                    @if ($hasFilters)
+                        <span class="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                            Filters Applied
+                        </span>
+                    @endif
+
+                </div>
+
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+
+                    {{-- SEARCH --}}
+                    <div class="sm:col-span-2">
+
+                        <label for="complaint-search" class="mb-1.5 block text-xs font-semibold text-slate-600">
+                            Search
+                        </label>
+
+                        <div class="relative">
+
+                            <i
+                                class="fas fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+
+                            <input id="complaint-search" type="search" name="search" value="{{ request('search') }}"
+                                placeholder="Complaint number, consumer, type..."
+                                class="w-full rounded-xl border-slate-300 py-2.5 pl-10 pr-3 text-sm focus:border-sky-500 focus:ring-sky-500">
+
+                        </div>
+
+                    </div>
 
 
                     {{-- STATUS --}}
-
-                    <select name="status"
-                        class="rounded-xl border-gray-300
-                               text-sm text-gray-700
-                               focus:border-sky-500
-                               focus:ring-sky-500">
-
-                        <option value="">
-                            All Statuses
-                        </option>
-
-                        <option value="Assigned" @selected(request('status') === 'Assigned')>
-
-                            Assigned
-
-                        </option>
-
-                        <option value="In Progress" @selected(request('status') === 'In Progress')>
-
-                            In Progress
-
-                        </option>
-
-
-                        @if ($scope === 'all')
-                            <option value="Completed" @selected(request('status') === 'Completed')>
-
-                                Completed
-
-                            </option>
-
-                            <option value="Closed" @selected(request('status') === 'Closed')>
-
-                                Closed
-
-                            </option>
-                        @endif
-
-                    </select>
-
-
-
-                    {{-- URGENCY --}}
-
-                    <select name="urgency"
-                        class="rounded-xl border-gray-300
-                               text-sm text-gray-700
-                               focus:border-sky-500
-                               focus:ring-sky-500">
-
-                        <option value="">
-                            All Urgency
-                        </option>
-
-                        <option value="High" @selected(request('urgency') === 'High')>
-
-                            High
-
-                        </option>
-
-                        <option value="Moderate" @selected(request('urgency') === 'Moderate')>
-
-                            Moderate
-
-                        </option>
-
-                        <option value="Low" @selected(request('urgency') === 'Low')>
-
-                            Low
-
-                        </option>
-
-                        <option value="not_assessed" @selected(request('urgency') === 'not_assessed')>
-
-                            Not Assessed
-
-                        </option>
-
-                    </select>
-
-
-
-                    {{-- DATE FROM --}}
-
                     <div>
 
-                        <label
-                            class="block xl:hidden
-                                   text-xs font-medium
-                                   text-gray-500 mb-1">
-
-                            From
-
+                        <label for="complaint-status" class="mb-1.5 block text-xs font-semibold text-slate-600">
+                            Status
                         </label>
 
-                        <input type="date" name="date_from" value="{{ request('date_from') }}" title="Date From"
-                            class="w-full rounded-xl
-                                   border-gray-300
-                                   text-sm text-gray-700
-                                   focus:border-sky-500
-                                   focus:ring-sky-500">
+                        <select id="complaint-status" name="status"
+                            class="w-full rounded-xl border-slate-300 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-sky-500">
+
+                            <option value="">All Statuses</option>
+
+                            <option value="Assigned" @selected(request('status') === 'Assigned')>
+                                Assigned
+                            </option>
+
+                            <option value="In Progress" @selected(request('status') === 'In Progress')>
+                                In Progress
+                            </option>
+
+                            @if (!$isActivePage)
+                                <option value="Completed" @selected(request('status') === 'Completed')>
+                                    Completed
+                                </option>
+
+                                <option value="Closed" @selected(request('status') === 'Closed')>
+                                    Closed
+                                </option>
+                            @endif
+
+                        </select>
 
                     </div>
 
 
-
-                    {{-- DATE TO --}}
-
+                    {{-- URGENCY --}}
                     <div>
 
-                        <label
-                            class="block xl:hidden
-                                   text-xs font-medium
-                                   text-gray-500 mb-1">
-
-                            To
-
+                        <label for="complaint-urgency" class="mb-1.5 block text-xs font-semibold text-slate-600">
+                            CS Final Urgency
                         </label>
 
-                        <input type="date" name="date_to" value="{{ request('date_to') }}" title="Date To"
-                            class="w-full rounded-xl
-                                   border-gray-300
-                                   text-sm text-gray-700
-                                   focus:border-sky-500
-                                   focus:ring-sky-500">
+                        <select id="complaint-urgency" name="urgency"
+                            class="w-full rounded-xl border-slate-300 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-sky-500">
+
+                            <option value="">All Urgency Levels</option>
+
+                            <option value="High" @selected(strtoupper((string) request('urgency')) === 'HIGH')>
+                                High
+                            </option>
+
+                            <option value="Moderate" @selected(strtoupper((string) request('urgency')) === 'MODERATE')>
+                                Moderate
+                            </option>
+
+                            <option value="Low" @selected(strtoupper((string) request('urgency')) === 'LOW')>
+                                Low
+                            </option>
+
+                            <option value="not_assessed" @selected(request('urgency') === 'not_assessed')>
+                                Not Assessed
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    {{-- DATE FROM --}}
+                    <div>
+
+                        <label for="complaint-date-from" class="mb-1.5 block text-xs font-semibold text-slate-600">
+                            Date From
+                        </label>
+
+                        <input id="complaint-date-from" type="date" name="date_from"
+                            value="{{ request('date_from') }}"
+                            class="w-full rounded-xl border-slate-300 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-sky-500">
+
+                    </div>
+
+
+                    {{-- DATE TO --}}
+                    <div>
+
+                        <label for="complaint-date-to" class="mb-1.5 block text-xs font-semibold text-slate-600">
+                            Date To
+                        </label>
+
+                        <input id="complaint-date-to" type="date" name="date_to" value="{{ request('date_to') }}"
+                            min="{{ request('date_from') }}"
+                            class="w-full rounded-xl border-slate-300 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-sky-500">
 
                     </div>
 
                 </div>
 
 
-
-                {{-- ACTIONS --}}
-
-                <div class="mt-3 flex flex-wrap gap-2">
-
+                {{-- FILTER ACTIONS --}}
+                <div class="mt-4 flex flex-wrap items-center gap-2">
 
                     <button type="submit"
-                        class="inline-flex items-center
-                               justify-center gap-2
-                               px-4 py-2.5 rounded-xl
-                               bg-sky-600 text-white
-                               text-sm font-semibold
-                               hover:bg-sky-700 transition">
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
 
                         <i class="fas fa-filter"></i>
-
                         Apply Filters
 
                     </button>
 
 
-
-                    @if (request()->filled('search') ||
-                            request()->filled('status') ||
-                            request()->filled('urgency') ||
-                            request()->filled('date_from') ||
-                            request()->filled('date_to'))
-                        <a href="{{ route('technician.complaints.index', [
-                            'scope' => $scope,
-                        ]) }}"
-                            class="inline-flex items-center
-                                   justify-center gap-2
-                                   px-4 py-2.5 rounded-xl
-                                   bg-gray-100 text-gray-700
-                                   text-sm font-semibold
-                                   hover:bg-gray-200 transition">
+                    @if ($hasFilters)
+                        <a href="{{ route($indexRoute) }}"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
 
                             <i class="fas fa-xmark"></i>
-
                             Clear
 
                         </a>
                     @endif
 
 
-
-                    {{-- PRINT --}}
-
+                    {{-- PRINT REPORT --}}
                     <a href="{{ route(
                         'technician.complaints.print-report',
-                        request()->only(['scope', 'search', 'status', 'urgency', 'date_from', 'date_to']),
+                        array_merge(request()->only(['search', 'status', 'urgency', 'date_from', 'date_to']), [
+                            'scope' => $isActivePage ? 'active' : $viewScope,
+                        ]),
                     ) }}"
-                        target="_blank"
-                        class="inline-flex items-center
-                               justify-center gap-2
-                               px-4 py-2.5 rounded-xl
-                               bg-slate-100 text-slate-700
-                               text-sm font-semibold
-                               hover:bg-slate-200 transition">
+                        target="_blank" rel="noopener noreferrer"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
 
                         <i class="fas fa-print"></i>
-
-                        Print
+                        Print Report
 
                     </a>
 
@@ -611,148 +531,106 @@
         </div>
 
 
-
         {{-- ========================================================= --}}
         {{-- COMPLAINT LIST --}}
         {{-- ========================================================= --}}
 
-        <div
-            class="bg-white rounded-2xl
-                    border border-gray-200
-                    shadow-sm overflow-hidden">
-
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
             {{-- LIST HEADER --}}
+            <div class="border-b border-slate-100 px-4 py-4 sm:px-6">
 
-            <div class="px-5 sm:px-6 py-4
-                        border-b border-gray-100">
-
-                <div
-                    class="flex flex-col sm:flex-row
-                            sm:items-center
-                            sm:justify-between gap-2">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                     <div>
 
-                        <h2 class="font-semibold text-gray-900">
+                        <h2 class="text-base font-bold text-slate-900">
 
-                            <i class="fas fa-clipboard-list
-                                      text-sky-600 mr-2">
-                            </i>
+                            <i class="fas fa-clipboard-list mr-2 text-sky-600"></i>
 
-                            {{ $scope === 'active' ? 'Active Work' : 'All My Complaints' }}
+                            {{ $pageTitle ?? 'All Complaints' }}
 
                         </h2>
 
+                        <p class="mt-1 text-xs text-slate-500 sm:text-sm">
 
-                        <p class="text-xs sm:text-sm
-                                  text-gray-500 mt-1">
-
-                            @if ($scope === 'active')
-                                Assigned and in-progress complaints
-                                that still require your attention.
-                            @else
-                                All maintenance complaints
-                                assigned to you.
-                            @endif
+                            {{ $isActivePage
+                                ? 'Assigned and in-progress complaints requiring attention.'
+                                : 'All maintenance complaints assigned to you.' }}
 
                         </p>
 
                     </div>
 
 
-                    <span class="text-xs text-gray-500">
+                    <div class="flex flex-wrap items-center gap-2">
 
-                        Showing
-                        {{ $complaints->firstItem() ?? 0 }}
+                        <span
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700">
 
-                        –
+                            <i class="fas fa-arrow-down-wide-short"></i>
 
-                        {{ $complaints->lastItem() ?? 0 }}
+                            {{ $sortDescription ?? ($isActivePage ? 'Oldest assigned first' : 'Newest complaints first') }}
 
-                        of
+                        </span>
 
-                        {{ $complaints->total() }}
+                        <span class="text-xs text-slate-500">
 
-                    </span>
+                            {{ $complaints->firstItem() ?? 0 }}
+                            –
+                            {{ $complaints->lastItem() ?? 0 }}
+                            of
+                            {{ $complaints->total() }}
+
+                        </span>
+
+                    </div>
 
                 </div>
 
             </div>
 
 
-
             {{-- ===================================================== --}}
             {{-- DESKTOP TABLE --}}
             {{-- ===================================================== --}}
 
-            <div class="hidden lg:block overflow-x-auto">
+            <div class="hidden overflow-x-auto lg:block">
 
-                <table class="w-full text-sm">
+                <table class="w-full min-w-[950px] text-left text-sm">
 
-                    <thead class="bg-gray-50
-                               border-b border-gray-200">
+                    <thead class="border-b border-slate-200 bg-slate-50">
 
                         <tr>
 
-                            <th
-                                class="px-5 py-3
-                                       text-left text-xs
-                                       font-semibold uppercase
-                                       tracking-wide text-gray-500">
-
+                            <th scope="col"
+                                class="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                                 Complaint
-
                             </th>
 
-                            <th
-                                class="px-5 py-3
-                                       text-left text-xs
-                                       font-semibold uppercase
-                                       tracking-wide text-gray-500">
-
+                            <th scope="col"
+                                class="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                                 Consumer
-
                             </th>
 
-                            <th
-                                class="px-5 py-3
-                                       text-left text-xs
-                                       font-semibold uppercase
-                                       tracking-wide text-gray-500">
-
+                            <th scope="col"
+                                class="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                                 Complaint Type
-
                             </th>
 
-                            <th
-                                class="px-5 py-3
-                                       text-left text-xs
-                                       font-semibold uppercase
-                                       tracking-wide text-gray-500">
-
+                            <th scope="col"
+                                class="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                                 Location
-
                             </th>
 
-                            <th
-                                class="px-5 py-3
-                                       text-left text-xs
-                                       font-semibold uppercase
-                                       tracking-wide text-gray-500">
-
+                            <th scope="col"
+                                class="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                                 Status
-
                             </th>
 
-                            <th
-                                class="px-5 py-3
-                                       text-center text-xs
-                                       font-semibold uppercase
-                                       tracking-wide text-gray-500">
-
-                                Action
-
+                            <th scope="col"
+                                class="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Details
                             </th>
 
                         </tr>
@@ -760,135 +638,116 @@
                     </thead>
 
 
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-slate-100">
 
                         @forelse ($complaints as $complaint)
+
                             @php
+                                $statusClass =
+                                    $statusStyles[$complaint->status] ?? 'bg-slate-50 text-slate-600 border-slate-200';
 
-                                /*
-                                |--------------------------------------------------------------------------
-                                | STATUS
-                                |--------------------------------------------------------------------------
-                                */
+                                $finalUrgency = strtoupper(
+                                    trim((string) ($complaint->aiAnalysis?->verified_urgency_level ?? '')),
+                                );
 
-                                $statusClasses = match ($complaint->status) {
-                                    'Assigned' => 'bg-blue-50 text-blue-700 border-blue-100',
+                                $urgencyClass = $urgencyStyles[$finalUrgency] ?? $notFinalizedUrgencyStyle;
+                                $workState = $complaint->myScheduleState ?? [];
+                                $workDate = $workState['schedule_date'] ?? null;
 
-                                    'In Progress' => 'bg-amber-50 text-amber-700 border-amber-100',
+                                $myAssignedAt = $complaint->technicians->firstWhere('id', auth()->id())?->pivot
+                                    ?->assigned_at;
 
-                                    'Completed' => 'bg-green-50 text-green-700 border-green-100',
-
-                                    'Closed' => 'bg-gray-100 text-gray-700 border-gray-200',
-
-                                    default => 'bg-gray-50 text-gray-600 border-gray-200',
-                                };
-
-                                /*
-                                |--------------------------------------------------------------------------
-                                | AI URGENCY
-                                |--------------------------------------------------------------------------
-                                */
-
-                                $urgency = strtoupper(trim($complaint->aiAnalysis?->urgency_level ?? ''));
-
-                                $urgencyClasses = match ($urgency) {
-                                    'HIGH' => 'bg-red-50 text-red-700 border-red-200',
-
-                                    'MODERATE' => 'bg-amber-50 text-amber-700 border-amber-200',
-
-                                    'LOW' => 'bg-green-50 text-green-700 border-green-200',
-
-                                    default => 'bg-gray-50 text-gray-500 border-gray-200',
-                                };
-
+                                $detailUrl = route('technician.complaints.show', $complaint);
                             @endphp
 
+                            <tr onclick="window.location.href = @js($detailUrl)"
+                                onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); this.click(); }"
+                                tabindex="0" role="link" aria-label="View complaint {{ $complaint->complaint_no }}"
+                                title="View complaint {{ $complaint->complaint_no }}"
+                                class="group cursor-pointer transition-colors hover:bg-sky-50/60 focus:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-400">
 
-                            <tr class="hover:bg-gray-50/70 transition">
 
-
-                                {{-- ================================= --}}
-                                {{-- COMPLAINT + URGENCY --}}
-                                {{-- ================================= --}}
-
-                                <td class="px-5 py-4">
+                                {{-- COMPLAINT --}}
+                                <td class="px-5 py-4 align-top">
 
                                     <div class="flex items-start gap-3">
 
                                         <div
-                                            class="w-10 h-10 rounded-xl
-                                                   bg-sky-50 text-sky-600
-                                                   flex items-center
-                                                   justify-center shrink-0">
+                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
 
                                             <i class="fas fa-file-lines"></i>
 
                                         </div>
 
+                                        <div class="min-w-0 space-y-2">
 
-                                        <div class="min-w-0">
+                                            <p class="font-bold text-sky-700">
+                                                {{ $complaint->complaint_no }}
+                                            </p>
 
 
-                                            {{-- NUMBER + URGENCY --}}
-
-                                            <div
-                                                class="flex flex-wrap
-                                                       items-center gap-2">
-
+                                            {{-- CS FINAL URGENCY --}}
+                                            <div>
                                                 <p
-                                                    class="font-bold
-                                                           text-sky-700">
-
-                                                    {{ $complaint->complaint_no }}
-
+                                                    class="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                                    CS Final Decision
                                                 </p>
 
+                                                <span
+                                                    class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold {{ $urgencyClass }}">
+                                                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
 
-                                                @if ($urgency)
-                                                    <span
-                                                        class="inline-flex
-                                                               items-center gap-1
-                                                               px-2 py-0.5
-                                                               rounded-full border
-                                                               text-[10px]
-                                                               font-bold
-                                                               {{ $urgencyClasses }}">
+                                                    {{ $finalUrgency !== '' ? $finalUrgency : 'NOT FINALIZED' }}
+                                                </span>
+                                            </div>
 
-                                                        <span
-                                                            class="w-1.5 h-1.5
-                                                                   rounded-full
-                                                                   bg-current">
-                                                        </span>
 
-                                                        {{ $urgency }}
+                                            {{-- SCHEDULE STATUS --}}
+                                            <div>
 
+                                                <span
+                                                    class="inline-flex max-w-[230px] items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">
+
+                                                    <i class="fas fa-calendar-check shrink-0"></i>
+
+                                                    <span class="truncate">
+                                                        {{ $workState['label'] ?? 'Not Scheduled' }}
                                                     </span>
-                                                @else
-                                                    <span
-                                                        class="inline-flex
-                                                               items-center
-                                                               px-2 py-0.5
-                                                               rounded-full
-                                                               border
-                                                               bg-gray-50
-                                                               border-gray-200
-                                                               text-[10px]
-                                                               font-semibold
-                                                               text-gray-400">
 
-                                                        NOT ASSESSED
-
-                                                    </span>
-                                                @endif
+                                                </span>
 
                                             </div>
 
 
-                                            <p
-                                                class="text-xs
-                                                       text-gray-400 mt-1">
+                                            @if ($workDate)
+                                                <p class="text-xs text-slate-500">
 
-                                                {{ $complaint->created_at?->format('M d, Y h:i A') }}
+                                                    {{ \Carbon\CarbonImmutable::parse($workDate)->format('M d, Y') }}
+
+                                                    @if (!empty($workState['start_time']))
+                                                        · {{ substr((string) $workState['start_time'], 0, 5) }}
+                                                    @endif
+
+                                                    @if (!empty($workState['end_time']))
+                                                        – {{ substr((string) $workState['end_time'], 0, 5) }}
+                                                    @endif
+
+                                                </p>
+                                            @endif
+
+
+                                            {{-- DATE --}}
+                                            <p class="text-xs leading-5 text-slate-500">
+
+                                                <span class="font-semibold">
+                                                    {{ $isActivePage ? 'Assigned:' : 'Submitted:' }}
+                                                </span>
+
+                                                @if ($isActivePage)
+                                                    {{ $myAssignedAt ? \Carbon\Carbon::parse($myAssignedAt)->format('M d, Y h:i A') : 'Date unavailable' }}
+                                                @else
+                                                    {{ $complaint->created_at?->format('M d, Y h:i A') ?? 'Date unavailable' }}
+                                                @endif
 
                                             </p>
 
@@ -899,58 +758,31 @@
                                 </td>
 
 
-
-                                {{-- ================================= --}}
                                 {{-- CONSUMER --}}
-                                {{-- ================================= --}}
+                                <td class="px-5 py-4 align-top">
 
-                                <td class="px-5 py-4">
-
-                                    <p class="font-medium
-                                               text-gray-900">
-
+                                    <p class="font-semibold text-slate-800">
                                         {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? 'Unknown') }}
-
                                     </p>
 
-
                                     @if ($complaint->consumer?->account_number)
-                                        <p
-                                            class="text-xs
-                                                   text-gray-500 mt-1">
-
-                                            Account:
-
-                                            {{ $complaint->consumer->account_number }}
-
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            Account: {{ $complaint->consumer->account_number }}
                                         </p>
                                     @elseif ($complaint->complainant_phone)
-                                        <p
-                                            class="text-xs
-                                                   text-gray-500 mt-1">
-
+                                        <p class="mt-1 text-xs text-slate-500">
                                             {{ $complaint->complainant_phone }}
-
                                         </p>
                                     @endif
 
                                 </td>
 
 
-
-                                {{-- ================================= --}}
                                 {{-- COMPLAINT TYPE --}}
-                                {{-- ================================= --}}
-
-                                <td class="px-5 py-4">
+                                <td class="px-5 py-4 align-top">
 
                                     <span
-                                        class="inline-flex
-                                               px-2.5 py-1.5
-                                               rounded-lg
-                                               bg-gray-100
-                                               text-gray-700
-                                               text-xs font-medium">
+                                        class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium leading-5 text-slate-700">
 
                                         {{ $complaint->category?->name ?? 'Uncategorized' }}
 
@@ -959,45 +791,23 @@
                                 </td>
 
 
-
-                                {{-- ================================= --}}
                                 {{-- LOCATION --}}
-                                {{-- ================================= --}}
-
-                                <td class="px-5 py-4">
+                                <td class="px-5 py-4 align-top">
 
                                     <div class="flex items-start gap-2">
 
-                                        <i
-                                            class="fas fa-location-dot
-                                                   text-gray-400 mt-1">
-                                        </i>
+                                        <i class="fas fa-location-dot mt-0.5 text-slate-400"></i>
 
-                                        <div>
+                                        <div class="min-w-0">
 
-                                            <p
-                                                class="text-gray-700
-                                                       max-w-[240px]">
-
-                                                {{ \Illuminate\Support\Str::limit($complaint->address, 50) }}
-
+                                            <p class="max-w-[220px] break-words text-sm leading-5 text-slate-700">
+                                                {{ \Illuminate\Support\Str::limit($complaint->address ?: 'No address provided', 65) }}
                                             </p>
 
-
                                             @if (!is_null($complaint->latitude) && !is_null($complaint->longitude))
-                                                <p
-                                                    class="text-[10px]
-                                                           text-green-600
-                                                           mt-1">
-
-                                                    <i
-                                                        class="fas
-                                                               fa-map-location-dot
-                                                               mr-1">
-                                                    </i>
-
+                                                <p class="mt-1 text-[11px] text-emerald-600">
+                                                    <i class="fas fa-map-location-dot mr-1"></i>
                                                     GPS available
-
                                                 </p>
                                             @endif
 
@@ -1008,26 +818,13 @@
                                 </td>
 
 
-
-                                {{-- ================================= --}}
                                 {{-- STATUS --}}
-                                {{-- ================================= --}}
-
-                                <td class="px-5 py-4">
+                                <td class="px-5 py-4 align-top">
 
                                     <span
-                                        class="inline-flex
-                                               items-center gap-1.5
-                                               px-2.5 py-1.5
-                                               rounded-full border
-                                               text-xs font-semibold
-                                               {{ $statusClasses }}">
+                                        class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold {{ $statusClass }}">
 
-                                        <span
-                                            class="w-1.5 h-1.5
-                                                   rounded-full
-                                                   bg-current">
-                                        </span>
+                                        <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
 
                                         {{ $complaint->status }}
 
@@ -1036,82 +833,63 @@
                                 </td>
 
 
+                                {{-- DETAILS --}}
+                                <td class="px-5 py-4 text-right align-top">
 
-                                {{-- ================================= --}}
-                                {{-- ACTION --}}
-                                {{-- ================================= --}}
+                                    <span
+                                        class="inline-flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition group-hover:bg-sky-600 group-hover:text-white">
 
-                                <td class="px-5 py-4 text-center">
+                                        View
 
-                                    <a href="{{ route('technician.complaints.show', $complaint) }}"
-                                        title="View Complaint" aria-label="View Complaint"
-                                        class="inline-flex
-                                               w-9 h-9
-                                               items-center
-                                               justify-center
-                                               rounded-lg
-                                               bg-sky-50
-                                               text-sky-600
-                                               border border-sky-100
-                                               hover:bg-sky-600
-                                               hover:text-white
-                                               hover:border-sky-600
-                                               transition">
+                                        <i class="fas fa-arrow-right"></i>
 
-                                        <i class="fas fa-eye"></i>
-
-                                    </a>
+                                    </span>
 
                                 </td>
 
                             </tr>
-
 
                         @empty
 
                             <tr>
 
-                                <td colspan="6"
-                                    class="px-6 py-14
-                                           text-center">
+                                <td colspan="6" class="px-6 py-16 text-center">
 
                                     <div
-                                        class="w-14 h-14 mx-auto
-                                               rounded-2xl
-                                               bg-gray-100
-                                               text-gray-400
-                                               flex items-center
-                                               justify-center">
+                                        class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
 
-                                        <i
-                                            class="fas
-                                                   fa-clipboard-check
-                                                   text-xl">
-                                        </i>
+                                        <i class="fas fa-clipboard-check text-xl"></i>
 
                                     </div>
 
-
-                                    <h3
-                                        class="font-semibold
-                                               text-gray-900 mt-4">
-
+                                    <h3 class="mt-4 font-bold text-slate-900">
                                         No complaints found
-
                                     </h3>
 
+                                    <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">
 
-                                    <p class="text-sm
-                                               text-gray-500 mt-1">
-
-                                        No assigned maintenance
-                                        complaints match your filters.
+                                        {{ $hasFilters
+                                            ? 'No complaints match your selected filters.'
+                                            : ($isActivePage
+                                                ? 'You currently have no assigned or in-progress complaints.'
+                                                : 'There are no complaints assigned to you yet.') }}
 
                                     </p>
+
+                                    @if ($hasFilters)
+                                        <a href="{{ route($indexRoute) }}"
+                                            class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 hover:text-sky-800">
+
+                                            <i class="fas fa-xmark"></i>
+                                            Clear Filters
+
+                                        </a>
+                                    @endif
 
                                 </td>
 
                             </tr>
+
                         @endforelse
 
                     </tbody>
@@ -1121,107 +899,57 @@
             </div>
 
 
-
             {{-- ===================================================== --}}
-            {{-- MOBILE --}}
+            {{-- MOBILE AND TABLET CARDS --}}
             {{-- ===================================================== --}}
 
-            <div class="lg:hidden divide-y divide-gray-100">
+            <div class="divide-y divide-slate-100 lg:hidden">
 
                 @forelse ($complaints as $complaint)
+
                     @php
+                        $statusClass =
+                            $statusStyles[$complaint->status] ?? 'bg-slate-50 text-slate-600 border-slate-200';
 
-                        $statusClasses = match ($complaint->status) {
-                            'Assigned' => 'bg-blue-50 text-blue-700 border-blue-100',
+                        $finalUrgency = strtoupper(
+                            trim((string) ($complaint->aiAnalysis?->verified_urgency_level ?? '')),
+                        );
 
-                            'In Progress' => 'bg-amber-50 text-amber-700 border-amber-100',
+                        $urgencyClass = $urgencyStyles[$finalUrgency] ?? $notFinalizedUrgencyStyle;
+                        $workState = $complaint->myScheduleState ?? [];
+                        $workDate = $workState['schedule_date'] ?? null;
 
-                            'Completed' => 'bg-green-50 text-green-700 border-green-100',
+                        $myAssignedAt = $complaint->technicians->firstWhere('id', auth()->id())?->pivot?->assigned_at;
 
-                            'Closed' => 'bg-gray-100 text-gray-700 border-gray-200',
-
-                            default => 'bg-gray-50 text-gray-600 border-gray-200',
-                        };
-
-                        $urgency = strtoupper(trim($complaint->aiAnalysis?->urgency_level ?? ''));
-
-                        $urgencyClasses = match ($urgency) {
-                            'HIGH' => 'bg-red-50 text-red-700 border-red-200',
-
-                            'MODERATE' => 'bg-amber-50 text-amber-700 border-amber-200',
-
-                            'LOW' => 'bg-green-50 text-green-700 border-green-200',
-
-                            default => 'bg-gray-50 text-gray-500 border-gray-200',
-                        };
-
+                        $detailUrl = route('technician.complaints.show', $complaint);
                     @endphp
 
-
-                    <div class="p-4 sm:p-5">
+                    <div onclick="window.location.href = @js($detailUrl)"
+                        onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); this.click(); }"
+                        tabindex="0" role="link" aria-label="View complaint {{ $complaint->complaint_no }}"
+                        class="group cursor-pointer p-4 transition-colors hover:bg-sky-50/60 focus:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-400 sm:p-5">
 
 
                         {{-- TOP --}}
+                        <div class="flex flex-wrap items-start justify-between gap-3">
 
-                        <div class="flex items-start
-                                   justify-between gap-3">
+                            <div class="min-w-0 flex-1">
 
-                            <div class="min-w-0">
+                                <p class="break-words text-base font-bold text-sky-700">
+                                    {{ $complaint->complaint_no }}
+                                </p>
 
-                                <div class="flex flex-wrap
-                                           items-center gap-2">
+                                <p class="mt-1 text-xs leading-5 text-slate-500">
 
-                                    <p class="font-bold
-                                               text-sky-700">
+                                    <span class="font-semibold">
+                                        {{ $isActivePage ? 'Assigned:' : 'Submitted:' }}
+                                    </span>
 
-                                        {{ $complaint->complaint_no }}
-
-                                    </p>
-
-
-                                    @if ($urgency)
-                                        <span
-                                            class="inline-flex
-                                                   items-center gap-1
-                                                   px-2 py-0.5
-                                                   rounded-full border
-                                                   text-[10px]
-                                                   font-bold
-                                                   {{ $urgencyClasses }}">
-
-                                            <span
-                                                class="w-1.5 h-1.5
-                                                       rounded-full
-                                                       bg-current">
-                                            </span>
-
-                                            {{ $urgency }}
-
-                                        </span>
+                                    @if ($isActivePage)
+                                        {{ $myAssignedAt ? \Carbon\Carbon::parse($myAssignedAt)->format('M d, Y h:i A') : 'Date unavailable' }}
                                     @else
-                                        <span
-                                            class="inline-flex
-                                                   px-2 py-0.5
-                                                   rounded-full
-                                                   border
-                                                   bg-gray-50
-                                                   border-gray-200
-                                                   text-[10px]
-                                                   font-semibold
-                                                   text-gray-400">
-
-                                            NOT ASSESSED
-
-                                        </span>
+                                        {{ $complaint->created_at?->format('M d, Y h:i A') ?? 'Date unavailable' }}
                                     @endif
-
-                                </div>
-
-
-                                <p class="text-xs
-                                           text-gray-400 mt-1">
-
-                                    {{ $complaint->created_at?->format('M d, Y h:i A') }}
 
                                 </p>
 
@@ -1229,19 +957,9 @@
 
 
                             <span
-                                class="inline-flex
-                                       items-center gap-1.5
-                                       px-2.5 py-1
-                                       rounded-full border
-                                       text-[10px]
-                                       font-semibold
-                                       shrink-0
-                                       {{ $statusClasses }}">
+                                class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold {{ $statusClass }}">
 
-                                <span
-                                    class="w-1.5 h-1.5
-                                           rounded-full bg-current">
-                                </span>
+                                <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
 
                                 {{ $complaint->status }}
 
@@ -1250,181 +968,191 @@
                         </div>
 
 
+                        {{-- BADGES --}}
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
 
-                        {{-- DETAILS --}}
+                            {{-- CS FINAL URGENCY --}}
+                            <span title="Urgency finalized by Customer Service"
+                                class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold {{ $urgencyClass }}">
+                                <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
 
-                        <div class="mt-4 grid
-                                   grid-cols-2 gap-4">
+                                CS Final:
+                                {{ $finalUrgency !== '' ? $finalUrgency : 'NOT FINALIZED' }}
+                            </span>
 
+                            <span
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
 
-                            {{-- CONSUMER --}}
+                                <i class="fas fa-calendar-days"></i>
 
-                            <div>
-
-                                <p
-                                    class="text-[10px]
-                                           uppercase
-                                           tracking-wide
-                                           font-semibold
-                                           text-gray-400">
-
-                                    Consumer
-
-                                </p>
-
-                                <p
-                                    class="mt-1 text-sm
-                                           font-semibold
-                                           text-gray-800">
-
-                                    {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? 'Unknown') }}
-
-                                </p>
-
-                            </div>
-
-
-
-                            {{-- TYPE --}}
-
-                            <div>
-
-                                <p
-                                    class="text-[10px]
-                                           uppercase
-                                           tracking-wide
-                                           font-semibold
-                                           text-gray-400">
-
-                                    Complaint Type
-
-                                </p>
-
-                                <p
-                                    class="mt-1 text-sm
-                                           font-medium
-                                           text-gray-700">
-
-                                    {{ $complaint->category?->name ?? 'Uncategorized' }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- LOCATION --}}
-
-                        <div
-                            class="mt-4 p-3
-                                   rounded-xl bg-gray-50
-                                   border border-gray-100">
-
-                            <div class="flex items-start gap-2">
-
-                                <i
-                                    class="fas fa-location-dot
-                                           text-gray-400 mt-0.5">
-                                </i>
-
-                                <p class="text-sm
-                                           text-gray-600">
-
-                                    {{ \Illuminate\Support\Str::limit($complaint->address, 90) }}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- ACTION --}}
-
-                        <div class="mt-4 flex items-center
-                                   justify-between">
-
-                            <span class="text-xs
-                                       text-gray-400">
-
-                                Updated
-
-                                {{ $complaint->updated_at?->diffForHumans() }}
+                                {{ $workState['label'] ?? 'Not Scheduled' }}
 
                             </span>
 
+                        </div>
 
-                            <a href="{{ route('technician.complaints.show', $complaint) }}"
-                                title="View Complaint" aria-label="View Complaint"
-                                class="inline-flex
-                                       w-9 h-9
-                                       items-center
-                                       justify-center
-                                       rounded-lg
-                                       bg-sky-50
-                                       text-sky-600
-                                       border border-sky-100
-                                       hover:bg-sky-600
-                                       hover:text-white
-                                       transition">
 
-                                <i class="fas fa-eye"></i>
+                        {{-- SCHEDULE DATE --}}
+                        @if ($workDate)
+                            <div class="mt-2 flex items-center gap-2 text-xs text-slate-500">
 
-                            </a>
+                                <i class="fas fa-clock text-slate-400"></i>
+
+                                <span>
+
+                                    {{ \Carbon\CarbonImmutable::parse($workDate)->format('M d, Y') }}
+
+                                    @if (!empty($workState['start_time']))
+                                        · {{ substr((string) $workState['start_time'], 0, 5) }}
+                                    @endif
+
+                                    @if (!empty($workState['end_time']))
+                                        – {{ substr((string) $workState['end_time'], 0, 5) }}
+                                    @endif
+
+                                </span>
+
+                            </div>
+                        @endif
+
+
+                        {{-- DETAILS --}}
+                        <div class="mt-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+
+                            {{-- CONSUMER --}}
+                            <div class="min-w-0">
+
+                                <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                    Consumer
+                                </p>
+
+                                <p class="mt-1 break-words text-sm font-semibold text-slate-800">
+                                    {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? 'Unknown') }}
+                                </p>
+
+                                @if ($complaint->consumer?->account_number)
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Account: {{ $complaint->consumer->account_number }}
+                                    </p>
+                                @endif
+
+                            </div>
+
+
+                            {{-- COMPLAINT TYPE --}}
+                            <div class="min-w-0">
+
+                                <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                    Complaint Type
+                                </p>
+
+                                <p class="mt-1 break-words text-sm font-medium text-slate-700">
+                                    {{ $complaint->category?->name ?? 'Uncategorized' }}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- LOCATION --}}
+                        <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+
+                            <div class="flex items-start gap-2">
+
+                                <i class="fas fa-location-dot mt-0.5 text-slate-400"></i>
+
+                                <div class="min-w-0 flex-1">
+
+                                    <p class="break-words text-sm leading-5 text-slate-600">
+                                        {{ $complaint->address ?: 'No address provided' }}
+                                    </p>
+
+                                    @if (!is_null($complaint->latitude) && !is_null($complaint->longitude))
+                                        <p class="mt-1 text-xs text-emerald-600">
+
+                                            <i class="fas fa-map-location-dot mr-1"></i>
+
+                                            GPS available
+
+                                        </p>
+                                    @endif
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- FOOTER --}}
+                        <div class="mt-4 flex items-center justify-between gap-3">
+
+                            <span class="text-xs text-slate-400">
+
+                                Updated {{ $complaint->updated_at?->diffForHumans() ?? 'N/A' }}
+
+                            </span>
+
+                            <span
+                                class="inline-flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition group-hover:bg-sky-600 group-hover:text-white">
+
+                                View Details
+
+                                <i class="fas fa-arrow-right"></i>
+
+                            </span>
 
                         </div>
 
                     </div>
-
 
                 @empty
 
-                    <div class="p-10 text-center">
+                    <div class="px-5 py-14 text-center">
 
                         <div
-                            class="w-14 h-14 mx-auto
-                                   rounded-2xl
-                                   bg-gray-100
-                                   text-gray-400
-                                   flex items-center
-                                   justify-center">
-
-                            <i
-                                class="fas
-                                       fa-clipboard-check
-                                       text-xl">
-                            </i>
-
+                            class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                            <i class="fas fa-clipboard-check text-xl"></i>
                         </div>
 
-
-                        <p class="font-semibold
-                                   text-gray-900 mt-3">
-
+                        <h3 class="mt-4 font-bold text-slate-900">
                             No complaints found
+                        </h3>
+
+                        <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">
+
+                            {{ $hasFilters
+                                ? 'No complaints match your selected filters.'
+                                : ($isActivePage
+                                    ? 'You currently have no active work orders.'
+                                    : 'There are no complaints assigned to you yet.') }}
 
                         </p>
 
+                        @if ($hasFilters)
+                            <a href="{{ route($indexRoute) }}"
+                                class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-sky-700">
 
-                        <p class="text-sm
-                                   text-gray-500 mt-1">
+                                <i class="fas fa-xmark"></i>
+                                Clear Filters
 
-                            No assigned maintenance
-                            complaints match your filters.
-
-                        </p>
+                            </a>
+                        @endif
 
                     </div>
+
                 @endforelse
 
             </div>
 
+
+            {{-- ===================================================== --}}
+            {{-- PAGINATION --}}
+            {{-- ===================================================== --}}
+
             @if ($complaints->hasPages())
-                <div class="px-5 sm:px-6 py-4
-                           border-t border-gray-100">
+                <div class="border-t border-slate-100 px-4 py-4 sm:px-6">
 
                     {{ $complaints->links() }}
 
@@ -1433,6 +1161,24 @@
 
         </div>
 
-    </div>
 
+        {{-- ========================================================= --}}
+        {{-- FOOTER NOTE --}}
+        {{-- ========================================================= --}}
+
+        @if ($isActivePage)
+            <p class="flex items-start gap-2 text-xs leading-5 text-slate-500">
+
+                <i class="fas fa-circle-info mt-0.5 text-slate-400"></i>
+
+                <span>
+                    Queue order is based on assignment time. Actual maintenance
+                    activities must follow the approved schedule and work-order
+                    permissions.
+                </span>
+
+            </p>
+        @endif
+
+    </div>
 @endsection

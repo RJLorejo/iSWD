@@ -3,16 +3,14 @@
 @section('title', 'Maintenance Technician Complaint Report')
 
 @section('prepared-by-name')
-    {{ auth()->user()->full_name ?? auth()->user()->name ?? 'N/A' }}
+    {{ auth()->user()->full_name ?? (auth()->user()->name ?? 'N/A') }}
 @endsection
 
 @section('prepared-by-role', 'Maintenance Technician')
 
 
 @push('styles')
-
     <style>
-
         .technician-complaint-report {
             width: 100%;
         }
@@ -73,9 +71,7 @@
             }
 
         }
-
     </style>
-
 @endpush
 
 
@@ -147,24 +143,15 @@
                         <tbody>
 
                             @foreach ($complaints as $complaint)
-
                                 @php
 
-                                    $urgency =
-                                        strtoupper(
-                                            trim(
-                                                $complaint
-                                                    ->aiAnalysis
-                                                    ?->urgency_level
-                                                ?? ''
-                                            )
-                                        );
+                                    // Display the urgency finalized by Customer Service.
+                                    $urgency = strtoupper(
+                                        trim((string) ($complaint->aiAnalysis?->verified_urgency_level ?? '')),
+                                    );
 
                                     $displayStatus =
-                                        $complaint->status === 'Completed'
-                                            ? 'Accomplished'
-                                            : $complaint->status;
-
+                                        $complaint->status === 'Completed' ? 'Accomplished' : $complaint->status;
                                 @endphp
 
 
@@ -182,8 +169,7 @@
                                                 font-size: 6.5pt;
                                                 font-weight: 700;
                                                 color: #4b5563;
-                                            "
-                                        >
+                                            ">
                                             {{ $urgency ?: 'NOT ASSESSED' }}
                                         </div>
 
@@ -192,32 +178,24 @@
 
                                     <td>
 
-                                        {{ $complaint->consumer?->full_name
-                                            ?? (
-                                                $complaint->complainant_name
-                                                ?? 'Unknown'
-                                            ) }}
+                                        {{ $complaint->consumer?->full_name ?? ($complaint->complainant_name ?? 'Unknown') }}
 
                                         @if ($complaint->consumer?->account_number)
-
                                             <div
                                                 style="
                                                     margin-top: 1mm;
                                                     color: #6b7280;
                                                     font-size: 6.5pt;
-                                                "
-                                            >
+                                                ">
                                                 {{ $complaint->consumer->account_number }}
                                             </div>
-
                                         @endif
 
                                     </td>
 
 
                                     <td>
-                                        {{ $complaint->category?->name
-                                            ?? 'Uncategorized' }}
+                                        {{ $complaint->category?->name ?? 'Uncategorized' }}
                                     </td>
 
 
@@ -235,22 +213,17 @@
 
                                     <td>
 
-                                        {{ $complaint->created_at
-                                            ?->format('M d, Y')
-                                            ?? '—' }}
+                                        {{ $complaint->created_at?->format('M d, Y') ?? '—' }}
 
                                         @if ($complaint->created_at)
-
                                             <div
                                                 style="
                                                     margin-top: 0.5mm;
                                                     color: #6b7280;
                                                     font-size: 6.5pt;
-                                                "
-                                            >
+                                                ">
                                                 {{ $complaint->created_at->format('h:i A') }}
                                             </div>
-
                                         @endif
 
                                     </td>
@@ -258,28 +231,22 @@
 
                                     <td>
 
-                                        {{ $complaint->updated_at
-                                            ?->format('M d, Y')
-                                            ?? '—' }}
+                                        {{ $complaint->updated_at?->format('M d, Y') ?? '—' }}
 
                                         @if ($complaint->updated_at)
-
                                             <div
                                                 style="
                                                     margin-top: 0.5mm;
                                                     color: #6b7280;
                                                     font-size: 6.5pt;
-                                                "
-                                            >
+                                                ">
                                                 {{ $complaint->updated_at->format('h:i A') }}
                                             </div>
-
                                         @endif
 
                                     </td>
 
                                 </tr>
-
                             @endforeach
 
                         </tbody>
@@ -287,9 +254,7 @@
                     </table>
 
                 </div>
-
             @else
-
                 <div class="report-text-block text-center">
                     No complaints matched the selected filters.
                 </div>

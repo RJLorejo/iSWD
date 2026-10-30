@@ -5,22 +5,28 @@ set -e
 PORT="${PORT:-80}"
 
 echo "========================================"
-echo "iSWD Apache Startup Diagnostics"
+echo "iSWD Apache Startup"
 echo "PORT=${PORT}"
 echo "========================================"
 
-echo "Checking enabled MPM module files..."
+echo "Removing conflicting Apache MPM modules..."
+
+a2dismod mpm_event mpm_worker || true
+
+rm -f \
+    /etc/apache2/mods-enabled/mpm_event.load \
+    /etc/apache2/mods-enabled/mpm_event.conf \
+    /etc/apache2/mods-enabled/mpm_worker.load \
+    /etc/apache2/mods-enabled/mpm_worker.conf
+
+echo "Enabling required Apache MPM..."
+a2enmod mpm_prefork
+
+echo "Verifying enabled MPM modules..."
 ls -la /etc/apache2/mods-enabled/ | grep mpm || true
 
-echo "Checking MPM load directives..."
-grep -RniE '^[[:space:]]*LoadModule[[:space:]]+mpm_' \
-    /etc/apache2/apache2.conf \
-    /etc/apache2/mods-enabled \
-    /etc/apache2/conf-enabled \
-    /etc/apache2/sites-enabled || true
-
-echo "Checking Apache module list..."
-apache2ctl -M 2>&1 || true
+echo "Verifying Apache loaded modules..."
+apache2ctl -M
 
 echo "Updating Apache listening port..."
 sed -i "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
@@ -28,7 +34,7 @@ sed -i "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
 echo "Updating VirtualHost port..."
 sed -i "s|<VirtualHost \*:80>|<VirtualHost *:${PORT}>|" /etc/apache2/sites-available/000-default.conf
 
-echo "Checking Apache configuration..."
+echo "Testing Apache configuration..."
 apache2ctl -t
 
 echo "Starting Apache..."

@@ -9,6 +9,7 @@ use App\Observers\ComplaintObserver;
 use App\Observers\MaintenanceReportObserver;
 use App\Services\MailSettingsService;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+
+        // Force HTTPS URLs in production.
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
         /*
         |--------------------------------------------------------------------------
         | Register Model Observers
@@ -80,16 +86,16 @@ class AppServiceProvider extends ServiceProvider
                     if ($consumer) {
                         $newAnnouncementCount =
                             ServiceAnnouncement::published()
-                                ->whereDoesntHave(
-                                    'reads',
-                                    function ($query) use ($consumer) {
-                                        $query->where(
-                                            'consumer_id',
-                                            $consumer->id
-                                        );
-                                    }
-                                )
-                                ->count();
+                            ->whereDoesntHave(
+                                'reads',
+                                function ($query) use ($consumer) {
+                                    $query->where(
+                                        'consumer_id',
+                                        $consumer->id
+                                    );
+                                }
+                            )
+                            ->count();
                     }
                 }
 

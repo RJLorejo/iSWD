@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -6,36 +7,30 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
+        if (!Schema::hasTable('complaints')) {
+            return;
+        }
+
         Schema::table('complaints', function (Blueprint $table) {
+            if (!Schema::hasColumn('complaints', 'complainant_name')) {
+                $table->string('complainant_name')
+                    ->nullable()
+                    ->after('consumer_id');
+            }
 
-            $table->string('complainant_name')
-                ->nullable()
-                ->after('consumer_id');
-
-            $table->string('complainant_phone')
-                ->nullable()
-                ->after('complainant_name');
-
+            if (!Schema::hasColumn('complaints', 'complainant_phone')) {
+                $table->string('complainant_phone')
+                    ->nullable()
+                    ->after('complainant_name');
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('complaints', function (Blueprint $table) {
-
-            $table->dropColumn([
-                'complainant_name',
-                'complainant_phone',
-            ]);
-
-        });
+        // Intentionally left empty.
+        // The earlier walk-in complainant migration owns these columns.
     }
 };

@@ -7,45 +7,41 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo/logo.png') }}">
     <title>@yield('title') | iSWD</title>
 
-    @vite(['resources/css/app.css','resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
 
 </head>
 
 <body class="bg-slate-100">
 
-<div
-x-data="{
-sidebarOpen:false,
-sidebarMini:false
-}"
-class="flex min-h-screen">
+    <div x-data="{
+        sidebarOpen: false,
+        sidebarMini: false
+    }" class="flex min-h-screen">
 
-    @include('technician.layouts.sidebar')
+        @include('technician.layouts.sidebar')
 
-    <div
-    :class="sidebarMini ? 'lg:ml-20' : 'lg:ml-72'"
-    class="flex-1 flex flex-col transition-all duration-300">
+        <div :class="sidebarMini ? 'lg:ml-20' : 'lg:ml-72'" class="flex-1 flex flex-col transition-all duration-300">
 
-        @include('technician.layouts.navbar')
+            @include('technician.layouts.navbar')
 
-        <main class="flex-1 p-8">
+            <main class="flex-1 p-8">
 
-            @yield('content')
+                @yield('content')
 
-        </main>
+            </main>
 
-        @include('technician.layouts.footer')
+            @include('technician.layouts.footer')
+
+        </div>
 
     </div>
-
-</div>
 
 </body>
 

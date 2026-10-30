@@ -4,26 +4,31 @@
 
 <div class="min-h-screen flex flex-col">
 
-    {{-- Navbar --}}
-    @include('landing.components.landing.navbar')
 
-    {{-- Hero --}}
-    @include('landing.components.landing.hero')
+{{-- Navbar --}}
+@include('landing.components.landing.navbar')
 
-    {{-- About --}}
-    @include('landing.components.landing.about')
+{{-- Hero --}}
+@include('landing.components.landing.hero')
 
-    {{-- Features --}}
-    @include(' landing.components.landing.features')
+{{-- About --}}
+@include('landing.components.landing.about')
 
-    {{-- Workflow --}}
-    @include('landing.components.landing.workflow')
+{{-- Features --}}
+@include('landing.components.landing.features')
 
-    {{-- Contact --}}
-    @include('landing.components.landing.contact')
+{{-- Complaint Workflow --}}
+@include('landing.components.landing.workflow')
 
-    {{-- Footer --}}
-    @include('landing.components.landing.footer')
+{{-- Water Application Information (Informational Only) --}}
+@include('landing.components.landing.water-application')
+
+{{-- Contact --}}
+@include('landing.components.landing.contact')
+
+{{-- Footer --}}
+@include('landing.components.landing.footer')
+
 
 </div>
 

@@ -27,7 +27,7 @@
                 [
                     'icon' => 'fa-wand-magic-sparkles',
                     'title' => 'AI-Assisted Assessment',
-                    'description' => 'Provides personnel with recommendations for complaint classification, priority, urgency, and appropriate service routing.'
+                    'description' => 'Provides personnel with recommendations for complaint classification, similarity, urgency, and appropriate service routing.'
                 ],
                 [
                     'icon' => 'fa-building-circle-arrow-right',

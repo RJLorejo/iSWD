@@ -9,6 +9,9 @@
 
     <meta name="theme-color" content="#0369a1">
 
+        <link rel="icon" type="image/png"
+     href="{{ asset('images/logo/logo.png') }}">
+
     <title>@yield('title', 'Customer Service') | iSWD</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])

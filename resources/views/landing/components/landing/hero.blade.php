@@ -94,20 +94,21 @@
                     </div>
                 </div>
 
-                <div class="absolute -bottom-4 -left-3 hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-xl lg:flex">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
+<div class="relative mt-4 flex w-full items-center gap-3 rounded-xl border border-white/20 bg-white px-4 py-3 text-slate-700 shadow-xl sm:mt-5">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+        <i class="fa-solid fa-shield-halved"></i>
+    </div>
 
-                    <div>
-                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                            Decision Support
-                        </p>
-                        <p class="text-xs font-semibold text-slate-700">
-                            Human-reviewed AI assistance
-                        </p>
-                    </div>
-                </div>
+    <div class="min-w-0">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            Decision Support
+        </p>
+        <p class="text-sm font-semibold leading-5 text-slate-700">
+            Human-reviewed AI assistance
+        </p>
+    </div>
+</div>
+
             </div>
         </div>
     </div>

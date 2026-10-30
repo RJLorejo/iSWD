@@ -90,13 +90,7 @@
 
                     </a>
 
-                    <a href="#" class="block px-5 py-3 hover:bg-gray-100">
 
-                        <i class="fa-solid fa-gear mr-2"></i>
-
-                        Settings
-
-                    </a>
 
                     <form action="{{ route('logout') }}" method="POST">
 

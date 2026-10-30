@@ -25,7 +25,7 @@
                 [
                     'icon' => 'fa-wand-magic-sparkles',
                     'title' => 'AI-Assisted Assessment',
-                    'description' => 'The system analyzes complaint information and provides recommendations for classification, priority, urgency, and routing.'
+                    'description' => 'The system analyzes complaint information and provides recommendations for classification, similarity, urgency, and routing.'
                 ],
                 [
                     'icon' => 'fa-user-check',

@@ -4,12 +4,9 @@
             <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="sm:col-span-2 lg:col-span-1">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white">
-                            <img
-                                src="{{ asset('images/logo/logo.png') }}"
-                                alt="iSWD Logo"
-                                class="h-9 w-9 object-contain"
-                            >
+                        <div
+                            class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white">
+                            <img src="{{ asset('images/logo/logo.png') }}" alt="iSWD Logo" class="h-9 w-9 object-contain">
                         </div>
 
                         <div>
@@ -23,7 +20,8 @@
                     </div>
 
                     <p class="mt-5 max-w-sm text-sm leading-6 text-sky-100/90">
-                        AI-Assisted Consumer Complaint Management and Service Support System for coordinated complaint handling, service response, monitoring, and resolution.
+                        AI-Assisted Consumer Complaint Management and Service Support System for coordinated complaint
+                        handling, service response, monitoring, and resolution.
                     </p>
                 </div>
 
@@ -34,28 +32,42 @@
 
                     <ul class="mt-4 space-y-3">
                         <li>
-                            <a href="#about" class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
+                            <a href="#about"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
                                 <i class="fa-solid fa-chevron-right text-[9px]"></i>
                                 About iSWD
                             </a>
                         </li>
 
                         <li>
-                            <a href="#workflow" class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
+                            <a href="#workflow"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
                                 <i class="fa-solid fa-chevron-right text-[9px]"></i>
                                 Complaint Workflow
                             </a>
                         </li>
 
                         <li>
-                            <a href="#features" class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
+                            <a href="#features"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
                                 <i class="fa-solid fa-chevron-right text-[9px]"></i>
                                 System Features
                             </a>
                         </li>
 
+
                         <li>
-                            <a href="#contact" class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
+                            <a href="#water-application"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
+                                <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                                Water Application Information
+                            </a>
+                        </li>
+
+
+                        <li>
+                            <a href="#contact"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
                                 <i class="fa-solid fa-chevron-right text-[9px]"></i>
                                 Contact Information
                             </a>
@@ -70,20 +82,16 @@
 
                     <ul class="mt-4 space-y-3">
                         <li>
-                            <a
-                                href="{{ route('consumer.login') }}"
-                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white"
-                            >
+                            <a href="{{ route('consumer.login') }}"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
                                 <i class="fa-solid fa-user w-4"></i>
                                 Consumer Portal
                             </a>
                         </li>
 
                         <li>
-                            <a
-                                href="{{ route('login') }}"
-                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white"
-                            >
+                            <a href="{{ route('login') }}"
+                                class="inline-flex items-center gap-2 text-sm text-sky-100/80 transition hover:text-white">
                                 <i class="fa-solid fa-user-shield w-4"></i>
                                 Employee Login
                             </a>
@@ -93,7 +101,8 @@
                     <div class="mt-5 rounded-xl border border-white/10 bg-white/10 p-3.5">
                         <div class="flex items-center gap-2">
                             <span class="relative flex h-2.5 w-2.5">
-                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50"></span>
+                                <span
+                                    class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50"></span>
                                 <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300"></span>
                             </span>
 
@@ -138,7 +147,8 @@
     </div>
 
     <div class="bg-sky-950/20">
-        <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div
+            class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
             <div class="text-center md:text-left">
                 <p class="text-xs text-sky-100/80">
                     &copy; {{ date('Y') }} Sagay Water District. All rights reserved.
@@ -149,7 +159,8 @@
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-sky-100/70 md:justify-end">
+            <div
+                class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-sky-100/70 md:justify-end">
                 <span class="inline-flex items-center gap-1.5">
                     <i class="fa-solid fa-lock text-[10px]"></i>
                     Secure Access

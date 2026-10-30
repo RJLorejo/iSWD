@@ -16,7 +16,7 @@
                 </p>
 
                 <p class="mt-4 text-base leading-7 text-slate-600">
-                    AI supports personnel by providing recommendations for complaint classification, priority, urgency, and service routing. These recommendations remain subject to review and confirmation by authorized Sagay Water District personnel.
+                    AI supports personnel by providing recommendations for complaint classification, similarity, urgency, and service routing. These recommendations remain subject to review and confirmation by authorized Sagay Water District personnel.
                 </p>
 
                 <div class="mt-7 rounded-2xl border border-sky-100 bg-sky-50/70 p-5">
@@ -62,7 +62,7 @@
                     </h3>
 
                     <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Assist personnel in identifying complaint classification, priority, urgency, and appropriate service routing.
+                        Assist personnel in identifying complaint classification, similarity, urgency, and appropriate service routing.
                     </p>
                 </div>
 

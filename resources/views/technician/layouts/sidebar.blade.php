@@ -14,36 +14,67 @@
         ->count();
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | ROUTE STATES
-    |--------------------------------------------------------------------------
-    */
 
-    $dashboardActive = request()->routeIs('technician.dashboard');
+/*
+|--------------------------------------------------------------------------
+| ROUTE STATES
+|--------------------------------------------------------------------------
+*/
 
-    $activeWorkOrdersActive = request()->routeIs(
-        'technician.active-work-orders.*'
-    );
+$dashboardActive = request()->routeIs('technician.dashboard');
 
-    $allComplaintsActive = request()->routeIs(
-        'technician.complaints.*'
-    ) && !request()->routeIs(
-        'technician.complaints.print-report'
-    );
+$activeWorkOrdersActive = request()->routeIs(
+    'technician.active-work-orders.*'
+);
 
-    $myScheduleActive = request()->routeIs(
-        'technician.schedule.*'
-    );
+$allComplaintsActive = request()->routeIs(
+    'technician.complaints.*'
+) && !request()->routeIs(
+    'technician.complaints.print-report'
+);
 
-    $pendingWorkloadActive = request()->routeIs(
-        'technician.pending-workload.*'
-    );
+$missedVisitsActive = request()->routeIs(
+    'technician.schedule.index',
+    'technician.schedule.print'
+) && request('view') === 'missed';
 
-    $reportsActive = request()->routeIs('technician.reports.*')
-        || request()->routeIs('technician.maintenance-reports.index');
-    $reportHistoryActive = request()->routeIs('technician.maintenance-reports.history');
-    $hasReportHistoryRoute = \Illuminate\Support\Facades\Route::has('technician.maintenance-reports.history');
+$myScheduleActive = request()->routeIs(
+    'technician.schedule.index'
+) && request('view') !== 'missed';
+
+$pendingWorkloadActive = request()->routeIs(
+    'technician.pending-workload.*'
+);
+
+$reportsActive = request()->routeIs('technician.reports.*')
+    || request()->routeIs('technician.maintenance-reports.index');
+
+$reportHistoryActive = request()->routeIs(
+    'technician.maintenance-reports.history'
+);
+
+$hasReportHistoryRoute = \Illuminate\Support\Facades\Route::has(
+    'technician.maintenance-reports.history'
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| OPTIONAL ROUTES
+|--------------------------------------------------------------------------
+*/
+
+$hasScheduleRoute = \Illuminate\Support\Facades\Route::has(
+    'technician.schedule.index'
+);
+
+$hasSchedulePrintRoute = \Illuminate\Support\Facades\Route::has(
+    'technician.schedule.print'
+);
+
+$hasPendingWorkloadRoute = \Illuminate\Support\Facades\Route::has(
+    'technician.pending-workload.index'
+);
 
 
     /*
@@ -307,6 +338,77 @@
                 </a>
 
             @endif
+
+
+{{-- ==================================================== --}}
+{{-- MISSED VISITS --}}
+{{-- ==================================================== --}}
+
+@if ($hasScheduleRoute)
+
+    <a
+        href="{{ route('technician.schedule.index', ['view' => 'missed']) }}"
+        title="Missed Visits"
+        @if ($missedVisitsActive) aria-current="page" @endif
+        class="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 transition
+            {{ $missedVisitsActive
+                ? 'bg-white text-sky-700 shadow-sm'
+                : 'text-white hover:bg-white/10' }}">
+
+        <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
+            {{ $missedVisitsActive ? 'bg-sky-50' : 'bg-white/10' }}">
+
+            <i class="fa-solid fa-calendar-xmark text-sm"></i>
+
+        </div>
+
+        <span
+            x-show="!sidebarMini"
+            x-transition
+            class="min-w-0 flex-1 truncate text-sm font-semibold">
+            Missed Visits
+        </span>
+
+    </a>
+
+@endif
+
+
+{{-- ==================================================== --}}
+{{-- PRINT MISSED VISITS --}}
+{{-- ==================================================== --}}
+
+@if ($hasSchedulePrintRoute)
+
+    <a
+        href="{{ route('technician.schedule.print', ['view' => 'missed']) }}"
+        target="_blank"
+        rel="noopener"
+        title="Print Missed Visits Report"
+        class="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 transition
+            {{ $missedVisitsActive
+                ? 'text-white hover:bg-white/10'
+                : 'text-white hover:bg-white/10' }}">
+
+        <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+
+            <i class="fa-solid fa-print text-sm"></i>
+
+        </div>
+
+        <span
+            x-show="!sidebarMini"
+            x-transition
+            class="truncate text-sm font-semibold">
+            Print Missed Visits
+        </span>
+
+    </a>
+
+@endif
+
 
 
             {{-- ==================================================== --}}

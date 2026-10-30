@@ -1,4 +1,5 @@
-﻿FROM node:22-bookworm-slim AS frontend
+﻿
+FROM node:22-bookworm-slim AS frontend
 
 WORKDIR /app
 
@@ -17,7 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
        pdo_mysql mbstring bcmath gd zip intl opcache \
-    && a2enmod rewrite headers \
+    && a2dismod mpm_event mpm_worker \
+    && a2enmod mpm_prefork rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -40,7 +42,5 @@ EXPOSE 80
 
 COPY docker/start-apache.sh /usr/local/bin/start-apache
 RUN chmod +x /usr/local/bin/start-apache
+
 CMD ["/usr/local/bin/start-apache"]
-
-
-

@@ -6,13 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('maintenance_reports', function (Blueprint $table) {
-
             $table->string('review_status')
                 ->default('Pending Review')
                 ->after('submitted_at');
@@ -43,20 +39,11 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('maintenance_reports', function (Blueprint $table) {
-
-            $table->dropForeign([
-                'reviewed_by',
-            ]);
-
-            $table->dropIndex([
-                'maintenance_reports_review_status_index',
-            ]);
+            $table->dropForeign(['reviewed_by']);
+            $table->dropIndex(['review_status']);
 
             $table->dropColumn([
                 'review_status',

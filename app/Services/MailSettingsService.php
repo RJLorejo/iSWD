@@ -1,20 +1,27 @@
 <?php
 
 namespace App\Services;
+
 use App\Models\MailSetting;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class MailSettingsService
 {
     /**
      * Apply saved SMTP settings.
      *
-     * When database settings are unavailable or disabled,
-     * Laravel retains its existing .env-based configuration.
+     * If the mail_settings table does not exist, or database
+     * settings are disabled, retain the .env mail configuration.
      */
     public function apply(): void
     {
+        // Prevent database queries before the migration creates the table.
+        if (!Schema::hasTable('mail_settings')) {
+            return;
+        }
+
         $settings = MailSetting::query()->first();
 
         if (!$settings || !$settings->is_enabled) {

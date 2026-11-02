@@ -47,35 +47,6 @@
 
         <div class="flex items-center gap-2 sm:gap-3">
 
-            <a href="{{ route('consumer.announcements.index') }}"
-                class="relative flex h-10 w-10 items-center justify-center
-           rounded-xl text-slate-500 transition
-           hover:bg-slate-100 hover:text-slate-800"
-                aria-label="Service announcements"
-                title="{{ ($newAnnouncementCount ?? 0) > 0
-                    ? $newAnnouncementCount . ' unread announcement' . ($newAnnouncementCount > 1 ? 's' : '')
-                    : 'Service Announcements' }}">
-
-                <i class="{{ ($newAnnouncementCount ?? 0) > 0 ? 'fas' : 'far' }} fa-bell">
-                </i>
-
-                @if (($newAnnouncementCount ?? 0) > 0)
-                    <span
-                        class="absolute -right-0.5 -top-0.5
-                   flex min-w-[18px] h-[18px]
-                   items-center justify-center
-                   rounded-full bg-red-500
-                   px-1 text-[10px] font-bold
-                   leading-none text-white
-                   ring-2 ring-white">
-
-                        {{ $newAnnouncementCount > 99 ? '99+' : $newAnnouncementCount }}
-
-                    </span>
-                @endif
-
-            </a>
-
             <div x-data="{ open: false }" class="relative">
 
                 <button type="button" @click="open = !open" :aria-expanded="open"

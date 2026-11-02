@@ -36,35 +36,84 @@
 
             <div id="otp-verification-card"
                 class="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/40 sm:p-8"
-                x-data="{
-                    digits: ['', '', '', '', '', ''],
-                    left: {{ (int) $resendIn }},
-                    loading: false,
-                    code() { return this.digits.join(''); },
-                    type(i, e) {
-                        const v = e.target.value.replace(/\D/g, '').slice(-1);
-                        this.digits[i] = v;
-                        e.target.value = v;
-                        if (v && i < 5) this.$refs['d' + (i + 1)].focus();
-                    },
-                    back(i, e) {
-                        if (e.key === 'Backspace' && !this.digits[i] && i > 0) this.$refs['d' + (i - 1)].focus();
-                    },
-                    paste(e) {
-                        const t = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
-                        if (!t) return;
-                        e.preventDefault();
-                        t.split('').forEach((c, i) => {
-                            this.digits[i] = c;
-                            this.$refs['d' + i].value = c;
-                        });
-                        this.$refs['d' + Math.min(t.length, 5)].focus();
-                    },
-                    init() {
-                        this.$refs.d0.focus();
-                        setInterval(() => { if (this.left > 0) this.left--; }, 1000);
-                    }
-                }">
+                x-data=
+                "
+{
+    digits: ['', '', '', '', '', ''],
+    left: {{ (int) $resendIn }},
+    loading: false,
+
+    code() {
+        return this.digits.join('');
+    },
+
+    syncInputs() {
+        this.digits.forEach((digit, i) => {
+            const input = this.$refs['d' + i];
+
+            if (input) {
+                input.value = digit;
+            }
+        });
+    },
+
+    type(i, e) {
+        const value = e.target.value.replace(/\D/g, '');
+
+        this.digits[i] = value.slice(-1);
+        e.target.value = this.digits[i];
+
+        if (this.digits[i] && i < 5) {
+            this.$refs['d' + (i + 1)].focus();
+        }
+    },
+
+    back(i, e) {
+        if (
+            e.key === 'Backspace' &&
+            !this.digits[i] &&
+            i > 0
+        ) {
+            this.$refs['d' + (i - 1)].focus();
+        }
+    },
+
+    paste(e) {
+        const value = (
+            e.clipboardData.getData('text') || ''
+        ).replace(/\D/g, '').slice(0, 6);
+
+        if (!value) return;
+
+        e.preventDefault();
+
+        this.digits = ['', '', '', '', '', ''];
+
+        value.split('').forEach((digit, i) => {
+            this.digits[i] = digit;
+        });
+
+        this.$nextTick(() => {
+            this.syncInputs();
+
+            const focusIndex = Math.min(value.length, 5);
+            this.$refs['d' + focusIndex].focus();
+        });
+    },
+
+    init() {
+        this.$nextTick(() => {
+            this.$refs.d0.focus();
+        });
+
+        setInterval(() => {
+            if (this.left > 0) {
+                this.left--;
+            }
+        }, 1000);
+    }
+}
+">
 
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
                     <i class="fa-solid fa-envelope-circle-check text-lg"></i>

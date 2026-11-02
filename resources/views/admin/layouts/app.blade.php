@@ -42,59 +42,6 @@
 
             <main class="flex-1 p-4 sm:p-6 lg:p-8">
 
-
-                {{-- Success Message --}}
-
-                @if (session('success'))
-                    <div
-                        class="mb-6 rounded-xl
-                               bg-green-50
-                               border border-green-200
-                               text-green-800
-                               p-4">
-
-                        <div class="flex items-start gap-3">
-
-                            <i
-                                class="fa-solid fa-circle-check
-                                       text-green-600 mt-0.5"></i>
-
-                            <div>
-                                {{ session('success') }}
-                            </div>
-
-                        </div>
-
-                    </div>
-                @endif
-
-
-                {{-- Error Message --}}
-
-                @if (session('error'))
-                    <div
-                        class="mb-6 rounded-xl
-                               bg-red-50
-                               border border-red-200
-                               text-red-800
-                               p-4">
-
-                        <div class="flex items-start gap-3">
-
-                            <i
-                                class="fa-solid fa-circle-exclamation
-                                       text-red-600 mt-0.5"></i>
-
-                            <div>
-                                {{ session('error') }}
-                            </div>
-
-                        </div>
-
-                    </div>
-                @endif
-
-
                 @yield('content')
 
             </main>

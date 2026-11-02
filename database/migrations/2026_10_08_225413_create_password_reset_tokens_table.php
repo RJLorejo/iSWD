@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -9,17 +8,39 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('password_reset_tokens')) {
-            Schema::create('password_reset_tokens', function (Blueprint $table) {
-                $table->string('email')->primary();
-                $table->string('token');
-                $table->timestamp('created_at')->nullable();
-            });
-        }
+        Schema::create('verification_otps', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('user_id')
+                ->nullable()
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->string('channel', 20);
+            $table->string('purpose', 50);
+            $table->string('destination');
+            $table->string('code_hash');
+
+            // OTP expiration is set by Laravel, not automatically updated by MySQL.
+            $table->timestamp('expires_at')->useCurrent();
+
+            $table->unsignedTinyInteger('attempts')->default(0);
+
+            $table->timestamp('verified_at')->nullable();
+            $table->timestamp('last_sent_at')->nullable();
+
+            $table->timestamps();
+
+            $table->index([
+                'destination',
+                'channel',
+                'purpose',
+            ]);
+        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('verification_otps');
     }
 };

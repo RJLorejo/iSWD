@@ -11,7 +11,7 @@ use Throwable;
 class AuditLogger
 {
     /**
-     * Record a significant system activity.
+     * Record a significant internal employee activity.
      *
      * Do not pass passwords, tokens, or unnecessary personal data
      * in the old_values/new_values arguments.
@@ -35,16 +35,29 @@ class AuditLogger
 
             $request = request();
 
+            $employeeName = null;
+
+            if ($user) {
+                $employeeName = trim((string) $user->full_name);
+
+                if ($employeeName === '') {
+                    $employeeName = trim(implode(' ', array_filter([
+                        $user->first_name,
+                        $user->middle_name,
+                        $user->last_name,
+                        $user->suffix,
+                    ])));
+                }
+
+                if ($employeeName === '') {
+                    $employeeName = $user->employee_id
+                        ?: 'Employee name unavailable';
+                }
+            }
+
             AuditLog::create([
                 'user_id' => $user?->getAuthIdentifier(),
-                'user_name' => $user?->full_name
-                    ?? $user?->name
-                    ?? trim(
-                        ($user?->first_name ?? '') . ' ' .
-                        ($user?->last_name ?? '')
-                    )
-                    ?: ($user ? 'User #' . $user->getAuthIdentifier() : 'Guest'),
-
+                'user_name' => $employeeName,
                 'user_role' => $role,
                 'action' => $action,
                 'module' => $module,
@@ -63,9 +76,6 @@ class AuditLogger
                     : null,
             ]);
         } catch (Throwable $exception) {
-            // Do not silently hide audit failures from the application logs.
-            // This avoids replacing an existing business operation's response
-            // with an unrelated audit-logging exception.
             Log::error('Failed to write system audit log.', [
                 'action' => $action,
                 'module' => $module,

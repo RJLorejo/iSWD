@@ -12,7 +12,6 @@ class StoreConsumerRequest extends FormRequest
         return true;
     }
 
-
     public function rules(): array
     {
         return [
@@ -27,11 +26,7 @@ class StoreConsumerRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-
-                Rule::unique(
-                    'consumers',
-                    'account_number'
-                ),
+                Rule::unique('consumers', 'account_number'),
             ],
 
             'first_name' => [
@@ -60,19 +55,24 @@ class StoreConsumerRequest extends FormRequest
 
             'sex' => [
                 'required',
-
                 Rule::in([
                     'Male',
                     'Female',
                 ]),
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | Philippine Mobile Number
+            |--------------------------------------------------------------------------
+            */
+
             'phone' => [
                 'required',
                 'string',
-                'max:20',
+                'digits:11',
+                'regex:/^09\d{9}$/',
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -84,13 +84,8 @@ class StoreConsumerRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-
-                Rule::unique(
-                    'users',
-                    'email'
-                ),
+                Rule::unique('users', 'email'),
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -134,7 +129,6 @@ class StoreConsumerRequest extends FormRequest
                 'max:255',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Registered Service Coordinates
@@ -152,53 +146,93 @@ class StoreConsumerRequest extends FormRequest
                 'numeric',
                 'between:-180,180',
             ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Customer Service Certification
+            |--------------------------------------------------------------------------
+            */
+
+            'information_certified' => [
+                'required',
+                'accepted',
+            ],
+
         ];
     }
-
 
     public function messages(): array
     {
         return [
 
+            /*
+            |--------------------------------------------------------------------------
+            | Consumer Information
+            |--------------------------------------------------------------------------
+            */
+
             'account_number.required' =>
-                'Please enter the consumer account number.',
+            'Please enter the consumer account number.',
 
             'account_number.unique' =>
-                'This consumer account number is already registered.',
+            'This consumer account number is already registered.',
 
             'first_name.required' =>
-                'Please enter the consumer first name.',
+            'Please enter the consumer first name.',
 
             'last_name.required' =>
-                'Please enter the consumer last name.',
+            'Please enter the consumer last name.',
 
             'sex.required' =>
-                'Please select the consumer sex.',
+            'Please select the consumer sex.',
 
             'sex.in' =>
-                'Please select a valid sex.',
+            'Please select a valid sex.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Phone Number
+            |--------------------------------------------------------------------------
+            */
 
             'phone.required' =>
-                'Please enter the consumer phone number.',
+            'Please enter the consumer phone number.',
+
+            'phone.digits' =>
+            'The phone number must contain exactly 11 digits.',
+
+            'phone.regex' =>
+            'Enter a valid Philippine mobile number beginning with 09.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Portal Email
+            |--------------------------------------------------------------------------
+            */
 
             'email.required' =>
-                'Please enter an email address for the consumer portal account.',
+            'Please enter an email address for the consumer portal account.',
 
             'email.email' =>
-                'Please enter a valid email address.',
+            'Please enter a valid email address.',
 
             'email.unique' =>
-                'This email address is already registered to another account.',
+            'This email address is already registered to another account.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Service Address
+            |--------------------------------------------------------------------------
+            */
 
             'barangay.required' =>
-                'Please enter the barangay.',
+            'Please enter the barangay.',
 
             'municipality.required' =>
-                'Please enter the municipality.',
+            'Please enter the municipality.',
 
             'province.required' =>
-                'Please enter the province.',
-
+            'Please enter the province.',
 
             /*
             |--------------------------------------------------------------------------
@@ -207,22 +241,35 @@ class StoreConsumerRequest extends FormRequest
             */
 
             'latitude.required' =>
-                'Please select the registered water service location on the map.',
+            'Please select the registered water service location on the map.',
 
             'latitude.numeric' =>
-                'The selected service location is invalid.',
+            'The selected service location is invalid.',
 
             'latitude.between' =>
-                'The selected latitude is invalid.',
+            'The selected latitude is invalid.',
 
             'longitude.required' =>
-                'Please select the registered water service location on the map.',
+            'Please select the registered water service location on the map.',
 
             'longitude.numeric' =>
-                'The selected service location is invalid.',
+            'The selected service location is invalid.',
 
             'longitude.between' =>
-                'The selected longitude is invalid.',
+            'The selected longitude is invalid.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Certification
+            |--------------------------------------------------------------------------
+            */
+
+            'information_certified.required' =>
+            'Please complete the consumer information certification.',
+
+            'information_certified.accepted' =>
+            'You must certify that the consumer information has been reviewed before registration.',
+
         ];
     }
 }

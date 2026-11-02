@@ -405,6 +405,7 @@
 </div>
 
 <script>
+
 function passwordResetOtp(config) {
     return {
         digits: ['', '', '', '', '', ''],
@@ -449,8 +450,7 @@ function passwordResetOtp(config) {
         focusInput(index) {
             if (this.locked || this.expirySeconds <= 0) return;
 
-            const inputs = this.getInputs();
-            const input = inputs[index];
+            const input = this.getInputs()[index];
 
             if (input && !input.disabled) {
                 input.focus();
@@ -462,14 +462,24 @@ function passwordResetOtp(config) {
             this.otp = this.digits.join('');
         },
 
+        syncInputs() {
+            const inputs = this.getInputs();
+
+            this.digits.forEach((digit, index) => {
+                if (inputs[index]) {
+                    inputs[index].value = digit;
+                }
+            });
+
+            this.updateOtp();
+        },
+
         clearOtp() {
             this.digits = ['', '', '', '', '', ''];
             this.otp = '';
 
             this.$nextTick(() => {
-                this.getInputs().forEach(input => {
-                    input.value = '';
-                });
+                this.syncInputs();
             });
         },
 
@@ -523,11 +533,13 @@ function passwordResetOtp(config) {
             if (event.key === 'ArrowLeft' && index > 0) {
                 event.preventDefault();
                 this.focusInput(index - 1);
+                return;
             }
 
             if (event.key === 'ArrowRight' && index < 5) {
                 event.preventDefault();
                 this.focusInput(index + 1);
+                return;
             }
 
             if (
@@ -547,7 +559,7 @@ function passwordResetOtp(config) {
             const numbers = value.replace(/\D/g, '').slice(0, 6);
             const inputs = this.getInputs();
 
-            let lastIndex = startIndex;
+            this.digits = ['', '', '', '', '', ''];
 
             for (let i = 0; i < numbers.length; i++) {
                 const index = startIndex + i;
@@ -555,17 +567,19 @@ function passwordResetOtp(config) {
                 if (index >= 6) break;
 
                 this.digits[index] = numbers[i];
-                inputs[index].value = numbers[i];
-
-                lastIndex = index;
             }
 
-            this.updateOtp();
+            this.syncInputs();
 
-            if (lastIndex < 5) {
-                this.focusInput(lastIndex + 1);
-            } else {
+            const lastIndex = Math.min(
+                startIndex + numbers.length,
+                5
+            );
+
+            if (this.digits.every(digit => digit !== '')) {
                 this.focusInput(5);
+            } else {
+                this.focusInput(lastIndex);
             }
         },
 
@@ -578,11 +592,9 @@ function passwordResetOtp(config) {
 
             if (!pasted) return;
 
-            const targetIndex = Number(
-                event.target.dataset.otpIndex ?? 0
-            );
+            event.preventDefault();
 
-            this.fillFromString(pasted, targetIndex);
+            this.fillFromString(pasted, 0);
         },
 
         submitOtp(event) {
@@ -652,6 +664,7 @@ function passwordResetOtp(config) {
         }
     };
 }
+
 </script>
 
 @endsection

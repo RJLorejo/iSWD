@@ -13,15 +13,11 @@ class UpdateConsumerRequest extends FormRequest
         return true;
     }
 
-
     public function rules(): array
     {
-        $consumer =
-            $this->route('consumer');
+        $consumer = $this->route('consumer');
 
-        $userId =
-            $consumer?->user_id;
-
+        $userId = $consumer?->user_id;
 
         return [
 
@@ -35,13 +31,8 @@ class UpdateConsumerRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-
-                Rule::unique(
-                    'consumers',
-                    'account_number'
-                )->ignore(
-                    $consumer?->id
-                ),
+                Rule::unique('consumers', 'account_number')
+                    ->ignore($consumer?->id),
             ],
 
             'first_name' => [
@@ -70,19 +61,24 @@ class UpdateConsumerRequest extends FormRequest
 
             'sex' => [
                 'required',
-
                 Rule::in([
                     'Male',
                     'Female',
                 ]),
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | Philippine Mobile Number
+            |--------------------------------------------------------------------------
+            */
+
             'phone' => [
                 'required',
                 'string',
-                'max:20',
+                'digits:11',
+                'regex:/^09\d{9}$/',
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -94,15 +90,9 @@ class UpdateConsumerRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-
-                Rule::unique(
-                    'users',
-                    'email'
-                )->ignore(
-                    $userId
-                ),
+                Rule::unique('users', 'email')
+                    ->ignore($userId),
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -115,7 +105,6 @@ class UpdateConsumerRequest extends FormRequest
                 'boolean',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Password Reset
@@ -125,13 +114,11 @@ class UpdateConsumerRequest extends FormRequest
             'new_password' => [
                 'nullable',
                 'confirmed',
-
                 Password::min(8)
                     ->letters()
                     ->mixedCase()
                     ->numbers(),
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -175,7 +162,6 @@ class UpdateConsumerRequest extends FormRequest
                 'max:255',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Registered Service Coordinates
@@ -193,13 +179,30 @@ class UpdateConsumerRequest extends FormRequest
                 'numeric',
                 'between:-180,180',
             ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Customer Service Certification
+            |--------------------------------------------------------------------------
+            */
+
+            'information_certified' => [
+                'required',
+                'accepted',
+            ],
+
         ];
     }
-
 
     public function messages(): array
     {
         return [
+
+            /*
+            |--------------------------------------------------------------------------
+            | Consumer Information
+            |--------------------------------------------------------------------------
+            */
 
             'account_number.required' =>
             'Please enter the consumer account number.',
@@ -219,8 +222,26 @@ class UpdateConsumerRequest extends FormRequest
             'sex.in' =>
             'Please select a valid sex.',
 
+            /*
+            |--------------------------------------------------------------------------
+            | Phone Number
+            |--------------------------------------------------------------------------
+            */
+
             'phone.required' =>
             'Please enter the consumer phone number.',
+
+            'phone.digits' =>
+            'The phone number must contain exactly 11 digits.',
+
+            'phone.regex' =>
+            'Enter a valid Philippine mobile number beginning with 09.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Portal Email
+            |--------------------------------------------------------------------------
+            */
 
             'email.required' =>
             'Please enter an email address for the consumer portal account.',
@@ -231,11 +252,29 @@ class UpdateConsumerRequest extends FormRequest
             'email.unique' =>
             'This email address is already registered to another account.',
 
+            /*
+            |--------------------------------------------------------------------------
+            | Account Status
+            |--------------------------------------------------------------------------
+            */
+
             'is_active.required' =>
             'Please select whether the consumer account is active or inactive.',
 
+            /*
+            |--------------------------------------------------------------------------
+            | Password Reset
+            |--------------------------------------------------------------------------
+            */
+
             'new_password.confirmed' =>
             'The new password confirmation does not match.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Service Address
+            |--------------------------------------------------------------------------
+            */
 
             'barangay.required' =>
             'Please enter the barangay.',
@@ -245,7 +284,6 @@ class UpdateConsumerRequest extends FormRequest
 
             'province.required' =>
             'Please enter the province.',
-
 
             /*
             |--------------------------------------------------------------------------
@@ -269,7 +307,20 @@ class UpdateConsumerRequest extends FormRequest
             'The selected service location is invalid.',
 
             'longitude.between' =>
-            'The selected longitude is invalid.',
+            'The selected service location is invalid.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Certification
+            |--------------------------------------------------------------------------
+            */
+
+            'information_certified.required' =>
+            'Please complete the consumer information certification.',
+
+            'information_certified.accepted' =>
+            'You must certify that the consumer information has been reviewed before updating.',
+
         ];
     }
 }

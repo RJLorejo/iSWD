@@ -77,7 +77,8 @@ class StoreUserRequest extends FormRequest
             'phone' => [
                 'nullable',
                 'string',
-                'max:20',
+                'digits:11',
+                'regex:/^09[0-9]{9}$/',
             ],
 
 

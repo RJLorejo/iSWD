@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-
 class User extends Authenticatable
 {
     use HasFactory;
@@ -21,61 +20,34 @@ class User extends Authenticatable
     use SoftDeletes;
 
     protected $fillable = [
-
         'employee_id',
-
         'first_name',
-
         'middle_name',
-
         'last_name',
-
         'suffix',
-
         'email',
-
         'email_verified_at',
-
         'password',
-
         'phone',
-
         'avatar',
-
         'department_id',
-
         'position_id',
-
         'service_area_id',
-
         'is_active',
-
         'last_login_at',
-
         'last_login_ip',
-
-
-
     ];
 
     protected $hidden = [
-
         'password',
-
         'remember_token',
-
     ];
 
     protected $casts = [
-
         'email_verified_at' => 'datetime',
-
         'last_login_at' => 'datetime',
-
         'password' => 'hashed',
-
         'is_active' => 'boolean',
-
     ];
 
     public function department()
@@ -90,10 +62,7 @@ class User extends Authenticatable
 
     public function serviceArea()
     {
-        return $this->belongsTo(
-            ServiceArea::class,
-            'service_area_id'
-        );
+        return $this->belongsTo(ServiceArea::class, 'service_area_id');
     }
 
     public function consumer()
@@ -130,10 +99,7 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar) {
-
-            return asset(
-                'storage/' . $this->avatar
-            );
+            return asset('storage/' . $this->avatar);
         }
 
         return 'https://ui-avatars.com/api/?background=0ea5e9&color=ffffff&name='

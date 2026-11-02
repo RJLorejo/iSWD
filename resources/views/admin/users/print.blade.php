@@ -1,484 +1,199 @@
-<!DOCTYPE html>
+@extends('layouts.report')
 
-<html lang="en">
+@section('title', 'Employee Report')
 
-<head>
+@section('back-url')
+    {{ route('admin.users.index', request()->query()) }}
+@endsection
 
-    <meta charset="UTF-8">
+@section('report-title', 'Employee Report')
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('report-subtitle')
+    iSWD AI-Assisted Consumer Complaint Management and Service Support System
+@endsection
 
-    <title>Employee Report | iSWD</title>
+@section('report-content')
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    {{-- APPLIED FILTERS --}}
+    <section class="report-section">
 
-    <style>
-        @page {
-            size: A4 landscape;
-            margin: 12mm;
-        }
+        <h3 class="report-section-title">
+            Report Filters
+        </h3>
 
-        @media print {
+        <div class="report-grid">
 
-            .no-print {
-                display: none !important;
-            }
+            <div class="report-field">
+                <div class="report-field-label">Search</div>
+                <div class="report-field-value">
+                    {{ request('search') ?: 'All' }}
+                </div>
+            </div>
 
-            body {
-                background: white !important;
-            }
+            <div class="report-field">
+                <div class="report-field-label">Department</div>
+                <div class="report-field-value">
+                    @if (request('department'))
+                        {{ $users->first()?->department?->department_name ?? 'Selected Department' }}
+                    @else
+                        All Departments
+                    @endif
+                </div>
+            </div>
 
-            .print-container {
-                box-shadow: none !important;
-                border: none !important;
-            }
-        }
-    </style>
+            <div class="report-field">
+                <div class="report-field-label">Role</div>
+                <div class="report-field-value">
+                    {{ request('role') ?: 'All Roles' }}
+                </div>
+            </div>
 
-</head>
-
-
-<body class="bg-slate-100 text-slate-900">
-
-    <div class="max-w-7xl mx-auto p-6">
-
-
-        {{-- Print Controls --}}
-
-        <div
-            class="no-print
-                   flex items-center
-                   justify-between
-                   gap-4 mb-6">
-
-            <a href="{{ route('admin.users.index', request()->query()) }}"
-                class="inline-flex
-                       items-center gap-2
-                       px-5 py-3
-                       rounded-xl
-                       border border-slate-300
-                       bg-white
-                       text-slate-700
-                       font-semibold">
-
-                ← Back
-
-            </a>
-
-
-            <button type="button" onclick="window.print()"
-                class="inline-flex
-                       items-center gap-2
-                       px-6 py-3
-                       rounded-xl
-                       bg-sky-700
-                       text-white
-                       font-semibold">
-
-                Print Report
-
-            </button>
+            <div class="report-field">
+                <div class="report-field-label">Status</div>
+                <div class="report-field-value">
+                    @if (request('status') === '1')
+                        Active
+                    @elseif (request('status') === '0')
+                        Inactive
+                    @else
+                        All Statuses
+                    @endif
+                </div>
+            </div>
 
         </div>
 
-
-        <div
-            class="print-container
-                   bg-white
-                   rounded-2xl
-                   border border-slate-200
-                   shadow-sm
-                   p-8">
+    </section>
 
 
-            {{-- Report Header --}}
+    {{-- EMPLOYEE SUMMARY --}}
+    <section class="report-section">
 
-            <div
-                class="flex items-center
-                       justify-between
-                       border-b-2
-                       border-slate-800
-                       pb-5">
+        <h3 class="report-section-title">
+            Employee Summary
+        </h3>
 
-                <div class="flex items-center gap-4">
+        <div class="report-grid">
 
-                    <img src="{{ asset('images/logo/logo.png') }}" alt="Sagay Water District"
-                        class="w-16 h-16 object-contain">
-
-                    <div>
-
-                        <h1
-                            class="text-xl
-                                   font-bold
-                                   uppercase">
-                            Sagay Water District
-                        </h1>
-
-                        <p class="text-sm text-slate-600">
-                            iSWD AI-Assisted Consumer Complaint
-                            Management and Service Support System
-                        </p>
-
-                    </div>
-
+            <div class="report-field">
+                <div class="report-field-label">Total Employees</div>
+                <div class="report-field-value">
+                    {{ number_format($totalEmployees) }}
                 </div>
-
-
-                <div class="text-right">
-
-                    <h2 class="text-lg
-                               font-bold">
-                        Employee Report
-                    </h2>
-
-                    <p class="text-xs text-slate-500 mt-1">
-                        Generated:
-                        {{ now()->format('F d, Y h:i A') }}
-                    </p>
-
-                </div>
-
             </div>
 
-
-            {{-- Applied Filters --}}
-
-            <div class="mt-5">
-
-                <p
-                    class="text-xs font-bold
-                           uppercase
-                           tracking-wider
-                           text-slate-500">
-                    Report Filters
-                </p>
-
-
-                <div
-                    class="mt-2 flex
-                           flex-wrap gap-x-6
-                           gap-y-2
-                           text-sm">
-
-                    <div>
-
-                        <span class="font-semibold">
-                            Search:
-                        </span>
-
-                        {{ request('search') ?: 'All' }}
-
-                    </div>
-
-
-                    <div>
-
-                        <span class="font-semibold">
-                            Department:
-                        </span>
-
-                        @if (request('department'))
-                            {{ $users->first()?->department?->department_name ?? 'Selected Department' }}
-                        @else
-                            All Departments
-                        @endif
-
-                    </div>
-
-
-                    <div>
-
-                        <span class="font-semibold">
-                            Role:
-                        </span>
-
-                        {{ request('role') ?: 'All Roles' }}
-
-                    </div>
-
-
-                    <div>
-
-                        <span class="font-semibold">
-                            Status:
-                        </span>
-
-                        @if (request('status') === '1')
-                            Active
-                        @elseif (request('status') === '0')
-                            Inactive
-                        @else
-                            All Statuses
-                        @endif
-
-                    </div>
-
+            <div class="report-field">
+                <div class="report-field-label">Active Employees</div>
+                <div class="report-field-value">
+                    {{ number_format($activeEmployees) }}
                 </div>
-
             </div>
 
-
-            {{-- Summary --}}
-
-            <div class="grid grid-cols-3
-                       gap-4 mt-6">
-
-                <div
-                    class="border
-                           border-slate-300
-                           rounded-lg p-4">
-
-                    <p class="text-xs text-slate-500">
-                        Employees
-                    </p>
-
-                    <p class="text-xl font-bold mt-1">
-                        {{ number_format($totalEmployees) }}
-                    </p>
-
+            <div class="report-field">
+                <div class="report-field-label">Inactive Employees</div>
+                <div class="report-field-value">
+                    {{ number_format($inactiveEmployees) }}
                 </div>
-
-
-                <div
-                    class="border
-                           border-slate-300
-                           rounded-lg p-4">
-
-                    <p class="text-xs text-slate-500">
-                        Active
-                    </p>
-
-                    <p class="text-xl font-bold mt-1">
-                        {{ number_format($activeEmployees) }}
-                    </p>
-
-                </div>
-
-
-                <div
-                    class="border
-                           border-slate-300
-                           rounded-lg p-4">
-
-                    <p class="text-xs text-slate-500">
-                        Inactive
-                    </p>
-
-                    <p class="text-xl font-bold mt-1">
-                        {{ number_format($inactiveEmployees) }}
-                    </p>
-
-                </div>
-
             </div>
 
+        </div>
 
-            {{-- Table --}}
+    </section>
 
-            <div class="mt-6">
 
-                <table class="w-full
-                           border-collapse
-                           text-xs">
+    {{-- EMPLOYEE RECORDS --}}
+    <section class="report-section">
 
-                    <thead>
+        <div class="report-section-heading-row">
 
-                        <tr class="bg-slate-100">
+            <h3 class="report-section-title">
+                Employee Records
+            </h3>
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                #
-                            </th>
+            <div class="report-record-count">
+                Records:
+                <strong>{{ number_format($users->count()) }}</strong>
+            </div>
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Employee ID
-                            </th>
+        </div>
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Employee Name
-                            </th>
+        <div class="report-table-wrapper">
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Department
-                            </th>
+            <table class="report-table">
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Position
-                            </th>
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 11%;">Employee ID</th>
+                        <th style="width: 19%;">Employee Name</th>
+                        <th style="width: 14%;">Department</th>
+                        <th style="width: 14%;">Position</th>
+                        <th style="width: 12%;">Role</th>
+                        <th style="width: 9%;">Status</th>
+                        <th style="width: 16%;">Last Login</th>
+                    </tr>
+                </thead>
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Role
-                            </th>
+                <tbody>
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Status
-                            </th>
+                    @forelse ($users as $user)
 
-                            <th
-                                class="border
-                                       border-slate-300
-                                       px-3 py-2
-                                       text-left">
-                                Last Login
-                            </th>
+                        <tr>
+
+                            <td>
+                                {{ $loop->iteration }}
+                            </td>
+
+                            <td>
+                                {{ $user->employee_id ?: '—' }}
+                            </td>
+
+                            <td>
+                                {{ $user->full_name }}
+                            </td>
+
+                            <td>
+                                {{ $user->department?->department_name ?? '—' }}
+                            </td>
+
+                            <td>
+                                {{ $user->position?->position_name ?? '—' }}
+                            </td>
+
+                            <td>
+                                {{ $user->roles->pluck('name')->join(', ') ?: '—' }}
+                            </td>
+
+                            <td>
+                                {{ $user->is_active ? 'Active' : 'Inactive' }}
+                            </td>
+
+                            <td>
+                                @if ($user->last_login_at)
+                                    {{ $user->last_login_at->format('M d, Y h:i A') }}
+                                @else
+                                    Never logged in
+                                @endif
+                            </td>
 
                         </tr>
 
-                    </thead>
+                    @empty
 
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                No employee records match the selected filters.
+                            </td>
+                        </tr>
 
-                    <tbody>
+                    @endforelse
 
-                        @forelse ($users as $user)
-                            <tr>
+                </tbody>
 
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-                                    {{ $loop->iteration }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-                                    {{ $user->employee_id ?: '—' }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2
-                                           font-medium">
-                                    {{ $user->full_name }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-                                    {{ $user->department?->department_name ?? '—' }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-                                    {{ $user->position?->position_name ?? '—' }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-                                    {{ $user->roles->pluck('name')->join(', ') ?: '—' }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-                                    {{ $user->is_active ? 'Active' : 'Inactive' }}
-                                </td>
-
-
-                                <td
-                                    class="border
-                                           border-slate-300
-                                           px-3 py-2">
-
-                                    @if ($user->last_login_at)
-                                        {{ $user->last_login_at->format('M d, Y h:i A') }}
-                                    @else
-                                        Never logged in
-                                    @endif
-
-                                </td>
-
-                            </tr>
-
-                        @empty
-
-                            <tr>
-
-                                <td colspan="8"
-                                    class="border
-                                           border-slate-300
-                                           px-4 py-8
-                                           text-center
-                                           text-slate-500">
-                                    No employee records match
-                                    the selected filters.
-                                </td>
-
-                            </tr>
-                        @endforelse
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-            {{-- Footer --}}
-
-            <div
-                class="mt-8 pt-4
-                       border-t
-                       border-slate-300
-                       flex justify-between
-                       text-xs text-slate-500">
-
-                <span>
-                    iSWD Employee Report
-                </span>
-
-                <span>
-                    Generated by:
-                    {{ auth()->user()->full_name }}
-                </span>
-
-            </div>
+            </table>
 
         </div>
 
-    </div>
+    </section>
 
-</body>
-
-</html>
+@endsection

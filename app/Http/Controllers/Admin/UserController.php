@@ -377,16 +377,10 @@ class UserController extends Controller
             $request->role
         );
 
-
         return redirect()
-            ->route(
-                'admin.users.index'
-            )
-            ->with(
-                'success',
-                'Employee created successfully.Temporary Password: '
-                    . $password
-            );
+            ->route('admin.users.index')
+            ->with('success', 'Employee created successfully.')
+            ->with('temporary_password', $password);
     }
 
 
@@ -446,11 +440,8 @@ class UserController extends Controller
 
 
         return back()
-            ->with(
-                'success',
-                'Temporary Password: '
-                    . $password
-            );
+            ->with('success', 'Employee password reset successfully.')
+            ->with('temporary_password', $password);
     }
 
 

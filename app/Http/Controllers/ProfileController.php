@@ -119,7 +119,8 @@ class ProfileController extends Controller
             'phone' => [
                 'nullable',
                 'string',
-                'max:30',
+                'digits:11',
+                'regex:/^09[0-9]{9}$/',
             ],
 
             'avatar' => [
@@ -134,9 +135,7 @@ class ProfileController extends Controller
             $validated['first_name']
         );
 
-        $validated['middle_name'] = !empty(
-            $validated['middle_name']
-        )
+        $validated['middle_name'] = !empty($validated['middle_name'])
             ? trim($validated['middle_name'])
             : null;
 
@@ -144,9 +143,7 @@ class ProfileController extends Controller
             $validated['last_name']
         );
 
-        $validated['suffix'] = !empty(
-            $validated['suffix']
-        )
+        $validated['suffix'] = !empty($validated['suffix'])
             ? trim($validated['suffix'])
             : null;
 
@@ -154,9 +151,7 @@ class ProfileController extends Controller
             trim($validated['email'])
         );
 
-        $validated['phone'] = !empty(
-            $validated['phone']
-        )
+        $validated['phone'] = !empty($validated['phone'])
             ? trim($validated['phone'])
             : null;
 
@@ -186,22 +181,22 @@ class ProfileController extends Controller
                 if ($consumer) {
                     $consumer->update([
                         'first_name' =>
-                            $validated['first_name'],
+                        $validated['first_name'],
 
                         'middle_name' =>
-                            $validated['middle_name'],
+                        $validated['middle_name'],
 
                         'last_name' =>
-                            $validated['last_name'],
+                        $validated['last_name'],
 
                         'suffix' =>
-                            $validated['suffix'],
+                        $validated['suffix'],
 
                         'email' =>
-                            $validated['email'],
+                        $validated['email'],
 
                         'phone' =>
-                            $validated['phone'],
+                        $validated['phone'],
                     ]);
                 }
             });
@@ -265,7 +260,7 @@ class ProfileController extends Controller
             return back()
                 ->withErrors([
                     'current_password' =>
-                        'Current password is incorrect.',
+                    'Current password is incorrect.',
                 ]);
         }
 

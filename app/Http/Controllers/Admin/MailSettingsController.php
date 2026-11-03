@@ -32,6 +32,7 @@ class MailSettingsController extends Controller
         Request $request,
         MailSettingsService $mailSettings
     ): RedirectResponse {
+
         $settings = MailSetting::query()->first();
 
         $validated = $request->validate([
@@ -92,45 +93,46 @@ class MailSettingsController extends Controller
             ],
         ], [
             'provider.required' =>
-                'Select an email provider.',
+            'Select an email provider.',
 
             'provider.in' =>
-                'Select either SMTP or Resend.',
+            'Select either SMTP or Resend.',
 
             'username.required_if' =>
-                'Enter the complete SMTP email address.',
+            'Enter the complete SMTP email address.',
 
             'username.email' =>
-                'Enter a valid SMTP email address, including @gmail.com if you use Gmail.',
+            'Enter a valid SMTP email address, including @gmail.com if you use Gmail.',
 
             'password.max' =>
-                'The SMTP password is too long.',
+            'The SMTP password is too long.',
 
             'from_address.required' =>
-                'Enter the sender email address.',
+            'Enter the sender email address.',
 
             'from_address.email' =>
-                'Enter a valid sender email address.',
+            'Enter a valid sender email address.',
 
             'host.required_if' =>
-                'Enter your SMTP server host.',
+            'Enter your SMTP server host.',
 
             'port.required_if' =>
-                'Enter the SMTP port.',
+            'Enter the SMTP port.',
 
             'encryption.required_if' =>
-                'Select the SMTP encryption type.',
+            'Select the SMTP encryption type.',
         ]);
 
         $provider = $validated['provider'];
 
         /*
-         * Preserve existing SMTP values when Resend is selected.
-         *
-         * The current database schema requires SMTP fields even
-         * when the selected provider is Resend.
-         */
+        |--------------------------------------------------------------------------
+        | Preserve SMTP fields when Resend is selected
+        |--------------------------------------------------------------------------
+        */
+
         if ($provider === 'resend') {
+
             $validated['host'] = $settings?->host
                 ?? 'smtp.gmail.com';
 
@@ -145,10 +147,11 @@ class MailSettingsController extends Controller
         }
 
         /*
-         * An empty password means retain the existing password.
-         * This also avoids overwriting the encrypted password
-         * when the user switches between providers.
-         */
+        |--------------------------------------------------------------------------
+        | Preserve existing SMTP password
+        |--------------------------------------------------------------------------
+        */
+
         if (empty($validated['password'])) {
             unset($validated['password']);
         }
@@ -157,38 +160,29 @@ class MailSettingsController extends Controller
         $validated['updated_by'] = $request->user()->id;
 
         try {
-            /*
-             * Save the settings.
-             */
+
             if ($settings) {
                 $settings->update($validated);
             } else {
                 MailSetting::query()->create($validated);
             }
 
-            /*
-             * Apply the selected provider immediately.
-             */
             $mailSettings->apply();
 
             return redirect()
                 ->route('admin.settings.mail.index')
                 ->with(
-                    'success',
-                    'Email settings saved successfully. Send a test email to verify the selected email provider.'
+                    'mail_settings_saved',
+                    'Your email provider configuration has been saved and applied. Send a test email to confirm that your system can submit messages successfully.'
                 );
-
         } catch (Throwable $exception) {
-            /*
-             * Keep technical details in the server log.
-             * Never expose API keys or credentials in the UI.
-             */
+
             report($exception);
 
             return back()
                 ->withErrors([
                     'provider' =>
-                        'The email settings could not be applied. Please review your provider configuration and try again.',
+                    'The email settings could not be saved or applied. Please review your provider configuration and try again.',
                 ])
                 ->withInput($request->except('password'));
         }
@@ -201,6 +195,7 @@ class MailSettingsController extends Controller
         Request $request,
         MailSettingsService $mailSettings
     ): RedirectResponse {
+
         $validated = $request->validate([
             'test_email' => [
                 'required',
@@ -211,32 +206,45 @@ class MailSettingsController extends Controller
 
         $settings = MailSetting::query()->first();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Check whether database email settings are enabled
+        |--------------------------------------------------------------------------
+        */
+
         if (!$settings || !$settings->is_enabled) {
-            return back()
-                ->withErrors([
-                    'test_email' =>
-                        'Email sending is not enabled. Save and enable your email provider settings first.',
-                ])
-                ->withInput();
+
+            return back()->with(
+                'mail_test_error',
+                'Database email settings are not enabled. Please enable and save your email provider settings before sending a test email.'
+            );
         }
 
         $provider = strtolower($settings->provider ?? 'smtp');
 
         try {
+
             /*
-             * Apply the currently saved provider configuration.
-             */
+            |--------------------------------------------------------------------------
+            | Apply saved provider configuration
+            |--------------------------------------------------------------------------
+            */
+
             $mailSettings->apply();
 
             $mailerName = Config::get('mail.default');
 
             /*
-             * Confirm that the Resend API key is available.
-             */
+            |--------------------------------------------------------------------------
+            | Verify Resend API key
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 $provider === 'resend'
                 && !Config::get('services.resend.key')
             ) {
+
                 throw new RuntimeException(
                     'The Resend API key is not configured.'
                 );
@@ -245,25 +253,30 @@ class MailSettingsController extends Controller
             $providerLabel = strtoupper($provider);
 
             /*
-             * Send the test message.
-             */
+            |--------------------------------------------------------------------------
+            | Send test email
+            |--------------------------------------------------------------------------
+            */
+
             Mail::mailer($mailerName)->raw(
                 "Good day,\n\n"
-                . "This is a test email from iSWD - Sagay Water District.\n\n"
-                . "The system successfully submitted this test message "
-                . "using the configured {$providerLabel} email provider.\n\n"
-                . "If you received this message, the provider accepted "
-                . "the test email for delivery. This does not guarantee "
-                . "delivery to every recipient's inbox.\n\n"
-                . "Sincerely,\n"
-                . "Sagay Water District\n"
-                . "iSWD System Notification\n\n"
-                . "This is an automated message. Please do not reply.",
+                    . "This is a test email from iSWD - Sagay Water District.\n\n"
+                    . "The system successfully submitted this test message "
+                    . "using the configured {$providerLabel} email provider.\n\n"
+                    . "If you received this message, the provider accepted "
+                    . "the test email for delivery. This does not guarantee "
+                    . "delivery to every recipient's inbox.\n\n"
+                    . "Sincerely,\n"
+                    . "Sagay Water District\n"
+                    . "iSWD System Notification\n\n"
+                    . "This is an automated message. Please do not reply.",
+
                 function ($message) use (
                     $validated,
                     $settings,
                     $providerLabel
                 ) {
+
                     $message
                         ->to($validated['test_email'])
                         ->subject(
@@ -277,25 +290,22 @@ class MailSettingsController extends Controller
             );
 
             return back()->with(
-                'success',
-                'The test message was submitted successfully. Check the recipient inbox and Spam folder to confirm delivery.'
+                'mail_test_sent',
+                'Your test message was accepted by the configured email provider. Check the recipient inbox, including the Spam folder, to confirm that it arrived.'
             );
-
         } catch (Throwable $exception) {
-            /*
-             * Keep technical details in the Railway logs.
-             */
+
             report($exception);
 
             $message = $provider === 'resend'
+
                 ? 'We could not send the test email through Resend. Check the Railway RESEND_API_KEY, sender verification, and Resend account restrictions.'
-                : 'We could not send the test email. Check the SMTP username, App Password, host, port, and encryption.';
+
+                : 'We could not send the test email. Check the SMTP username, SMTP password, host, port, encryption, and sender authorization.';
 
             return back()
-                ->withErrors([
-                    'test_email' => $message,
-                ])
-                ->withInput();
+                ->with('mail_test_error', $message)
+                ->withInput($request->except('password'));
         }
     }
 }

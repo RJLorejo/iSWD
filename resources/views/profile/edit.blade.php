@@ -157,19 +157,46 @@
 
                     {{-- AVATAR --}}
                     <div class="sm:col-span-2">
-                        <label for="avatar" class="mb-2 block text-sm font-medium text-gray-700">Profile Picture <span
-                                class="font-normal text-gray-400">(Optional)</span></label>
+                        <label for="avatar" class="mb-2 block text-sm font-medium text-gray-700">
+                            Profile Picture
+                            <span class="font-normal text-gray-400">(Optional)</span>
+                        </label>
+
                         <div
                             class="flex flex-col gap-4 rounded-xl border border-dashed border-gray-300 p-4 sm:flex-row sm:items-center">
-                            <img src="{{ $user->avatar ? asset('storage/' . $user->avatar) : 'https://ui-avatars.com/api/?background=0D8ABC&color=fff&size=160&name=' . urlencode($user->full_name) }}"
-                                alt="Current profile picture"
-                                class="h-20 w-20 shrink-0 rounded-full border border-gray-200 object-cover">
+
+                            {{-- PROFILE PICTURE PREVIEW --}}
+                            <div class="flex shrink-0 flex-col items-center gap-2">
+                                <img id="avatar-preview"
+                                    src="{{ $user->avatar
+                                        ? asset('storage/' . $user->avatar)
+                                        : 'https://ui-avatars.com/api/?background=0D8ABC&color=fff&size=160&name=' . urlencode($user->full_name) }}"
+                                    alt="Profile picture preview"
+                                    class="h-24 w-24 rounded-full border border-gray-200 bg-gray-50 object-cover">
+
+                                <span id="avatar-preview-label" class="text-xs font-medium text-gray-500">
+                                    Current Photo
+                                </span>
+                            </div>
+
                             <div class="min-w-0 flex-1">
                                 <input id="avatar" name="avatar" type="file"
                                     accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                                     class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:font-semibold file:text-sky-700 hover:file:bg-sky-100">
-                                <p class="mt-2 text-xs leading-5 text-gray-500">JPG, PNG, or WEBP. Maximum file size: 2 MB.
+
+                                <p class="mt-2 text-xs leading-5 text-gray-500">
+                                    JPG, PNG, or WEBP. Maximum file size: 2 MB.
                                 </p>
+
+                                <p id="avatar-preview-error" class="mt-1.5 hidden text-sm font-medium text-red-600"
+                                    role="alert"></p>
+
+                                <button type="button" id="remove-avatar-selection"
+                                    class="mt-2 hidden text-xs font-semibold text-red-600 transition hover:text-red-800">
+                                    <i class="fas fa-times-circle mr-1" aria-hidden="true"></i>
+                                    Remove selected photo
+                                </button>
+
                                 @error('avatar')
                                     <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -288,6 +315,77 @@
                 });
             });
 
+            // Live profile picture preview before saving.
+            const avatarInput = document.getElementById('avatar');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const avatarPreviewLabel = document.getElementById('avatar-preview-label');
+            const avatarPreviewError = document.getElementById('avatar-preview-error');
+            const removeAvatarButton = document.getElementById('remove-avatar-selection');
+
+            let selectedAvatarUrl = null;
+
+            if (avatarInput && avatarPreview) {
+                avatarInput.addEventListener('change', function() {
+                    const file = this.files && this.files[0];
+
+                    avatarPreviewError.classList.add('hidden');
+                    avatarPreviewError.textContent = '';
+
+                    if (!file) {
+                        return;
+                    }
+
+                    const allowedTypes = [
+                        'image/jpeg',
+                        'image/png',
+                        'image/webp'
+                    ];
+
+                    if (!allowedTypes.includes(file.type)) {
+                        this.value = '';
+                        avatarPreviewError.textContent = 'Please select a JPG, PNG, or WEBP image.';
+                        avatarPreviewError.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (file.size > 2 * 1024 * 1024) {
+                        this.value = '';
+                        avatarPreviewError.textContent = 'The selected image must not exceed 2 MB.';
+                        avatarPreviewError.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (selectedAvatarUrl) {
+                        URL.revokeObjectURL(selectedAvatarUrl);
+                    }
+
+                    selectedAvatarUrl = URL.createObjectURL(file);
+
+                    avatarPreview.src = selectedAvatarUrl;
+                    avatarPreviewLabel.textContent = 'Selected Photo';
+                    removeAvatarButton.classList.remove('hidden');
+                });
+
+                removeAvatarButton.addEventListener('click', function() {
+                    avatarInput.value = '';
+
+                    if (selectedAvatarUrl) {
+                        URL.revokeObjectURL(selectedAvatarUrl);
+                        selectedAvatarUrl = null;
+                    }
+
+                    // Restore the original saved profile picture.
+                    avatarPreview.src = @json(
+                        $user->avatar
+                            ? asset('storage/' . $user->avatar)
+                            : 'https://ui-avatars.com/api/?background=0D8ABC&color=fff&size=160&name=' . urlencode($user->full_name));
+
+                    avatarPreviewLabel.textContent = 'Current Photo';
+                    removeAvatarButton.classList.add('hidden');
+                    avatarPreviewError.classList.add('hidden');
+                    avatarPreviewError.textContent = '';
+                });
+            }
 
             // Philippine mobile number validation and input formatting.
             const phoneInput = document.getElementById('phone');

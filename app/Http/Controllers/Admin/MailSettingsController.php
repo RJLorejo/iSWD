@@ -38,7 +38,7 @@ class MailSettingsController extends Controller
         $validated = $request->validate([
             'provider' => [
                 'required',
-                'in:smtp,resend',
+                'in:smtp,resend,brevo',
             ],
 
             'host' => [
@@ -93,45 +93,50 @@ class MailSettingsController extends Controller
             ],
         ], [
             'provider.required' =>
-            'Select an email provider.',
+                'Select an email provider.',
 
             'provider.in' =>
-            'Select either SMTP or Resend.',
+                'Select SMTP, Resend, or Brevo.',
 
             'username.required_if' =>
-            'Enter the complete SMTP email address.',
+                'Enter the complete SMTP email address.',
 
             'username.email' =>
-            'Enter a valid SMTP email address, including @gmail.com if you use Gmail.',
+                'Enter a valid SMTP email address, including @gmail.com if you use Gmail.',
 
             'password.max' =>
-            'The SMTP password is too long.',
+                'The SMTP password is too long.',
 
             'from_address.required' =>
-            'Enter the sender email address.',
+                'Enter the sender email address.',
 
             'from_address.email' =>
-            'Enter a valid sender email address.',
+                'Enter a valid sender email address.',
 
             'host.required_if' =>
-            'Enter your SMTP server host.',
+                'Enter your SMTP server host.',
 
             'port.required_if' =>
-            'Enter the SMTP port.',
+                'Enter the SMTP port.',
 
             'encryption.required_if' =>
-            'Select the SMTP encryption type.',
+                'Select the SMTP encryption type.',
         ]);
 
         $provider = $validated['provider'];
 
         /*
         |--------------------------------------------------------------------------
-        | Preserve SMTP fields when Resend is selected
+        | Preserve SMTP fields when an API provider is selected
         |--------------------------------------------------------------------------
+        |
+        | Resend and Brevo use HTTPS APIs instead of SMTP credentials.
+        | Keep existing SMTP settings so switching providers does not erase
+        | the previously configured SMTP information.
+        |
         */
 
-        if ($provider === 'resend') {
+        if (in_array($provider, ['resend', 'brevo'], true)) {
 
             $validated['host'] = $settings?->host
                 ?? 'smtp.gmail.com';
@@ -148,7 +153,7 @@ class MailSettingsController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Preserve existing SMTP password
+        | Preserve existing SMTP password when no new password is submitted
         |--------------------------------------------------------------------------
         */
 
@@ -175,6 +180,7 @@ class MailSettingsController extends Controller
                     'mail_settings_saved',
                     'Your email provider configuration has been saved and applied. Send a test email to confirm that your system can submit messages successfully.'
                 );
+
         } catch (Throwable $exception) {
 
             report($exception);
@@ -182,7 +188,7 @@ class MailSettingsController extends Controller
             return back()
                 ->withErrors([
                     'provider' =>
-                    'The email settings could not be saved or applied. Please review your provider configuration and try again.',
+                        'The email settings could not be saved or applied. Please review your provider configuration and try again.',
                 ])
                 ->withInput($request->except('password'));
         }
@@ -236,7 +242,7 @@ class MailSettingsController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Verify Resend API key
+            | Verify provider API keys
             |--------------------------------------------------------------------------
             */
 
@@ -244,9 +250,17 @@ class MailSettingsController extends Controller
                 $provider === 'resend'
                 && !Config::get('services.resend.key')
             ) {
-
                 throw new RuntimeException(
                     'The Resend API key is not configured.'
+                );
+            }
+
+            if (
+                $provider === 'brevo'
+                && !Config::get('services.brevo.key')
+            ) {
+                throw new RuntimeException(
+                    'The Brevo API key is not configured.'
                 );
             }
 
@@ -293,15 +307,26 @@ class MailSettingsController extends Controller
                 'mail_test_sent',
                 'Your test message was accepted by the configured email provider. Check the recipient inbox, including the Spam folder, to confirm that it arrived.'
             );
+
         } catch (Throwable $exception) {
 
             report($exception);
 
-            $message = $provider === 'resend'
+            if ($provider === 'brevo') {
 
-                ? 'We could not send the test email through Resend. Check the Railway RESEND_API_KEY, sender verification, and Resend account restrictions.'
+                $message =
+                    'We could not send the test email through Brevo. Check the Railway BREVO_API_KEY, sender verification, and Brevo account restrictions.';
 
-                : 'We could not send the test email. Check the SMTP username, SMTP password, host, port, encryption, and sender authorization.';
+            } elseif ($provider === 'resend') {
+
+                $message =
+                    'We could not send the test email through Resend. Check the Railway RESEND_API_KEY, sender verification, and Resend account restrictions.';
+
+            } else {
+
+                $message =
+                    'We could not send the test email. Check the SMTP username, SMTP password, host, port, encryption, and sender authorization.';
+            }
 
             return back()
                 ->with('mail_test_error', $message)

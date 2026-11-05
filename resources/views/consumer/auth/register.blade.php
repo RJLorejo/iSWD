@@ -503,6 +503,26 @@
                                         Search above, click the map, or use your current location to place the pin.
                                     </p>
                                 </div>
+                                {{-- Messenger Browser Guidance --}}
+                                <div class="mt-3 rounded-xl border border-sky-200 bg-sky-50 p-3.5">
+                                    <div class="flex items-start gap-3">
+                                        <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                                            <i class="fa-solid fa-mobile-screen-button"></i>
+                                        </div>
+
+                                        <div>
+                                            <p class="text-xs font-semibold text-sky-900">
+                                                Having trouble detecting your location?
+                                            </p>
+
+                                            <p class="mt-1 text-xs leading-5 text-sky-800">
+                                                If you opened this page through Messenger, tap the three-dot menu
+                                                and select <strong>Open in Chrome</strong> or <strong>Open in Browser</strong>.
+                                                This helps ensure your browser can access your device's location.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <p class="mt-2 text-[11px] leading-5 text-slate-400">
                                     Tip: "Use My Location" is most accurate on a phone with GPS. Laptops and desktops

@@ -1,4 +1,3 @@
-
 @extends('admin.layouts.app')
 
 @section('title', 'All Complaints')

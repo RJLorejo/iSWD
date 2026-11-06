@@ -1,4 +1,3 @@
-```blade
 @extends('admin.layouts.app')
 
 @section('content')
@@ -1165,4 +1164,4 @@
     </section>
 </div>
 @endsection
-```
+

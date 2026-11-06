@@ -32,10 +32,6 @@ class ProfileController extends Controller
             return 'customer-service.layouts.app';
         }
 
-        if ($user->hasRole('Consumer')) {
-            return 'consumer.layouts.app';
-        }
-
         return 'layouts.app';
     }
 
@@ -45,18 +41,11 @@ class ProfileController extends Controller
             'department',
             'position',
             'roles',
-            'consumer.address',
         ]);
 
         $layout = $this->profileLayout();
 
-        return view(
-            'profile.show',
-            compact(
-                'user',
-                'layout'
-            )
-        );
+        return view('profile.show', compact('user', 'layout'));
     }
 
     public function edit()
@@ -65,28 +54,28 @@ class ProfileController extends Controller
             'department',
             'position',
             'roles',
-            'consumer.address',
         ]);
 
         $layout = $this->profileLayout();
 
-        return view(
-            'profile.edit',
-            compact(
-                'user',
-                'layout'
-            )
-        );
+        return view('profile.edit', compact('user', 'layout'));
     }
 
     public function update(Request $request)
     {
         $user = Auth::user();
 
+        /*
+        |--------------------------------------------------------------------------
+        | PROFILE VALIDATION
+        |--------------------------------------------------------------------------
+        */
+
         $validated = $request->validate([
             'first_name' => [
                 'required',
                 'string',
+                'min:2',
                 'max:100',
             ],
 
@@ -99,6 +88,7 @@ class ProfileController extends Controller
             'last_name' => [
                 'required',
                 'string',
+                'min:2',
                 'max:100',
             ],
 
@@ -112,8 +102,7 @@ class ProfileController extends Controller
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')
-                    ->ignore($user->id),
+                Rule::unique('users', 'email')->ignore($user->id),
             ],
 
             'phone' => [
@@ -129,31 +118,108 @@ class ProfileController extends Controller
                 'mimes:jpg,jpeg,png,webp',
                 'max:2048',
             ],
+
+            /*
+             * Password fields are intentionally nullable here.
+             * We check them separately so an autofilled current
+             * password does not force an employee to change it.
+             */
+
+            'current_password' => [
+                'nullable',
+                'string',
+            ],
+
+            'password' => [
+                'nullable',
+                'string',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers(),
+            ],
+
+            'password_confirmation' => [
+                'nullable',
+                'string',
+            ],
         ]);
 
-        $validated['first_name'] = trim(
-            $validated['first_name']
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | PASSWORD VALIDATION
+        |--------------------------------------------------------------------------
+        */
 
-        $validated['middle_name'] = !empty($validated['middle_name'])
+        $changePassword = !empty($validated['password']);
+
+        if ($changePassword) {
+            // A new password requires the current password.
+            if (empty($validated['current_password'])) {
+                return back()
+                    ->withErrors([
+                        'current_password' =>
+                            'Please enter your current password to change your password.',
+                    ])
+                    ->withInput(
+                        $request->except([
+                            'current_password',
+                            'password',
+                            'password_confirmation',
+                        ])
+                    );
+            }
+
+            // Verify the employee's existing password.
+            if (
+                !Hash::check(
+                    $validated['current_password'],
+                    $user->password
+                )
+            ) {
+                return back()
+                    ->withErrors([
+                        'current_password' =>
+                            'Your current password is incorrect.',
+                    ])
+                    ->withInput(
+                        $request->except([
+                            'current_password',
+                            'password',
+                            'password_confirmation',
+                        ])
+                    );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | NORMALIZE PROFILE INFORMATION
+        |--------------------------------------------------------------------------
+        */
+
+        $firstName = trim($validated['first_name']);
+        $middleName = !empty($validated['middle_name'])
             ? trim($validated['middle_name'])
             : null;
 
-        $validated['last_name'] = trim(
-            $validated['last_name']
-        );
-
-        $validated['suffix'] = !empty($validated['suffix'])
+        $lastName = trim($validated['last_name']);
+        $suffix = !empty($validated['suffix'])
             ? trim($validated['suffix'])
             : null;
 
-        $validated['email'] = strtolower(
-            trim($validated['email'])
-        );
+        $email = strtolower(trim($validated['email']));
 
-        $validated['phone'] = !empty($validated['phone'])
+        $phone = !empty($validated['phone'])
             ? trim($validated['phone'])
             : null;
+
+        /*
+        |--------------------------------------------------------------------------
+        | AVATAR UPLOAD
+        |--------------------------------------------------------------------------
+        */
 
         $oldAvatar = $user->avatar;
         $newAvatar = null;
@@ -161,56 +227,79 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             $newAvatar = $request
                 ->file('avatar')
-                ->store(
-                    'avatars',
-                    'public'
-                );
+                ->store('avatars', 'public');
 
-            $validated['avatar'] = $newAvatar;
+            if (!$newAvatar) {
+                return back()
+                    ->withErrors([
+                        'avatar' =>
+                            'Unable to upload your profile picture. Please try again.',
+                    ])
+                    ->withInput(
+                        $request->except([
+                            'current_password',
+                            'password',
+                            'password_confirmation',
+                        ])
+                    );
+            }
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAVE PROFILE INFORMATION AND PASSWORD
+        |--------------------------------------------------------------------------
+        */
 
         try {
             DB::transaction(function () use (
                 $user,
+                $firstName,
+                $middleName,
+                $lastName,
+                $suffix,
+                $email,
+                $phone,
+                $newAvatar,
+                $changePassword,
                 $validated
             ) {
-                $user->update($validated);
+                $user->update([
+                    'first_name' => $firstName,
+                    'middle_name' => $middleName,
+                    'last_name' => $lastName,
+                    'suffix' => $suffix,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'avatar' => $newAvatar ?? $user->avatar,
+                ]);
 
-                $consumer = $user->consumer;
-
-                if ($consumer) {
-                    $consumer->update([
-                        'first_name' =>
-                        $validated['first_name'],
-
-                        'middle_name' =>
-                        $validated['middle_name'],
-
-                        'last_name' =>
-                        $validated['last_name'],
-
-                        'suffix' =>
-                        $validated['suffix'],
-
-                        'email' =>
-                        $validated['email'],
-
-                        'phone' =>
-                        $validated['phone'],
+                // Change password only when a new password was entered.
+                if ($changePassword) {
+                    $user->update([
+                        'password' => Hash::make(
+                            $validated['password']
+                        ),
                     ]);
                 }
             });
         } catch (\Throwable $exception) {
+            // Remove the newly uploaded file if saving fails.
             if (
                 $newAvatar &&
                 Storage::disk('public')->exists($newAvatar)
             ) {
-                Storage::disk('public')
-                    ->delete($newAvatar);
+                Storage::disk('public')->delete($newAvatar);
             }
 
             throw $exception;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | REMOVE OLD AVATAR AFTER SUCCESSFUL UPDATE
+        |--------------------------------------------------------------------------
+        */
 
         if (
             $newAvatar &&
@@ -218,17 +307,19 @@ class ProfileController extends Controller
             $oldAvatar !== $newAvatar &&
             Storage::disk('public')->exists($oldAvatar)
         ) {
-            Storage::disk('public')
-                ->delete($oldAvatar);
+            Storage::disk('public')->delete($oldAvatar);
         }
 
         return redirect()
             ->route('profile.show')
-            ->with(
-                'success',
-                'Profile updated successfully.'
-            );
+            ->with('success', 'Profile updated successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEPARATE PASSWORD UPDATE
+    |--------------------------------------------------------------------------
+    */
 
     public function updatePassword(Request $request)
     {
@@ -238,6 +329,7 @@ class ProfileController extends Controller
             'current_password' => [
                 'required',
                 'string',
+                'current_password',
             ],
 
             'password' => [
@@ -251,30 +343,12 @@ class ProfileController extends Controller
             ],
         ]);
 
-        if (
-            !Hash::check(
-                $validated['current_password'],
-                $user->password
-            )
-        ) {
-            return back()
-                ->withErrors([
-                    'current_password' =>
-                    'Current password is incorrect.',
-                ]);
-        }
-
         $user->update([
-            'password' => Hash::make(
-                $validated['password']
-            ),
+            'password' => Hash::make($validated['password']),
         ]);
 
         return redirect()
             ->route('profile.show')
-            ->with(
-                'success',
-                'Password updated successfully.'
-            );
+            ->with('success', 'Password updated successfully.');
     }
 }

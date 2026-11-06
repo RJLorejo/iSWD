@@ -1,4 +1,3 @@
-```blade
 @extends('layouts.report')
 
 @section('title', 'Administration Complaint Report')
@@ -236,4 +235,3 @@
     </section>
 
 @endsection
-```

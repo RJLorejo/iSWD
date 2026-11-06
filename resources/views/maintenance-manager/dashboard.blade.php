@@ -25,7 +25,7 @@
                         <p class="mt-1 text-xs text-gray-400">Ready for processing</p>
                     </div>
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                        <i class="fas fa-shield-check"></i>
+                        <i class="fas fa-shield-alt"></i>
                     </div>
                 </div>
             </x-form.card>

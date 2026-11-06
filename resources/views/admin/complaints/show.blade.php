@@ -1,4 +1,3 @@
-```blade
 @extends('admin.layouts.app')
 
 @section('title', 'Complaint Details')
@@ -1585,4 +1584,3 @@ $hasMissedSchedule = $workOrders->contains(function ($order) {
     @endpush
 @endif
 @endsection
-```
